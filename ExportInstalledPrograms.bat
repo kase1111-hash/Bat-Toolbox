@@ -134,21 +134,24 @@ echo ===========================================================================
 echo. >> "%EXPORT_FILE%"
 
 set "PSSCRIPT=%TEMP%\get-appx.ps1"
-(
-echo $apps = Get-AppxPackage ^| Where-Object { $_.IsFramework -eq $false } ^| Sort-Object Name
-echo foreach ^($app in $apps^) {
-echo     $name = $app.Name
-echo     if ^($name -notmatch '^Microsoft\.(NET|VCLibs|UI|Services|Windows)'  -and $name -notmatch '^\d+\.'  -and $name -notmatch '^Windows'  -and $name -notmatch '^InputApp' ^) {
-echo         Write-Output "$name"
-echo     }
-echo }
-) > "%PSSCRIPT%"
+
+:: Write PowerShell script line by line to avoid parentheses issues
+echo $apps = Get-AppxPackage ^| Where-Object { $_.IsFramework -eq $false } ^| Sort-Object Name > "%PSSCRIPT%"
+echo foreach { $app in $apps } { >> "%PSSCRIPT%"
+echo     $name = $app.Name >> "%PSSCRIPT%"
+echo     $skip = $false >> "%PSSCRIPT%"
+echo     if { $name -match '^Microsoft\.' } { $skip = $true } >> "%PSSCRIPT%"
+echo     if { $name -match '^Windows' } { $skip = $true } >> "%PSSCRIPT%"
+echo     if { $name -match '^\d+\.' } { $skip = $true } >> "%PSSCRIPT%"
+echo     if { $name -match '^InputApp' } { $skip = $true } >> "%PSSCRIPT%"
+echo     if { -not $skip } { Write-Output $name } >> "%PSSCRIPT%"
+echo } >> "%PSSCRIPT%"
+
+:: Alternative: just run PowerShell directly
+powershell -ExecutionPolicy Bypass -Command "Get-AppxPackage | Where-Object { $_.IsFramework -eq $false -and $_.Name -notmatch '^Microsoft\.' -and $_.Name -notmatch '^Windows' } | Select-Object -ExpandProperty Name | Sort-Object" >> "%EXPORT_FILE%" 2>nul
 
 set "count=0"
-for /f "tokens=*" %%a in ('powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2^>nul') do (
-    echo %%a >> "%EXPORT_FILE%"
-    set /a count+=1
-)
+for /f "tokens=*" %%a in ('powershell -ExecutionPolicy Bypass -Command "Get-AppxPackage | Where-Object { $_.IsFramework -eq $false -and $_.Name -notmatch '^Microsoft\.' -and $_.Name -notmatch '^Windows' } | Measure-Object | Select-Object -ExpandProperty Count" 2^>nul') do set "count=%%a"
 del "%PSSCRIPT%" 2>nul
 echo   Found %count% apps
 
@@ -173,44 +176,21 @@ for /f "tokens=*" %%a in ('dism /online /get-features /format:table 2^>nul ^| fi
 echo   Found %count% features
 
 :: ============================================================================
-:: Section 6: Detailed Program List with Versions (WMIC)
+:: Section 6: Detailed Program List with Versions
 :: ============================================================================
 echo [6/6] Creating detailed program list with versions...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo  DETAILED PROGRAM LIST (Name, Version, Publisher) >> "%EXPORT_FILE%"
+echo  DETAILED PROGRAM LIST [Name, Version, Publisher] >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo. >> "%EXPORT_FILE%"
-echo %-60s %-20s %-30s >> "%EXPORT_FILE%"
-
-:: Use PowerShell for better formatting
-set "PSSCRIPT2=%TEMP%\get-programs.ps1"
-(
-echo $programs = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*,
-echo                              HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*,
-echo                              HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* 2^>$null ^|
-echo     Where-Object { $_.DisplayName -ne $null } ^|
-echo     Select-Object DisplayName, DisplayVersion, Publisher ^|
-echo     Sort-Object DisplayName -Unique
-echo.
-echo foreach ^($prog in $programs^) {
-echo     $name = if ^($prog.DisplayName.Length -gt 55^) { $prog.DisplayName.Substring^(0,55^) + "..." } else { $prog.DisplayName }
-echo     $version = if ^($prog.DisplayVersion^) { $prog.DisplayVersion } else { "N/A" }
-echo     $publisher = if ^($prog.Publisher^) { $prog.Publisher } else { "Unknown" }
-echo     if ^($version.Length -gt 18^) { $version = $version.Substring^(0,18^) }
-echo     if ^($publisher.Length -gt 28^) { $publisher = $publisher.Substring^(0,28^) }
-echo     Write-Output ^("$name | $version | $publisher"^)
-echo }
-) > "%PSSCRIPT2%"
 
 echo NAME                                                         ^| VERSION              ^| PUBLISHER >> "%EXPORT_FILE%"
 echo ------------------------------------------------------------ ^| -------------------- ^| ------------------------------ >> "%EXPORT_FILE%"
 
-for /f "tokens=*" %%a in ('powershell -ExecutionPolicy Bypass -File "%PSSCRIPT2%" 2^>nul') do (
-    echo %%a >> "%EXPORT_FILE%"
-)
-del "%PSSCRIPT2%" 2>nul
+:: Use inline PowerShell to avoid batch parentheses issues
+powershell -ExecutionPolicy Bypass -Command "$paths = @('HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'); $programs = $paths | ForEach-Object { Get-ItemProperty $_ -ErrorAction SilentlyContinue } | Where-Object { $_.DisplayName } | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName -Unique; foreach ($p in $programs) { $n = if ($p.DisplayName.Length -gt 55) { $p.DisplayName.Substring(0,55) + '...' } else { $p.DisplayName }; $v = if ($p.DisplayVersion) { $p.DisplayVersion } else { 'N/A' }; $pub = if ($p.Publisher) { $p.Publisher } else { 'Unknown' }; if ($v.Length -gt 18) { $v = $v.Substring(0,18) }; if ($pub.Length -gt 28) { $pub = $pub.Substring(0,28) }; Write-Output ('{0,-60} | {1,-20} | {2}' -f $n, $v, $pub) }" >> "%EXPORT_FILE%" 2>nul
 
 :: ============================================================================
 :: Section 7: Browser Extensions Reminder
