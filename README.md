@@ -93,6 +93,52 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 
 ---
 
+### FirmwareCheck.bat
+
+**Purpose:** Scans system firmware and driver versions, outputs search-ready strings for checking updates online.
+
+**What it detects:**
+| Component | Information Gathered |
+|-----------|---------------------|
+| BIOS/UEFI | Manufacturer, version, date, motherboard model |
+| CPU | Processor name for chipset driver search |
+| GPU | Graphics card model, driver version and date |
+| Network | Adapter names, driver versions |
+| Audio | Sound device names, driver versions |
+| Storage | Disk models, firmware revisions |
+| Chipset | Platform detection for driver search |
+
+**Output:** Creates `FirmwareInfo_COMPUTERNAME.txt` on Desktop
+
+**Sample output:**
+```
+QUICK SEARCH STRINGS [Copy into your browser]
+
+  BIOS:    ASUS ROG STRIX B550-F GAMING BIOS update download
+  Chipset: ASUS ROG STRIX B550-F GAMING chipset driver
+  GPU:     NVIDIA GeForce driver download
+
+DIRECT LINKS
+  NVIDIA:   https://www.nvidia.com/Download/index.aspx
+  AMD:      https://www.amd.com/en/support
+  Intel:    https://www.intel.com/content/www/us/en/download-center/home.html
+```
+
+**Features:**
+- Pre-formatted search strings ready to paste into Google
+- Direct download links for major vendors (NVIDIA, AMD, Intel, Realtek)
+- Motherboard-specific support links (ASUS, MSI, Gigabyte, ASRock, Dell, HP, Lenovo)
+- Current driver versions to compare against latest available
+
+**When to use:**
+- After a fresh Windows install to update drivers
+- Periodically to check for firmware/driver updates
+- Before troubleshooting hardware issues
+
+**Admin required:** No
+
+---
+
 ### Honeypot.bat
 
 **Purpose:** A decoy file that logs information about anyone who opens it, then shuts down the computer.
@@ -198,6 +244,22 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 
 ---
 
+### RestoreRecycleBin.bat
+
+**Purpose:** Restores the Recycle Bin icon to the Windows desktop if it was accidentally hidden or removed.
+
+**What it does:**
+1. Removes registry flags that hide the Recycle Bin
+2. Re-registers the Recycle Bin in the desktop namespace
+3. Sets visibility flag to "show"
+4. Restarts Explorer to apply changes
+
+**When to use:** If the Recycle Bin disappeared from your desktop after running debloat scripts or registry tweaks.
+
+**Admin required:** No
+
+---
+
 ### ScreenSleepGuard.bat
 
 **Purpose:** Turns off the monitor and forces a logout if someone tries to wake it without knowing the secret key combination.
@@ -214,6 +276,50 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 **Companion file:** Requires `ScreenSleepGuard.ps1` in the same directory.
 
 **Admin required:** No
+
+---
+
+### WindowsTweaks.bat
+
+**Purpose:** Interactive menu for applying advanced Windows customizations not easily accessible through normal settings.
+
+**Categories available:**
+
+| Category | Tweaks Included |
+|----------|-----------------|
+| Performance | Disable SysMain/Superfetch, Search Indexing, Prefetch, Fast Startup, Power Throttling, NTFS optimizations |
+| Gaming | Disable Game DVR, Fullscreen Optimizations, HPET; Enable Hardware GPU Scheduling; CPU/GPU priority tweaks |
+| UI/Visual | Disable transparency, animations, Aero Shake; Restore classic context menu (Win11); Show clock seconds |
+| Privacy | Disable telemetry, Cortana, Bing search, Activity History, advertising ID, app suggestions |
+| Explorer | Show file extensions/hidden files, open to This PC, disable Quick Access history, remove 3D Objects |
+| Network | Disable Nagle's algorithm, network throttling, auto-tuning; Optimize DNS priority |
+| Input | Disable mouse acceleration, Sticky/Filter/Toggle Keys popups; Max keyboard repeat rate |
+
+**Menu options:**
+```
+[1] Apply ALL Tweaks (Recommended)
+[2] Performance Tweaks
+[3] Gaming Tweaks
+[4] UI / Visual Tweaks
+[5] Privacy Tweaks
+[6] Explorer Tweaks
+[7] Network Tweaks
+[8] Input Tweaks
+[9] Restore Defaults
+[0] Exit
+```
+
+**Highlights:**
+- Disables Game DVR background recording (frees GPU resources)
+- Enables Hardware-accelerated GPU Scheduling
+- Restores Windows 10 right-click menu on Windows 11
+- Disables mouse acceleration for raw input (better for gaming)
+- Removes Bing from Start Menu search
+- Disables all accessibility key popups (Sticky Keys, etc.)
+
+**When to use:** After a fresh Windows install to optimize for performance and privacy.
+
+**Admin required:** Yes
 
 ---
 
@@ -249,11 +355,14 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 |--------|----------------|
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
+| FirmwareCheck.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
+| RestoreRecycleBin.bat | No |
 | ScreenSleepGuard.bat | No |
+| WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
 ---
