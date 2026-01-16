@@ -136,18 +136,18 @@ echo.
 echo %WHITE%[1/4] Hardware-accelerated GPU scheduling...%RESET%
 if "%profile%"=="4" (
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v "HwSchMode" /t REG_DWORD /d 1 /f >nul 2>&1
-    echo %YELLOW%   [SET] Disabled (power saving)%RESET%
+    echo %YELLOW%   [SET] Disabled ^(power saving^)%RESET%
 ) else (
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v "HwSchMode" /t REG_DWORD /d 2 /f >nul 2>&1
-    echo %GREEN%   [SET] Enabled (reduces latency)%RESET%
+    echo %GREEN%   [SET] Enabled ^(reduces latency^)%RESET%
 )
 
 :: Variable Refresh Rate
 echo %WHITE%[2/4] Variable Refresh Rate (VRR)...%RESET%
 if "%profile%"=="1" (
-    :: Competitive - disable VRR for lowest latency (controversial, user preference)
+    :: Competitive - disable VRR for lowest latency ^(controversial, user preference^)
     reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /t REG_SZ /d "VRROptimizeEnable=0;" /f >nul 2>&1
-    echo %YELLOW%   [SET] VRR optimization disabled (raw latency)%RESET%
+    echo %YELLOW%   [SET] VRR optimization disabled ^(raw latency^)%RESET%
 ) else (
     reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /t REG_SZ /d "VRROptimizeEnable=1;" /f >nul 2>&1
     echo %GREEN%   [SET] VRR optimization enabled%RESET%
@@ -158,7 +158,7 @@ echo %WHITE%[3/4] Windows Game Mode...%RESET%
 if "%profile%"=="3" (
     reg add "HKCU\Software\Microsoft\GameBar" /v "AllowAutoGameMode" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\GameBar" /v "AutoGameModeEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
-    echo %YELLOW%   [SET] Disabled (content creation - avoids interference)%RESET%
+    echo %YELLOW%   [SET] Disabled ^(content creation - avoids interference^)%RESET%
 ) else (
     reg add "HKCU\Software\Microsoft\GameBar" /v "AllowAutoGameMode" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\GameBar" /v "AutoGameModeEnabled" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -168,7 +168,7 @@ if "%profile%"=="3" (
 :: Fullscreen optimizations
 echo %WHITE%[4/4] Fullscreen optimizations...%RESET%
 if "%profile%"=="1" (
-    :: Disable FSO for competitive (true exclusive fullscreen)
+    :: Disable FSO for competitive ^(true exclusive fullscreen^)
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /t REG_DWORD /d 2 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehavior" /t REG_DWORD /d 2 /f >nul 2>&1
@@ -200,7 +200,7 @@ if "%has_nvidia%"=="1" (
     if "%profile%"=="4" (
         :: Adaptive
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
-        echo %YELLOW%   [SET] Adaptive (power saving)%RESET%
+        echo %YELLOW%   [SET] Adaptive ^(power saving^)%RESET%
     ) else (
         :: Prefer maximum performance
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
@@ -214,12 +214,12 @@ if "%has_nvidia%"=="1" (
     :: NVIDIA Control Panel Low Latency Mode via profile settings
     :: Uses NVIDIA Profile Inspector values
     if "%profile%"=="1" (
-        :: Ultra (submit frames just-in-time)
-        echo %GREEN%   [SET] Ultra (competitive - submit just-in-time)%RESET%
+        :: Ultra ^(submit frames just-in-time^)
+        echo %GREEN%   [SET] Ultra ^(competitive - submit just-in-time^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Manage 3D Settings ^> Low Latency Mode ^> Ultra%RESET%
     ) else if "%profile%"=="2" (
         :: On
-        echo %GREEN%   [SET] On (balanced)%RESET%
+        echo %GREEN%   [SET] On ^(balanced^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Low Latency Mode ^> On%RESET%
     ) else (
         :: Off or Application controlled
@@ -229,59 +229,59 @@ if "%has_nvidia%"=="1" (
     echo %WHITE%[3/10] Shader cache...%RESET%
     :: Shader cache location and size
     if "%profile%"=="3" (
-        :: Unlimited for content creation (more VRAM usage)
+        :: Unlimited for content creation ^(more VRAM usage^)
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /t REG_DWORD /d 0xFFFFFFFF /f >nul 2>&1
-        echo %GREEN%   [SET] Unlimited (quality/content creation)%RESET%
+        echo %GREEN%   [SET] Unlimited ^(quality/content creation^)%RESET%
     ) else (
         :: Default driver controlled
         reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /f >nul 2>&1
-        echo %GREEN%   [SET] Driver controlled (10GB default)%RESET%
+        echo %GREEN%   [SET] Driver controlled ^(10GB default^)%RESET%
     )
 
     echo %WHITE%[4/10] Threaded optimization...%RESET%
     :: 0x00000001 = Auto, 0x00000002 = On, 0x00000000 = Off
     if "%profile%"=="1" (
-        :: Off for competitive (more predictable frametimes)
-        echo %YELLOW%   [SET] Off (competitive - predictable frametimes)%RESET%
+        :: Off for competitive ^(more predictable frametimes^)
+        echo %YELLOW%   [SET] Off ^(competitive - predictable frametimes^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel if needed%RESET%
     ) else (
         :: Auto for most use cases
-        echo %GREEN%   [SET] Auto (driver decides per-application)%RESET%
+        echo %GREEN%   [SET] Auto ^(driver decides per-application^)%RESET%
     )
 
     echo %WHITE%[5/10] Texture filtering quality...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] High Performance (competitive)%RESET%
+        echo %GREEN%   [SET] High Performance ^(competitive^)%RESET%
     ) else if "%profile%"=="3" (
-        echo %GREEN%   [SET] High Quality (content creation)%RESET%
+        echo %GREEN%   [SET] High Quality ^(content creation^)%RESET%
     ) else (
-        echo %GREEN%   [SET] Quality (balanced)%RESET%
+        echo %GREEN%   [SET] Quality ^(balanced^)%RESET%
     )
     echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Texture filtering - Quality%RESET%
 
     echo %WHITE%[6/10] Anisotropic filtering...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] Application-controlled (competitive)%RESET%
+        echo %GREEN%   [SET] Application-controlled ^(competitive^)%RESET%
     ) else (
-        echo %GREEN%   [SET] 16x (quality)%RESET%
+        echo %GREEN%   [SET] 16x ^(quality^)%RESET%
     )
     echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Anisotropic filtering%RESET%
 
-    echo %WHITE%[7/10] NVIDIA Reflex (game-specific)...%RESET%
+    echo %WHITE%[7/10] NVIDIA Reflex ^(game-specific^)...%RESET%
     echo %GREEN%   [OK] Enabled in supported games via in-game settings%RESET%
     echo %YELLOW%   [INFO] Look for "NVIDIA Reflex Low Latency" in game settings%RESET%
 
     echo %WHITE%[8/10] G-SYNC settings...%RESET%
     if "%profile%"=="1" (
         echo %YELLOW%   [SET] Disable V-Sync in NVIDIA CP, cap FPS 3 below refresh%RESET%
-        echo %YELLOW%   [INFO] Example: 144Hz monitor = cap at 141 FPS%RESET%
+        echo %YELLOW%   [INFO] Example: 144Hz monitor ^= cap at 141 FPS%RESET%
     ) else (
         echo %GREEN%   [SET] G-SYNC on, V-Sync on, no FPS cap needed%RESET%
     )
 
     echo %WHITE%[9/10] Pre-rendered frames...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] 1 (minimum latency)%RESET%
+        echo %GREEN%   [SET] 1 ^(minimum latency^)%RESET%
     ) else (
         echo %GREEN%   [SET] Use application setting or 2-3%RESET%
     )
@@ -341,9 +341,9 @@ if "%has_amd%"=="1" (
 
     echo %WHITE%[1/12] Radeon Anti-Lag...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] Enabled (competitive - reduces input lag)%RESET%
+        echo %GREEN%   [SET] Enabled ^(competitive - reduces input lag^)%RESET%
     ) else if "%profile%"=="4" (
-        echo %YELLOW%   [SET] Disabled (power saving)%RESET%
+        echo %YELLOW%   [SET] Disabled ^(power saving^)%RESET%
     ) else (
         echo %GREEN%   [SET] Enabled%RESET%
     )
@@ -351,9 +351,9 @@ if "%has_amd%"=="1" (
 
     echo %WHITE%[2/12] Radeon Boost...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] Enabled (reduces resolution during fast motion)%RESET%
+        echo %GREEN%   [SET] Enabled ^(reduces resolution during fast motion^)%RESET%
     ) else if "%profile%"=="3" (
-        echo %YELLOW%   [SET] Disabled (quality priority)%RESET%
+        echo %YELLOW%   [SET] Disabled ^(quality priority^)%RESET%
     ) else (
         echo %GREEN%   [SET] Optional - user preference%RESET%
     )
@@ -361,17 +361,17 @@ if "%has_amd%"=="1" (
 
     echo %WHITE%[3/12] Radeon Chill...%RESET%
     if "%profile%"=="4" (
-        echo %GREEN%   [SET] Enabled (power saving - dynamic FPS)%RESET%
+        echo %GREEN%   [SET] Enabled ^(power saving - dynamic FPS^)%RESET%
     ) else (
-        echo %YELLOW%   [SET] Disabled (consistent framerate)%RESET%
+        echo %YELLOW%   [SET] Disabled ^(consistent framerate^)%RESET%
     )
     echo %YELLOW%   [INFO] Set via AMD Software: Gaming ^> Graphics ^> Radeon Chill%RESET%
 
     echo %WHITE%[4/12] Enhanced Sync...%RESET%
     if "%profile%"=="1" (
-        echo %YELLOW%   [SET] Disabled (competitive - use FreeSync only)%RESET%
+        echo %YELLOW%   [SET] Disabled ^(competitive - use FreeSync only^)%RESET%
     ) else (
-        echo %GREEN%   [SET] Enabled (reduces tearing without V-Sync latency)%RESET%
+        echo %GREEN%   [SET] Enabled ^(reduces tearing without V-Sync latency^)%RESET%
     )
     echo %YELLOW%   [INFO] Set via AMD Software: Gaming ^> Graphics ^> Wait for Vertical Refresh%RESET%
 
@@ -386,8 +386,8 @@ if "%has_amd%"=="1" (
     echo %WHITE%[6/12] Shader cache...%RESET%
     :: AMD Shader Cache registry
     if "%profile%"=="3" (
-        :: Reset shader cache location for content creation (use default)
-        echo %GREEN%   [SET] Default location (content creation)%RESET%
+        :: Reset shader cache location for content creation ^(use default^)
+        echo %GREEN%   [SET] Default location ^(content creation^)%RESET%
     ) else (
         echo %GREEN%   [SET] Driver controlled%RESET%
     )
@@ -413,7 +413,7 @@ if "%has_amd%"=="1" (
 
     echo %WHITE%[9/12] Surface format optimization...%RESET%
     if "%profile%"=="1" (
-        echo %GREEN%   [SET] Enabled (competitive)%RESET%
+        echo %GREEN%   [SET] Enabled ^(competitive^)%RESET%
     ) else (
         echo %GREEN%   [SET] Enabled%RESET%
     )
@@ -427,8 +427,8 @@ if "%has_amd%"=="1" (
     )
     echo %YELLOW%   [INFO] Set via AMD Software: Performance ^> Tuning%RESET%
 
-    echo %WHITE%[11/12] ULPS (Ultra Low Power State)...%RESET%
-    :: Disable ULPS for lower latency (wake-up delay)
+    echo %WHITE%[11/12] ULPS ^(Ultra Low Power State^)...%RESET%
+    :: Disable ULPS for lower latency ^(wake-up delay^)
     for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "EnableULPS" 2^>nul ^| findstr /i "HKEY"') do (
         if "%profile%"=="4" (
             reg add "%%a" /v "EnableULPS" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -437,9 +437,9 @@ if "%has_amd%"=="1" (
         )
     )
     if "%profile%"=="4" (
-        echo %YELLOW%   [SET] Enabled (power saving)%RESET%
+        echo %YELLOW%   [SET] Enabled ^(power saving^)%RESET%
     ) else (
-        echo %GREEN%   [SET] Disabled (reduces wake latency)%RESET%
+        echo %GREEN%   [SET] Disabled ^(reduces wake latency^)%RESET%
     )
 
     echo %WHITE%[12/12] AMD telemetry...%RESET%
@@ -507,7 +507,7 @@ if "%has_intel%"=="1" (
         echo.
 
         echo %WHITE%[1/6] Resizable BAR...%RESET%
-        echo %GREEN%   [CHECK] Verify enabled in BIOS (critical for Arc performance)%RESET%
+        echo %GREEN%   [CHECK] Verify enabled in BIOS ^(critical for Arc performance^)%RESET%
 
         echo %WHITE%[2/6] Hyper Encode...%RESET%
         echo %GREEN%   [SET] Enable for video encoding workloads%RESET%
@@ -515,15 +515,15 @@ if "%has_intel%"=="1" (
 
         echo %WHITE%[3/6] Smooth Sync...%RESET%
         if "%profile%"=="1" (
-            echo %YELLOW%   [SET] Disabled (competitive)%RESET%
+            echo %YELLOW%   [SET] Disabled ^(competitive^)%RESET%
         ) else (
-            echo %GREEN%   [SET] Enabled (reduces tearing)%RESET%
+            echo %GREEN%   [SET] Enabled ^(reduces tearing^)%RESET%
         )
         echo %YELLOW%   [INFO] Intel Arc Control ^> Games ^> Smooth Sync%RESET%
 
         echo %WHITE%[4/6] Performance tuning...%RESET%
         if "%profile%"=="4" (
-            echo %YELLOW%   [SET] Default (power saving)%RESET%
+            echo %YELLOW%   [SET] Default ^(power saving^)%RESET%
         ) else (
             echo %GREEN%   [SET] Increase power limit in Arc Control%RESET%
         )
@@ -534,7 +534,7 @@ if "%has_intel%"=="1" (
         echo %YELLOW%   [INFO] Intel Arc Control ^> Display ^> Integer Scaling%RESET%
 
         echo %WHITE%[6/6] Present from Compute...%RESET%
-        echo %GREEN%   [SET] Enabled (may improve DX12 performance)%RESET%
+        echo %GREEN%   [SET] Enabled ^(may improve DX12 performance^)%RESET%
     ) else (
         echo %WHITE%Intel Integrated Graphics detected%RESET%
         echo.
@@ -549,7 +549,7 @@ if "%has_intel%"=="1" (
             )
         )
         if "%profile%"=="4" (
-            echo %YELLOW%   [SET] Balanced (power saving)%RESET%
+            echo %YELLOW%   [SET] Balanced ^(power saving^)%RESET%
         ) else (
             echo %GREEN%   [SET] Maximum Performance%RESET%
         )
@@ -558,9 +558,9 @@ if "%has_intel%"=="1" (
         echo %GREEN%   [OK] Open Intel GCC for per-game settings%RESET%
         echo %YELLOW%   [INFO] Settings: System ^> Power ^> Maximum Performance%RESET%
 
-        echo %WHITE%[3/4] Panel Self-Refresh (laptops)...%RESET%
+        echo %WHITE%[3/4] Panel Self-Refresh ^(laptops^)...%RESET%
         if "%profile%"=="4" (
-            echo %GREEN%   [SET] Enabled (power saving)%RESET%
+            echo %GREEN%   [SET] Enabled ^(power saving^)%RESET%
         ) else (
             echo %YELLOW%   [SET] Consider disabling for lower latency%RESET%
             echo %YELLOW%   [INFO] Intel GCC ^> Display ^> Power%RESET%
@@ -583,13 +583,13 @@ echo.
 
 echo %WHITE%[1/3] Frame rate limiting...%RESET%
 if "%profile%"=="1" (
-    echo %GREEN%   Use RTSS (RivaTuner Statistics Server) for precise frame limiting%RESET%
-    echo     - Set FPS cap 3 below refresh rate (e.g., 141 for 144Hz)
+    echo %GREEN%   Use RTSS ^(RivaTuner Statistics Server^) for precise frame limiting%RESET%
+    echo     - Set FPS cap 3 below refresh rate ^(e.g., 141 for 144Hz^)
     echo     - Lower scanline sync for additional latency reduction
     echo     - Download: https://www.guru3d.com/files-details/rtss-rivatuner-statistics-server-download.html
 ) else (
     echo %GREEN%   Use in-game FPS limiters when available%RESET%
-    echo     - Or use driver FPS limiter (NVIDIA/AMD control panel)
+    echo     - Or use driver FPS limiter ^(NVIDIA/AMD control panel^)
 )
 
 echo.
@@ -604,11 +604,11 @@ echo %WHITE%[3/3] In-game settings for %profile_name%...%RESET%
 if "%profile%"=="1" (
     echo %GREEN%   Recommended:%RESET%
     echo     - V-Sync: OFF
-    echo     - Frame rate: Capped 3 below refresh (via RTSS)
+    echo     - Frame rate: Capped 3 below refresh ^(via RTSS^)
     echo     - Render latency: Low/Ultra Low
     echo     - NVIDIA Reflex: ON + Boost
     echo     - AMD Anti-Lag: ON
-    echo     - Fullscreen: Exclusive (not borderless)
+    echo     - Fullscreen: Exclusive ^(not borderless^)
 ) else if "%profile%"=="2" (
     echo %GREEN%   Recommended:%RESET%
     echo     - V-Sync: OFF with VRR, ON without
@@ -617,13 +617,13 @@ if "%profile%"=="1" (
     echo     - Fullscreen: Borderless OK
 ) else if "%profile%"=="3" (
     echo %GREEN%   Recommended:%RESET%
-    echo     - V-Sync: ON (smoothest frametimes)
+    echo     - V-Sync: ON ^(smoothest frametimes^)
     echo     - Frame rate: Match refresh rate
     echo     - Render quality: Maximum
     echo     - Motion blur: Personal preference
 ) else (
     echo %GREEN%   Recommended:%RESET%
-    echo     - V-Sync: ON (prevents GPU from overworking)
+    echo     - V-Sync: ON ^(prevents GPU from overworking^)
     echo     - Frame rate: 60 FPS cap for battery
     echo     - Render quality: Medium-High
     echo     - Prefer integrated GPU when possible
@@ -663,7 +663,7 @@ if %errorlevel%==1 (
         start "" "C:\Program Files\AMD\CNext\CNext\RadeonSoftware.exe" 2>nul
     )
     if "%has_intel%"=="1" (
-        start "" "C:\Program Files\Intel\Intel(R) Graphics Command Center\IntelGraphicsCommandCenter.exe" 2>nul
+        start "" "C:\Program Files\Intel\Intel^(R^) Graphics Command Center\IntelGraphicsCommandCenter.exe" 2>nul
     )
 )
 

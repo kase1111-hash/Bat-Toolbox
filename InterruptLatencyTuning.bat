@@ -220,7 +220,7 @@ powershell -Command ^
     "[void]$type::NtQueryTimerResolution([ref]$min, [ref]$max, [ref]$current);" ^
     "$currentMs = $current / 10000;" ^
     "$maxMs = $max / 10000;" ^
-    "Write-Host \"   Current: $currentMs ms | Best possible: $maxMs ms\" -ForegroundColor Cyan"
+    "Write-Host \"   Current: $currentMs ms ^| Best possible: $maxMs ms\" -ForegroundColor Cyan"
 
 :: Disable dynamic tick (forces consistent timer)
 echo %WHITE%[2/3] Configuring timer behavior...%RESET%
@@ -300,7 +300,7 @@ reg query "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" >nul 2>&1
 if %errorlevel%==0 (
     :: Disable NVIDIA telemetry that causes DPC spikes
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm\Global\Startup" /v "SendTelemetryData" /t REG_DWORD /d 0 /f >nul 2>&1
-    :: Disable HDCP (can cause latency)
+    :: Disable HDCP ^(can cause latency^)
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "DisableHDCP" /t REG_DWORD /d 1 /f >nul 2>&1
     :: Optimize interrupt handling
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "RmDisableHdcp22" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -315,7 +315,7 @@ reg query "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" >nul 2>&1
 if %errorlevel%==0 (
     :: AMD interrupt coalescing
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" /v "EnableUlps" /t REG_DWORD /d 0 /f >nul 2>&1
-    echo %GREEN%   [OK] AMD ULPS disabled (reduces wake latency)%RESET%
+    echo %GREEN%   [OK] AMD ULPS disabled ^(reduces wake latency^)%RESET%
 ) else (
     echo %YELLOW%   [SKIP] AMD driver not found%RESET%
 )

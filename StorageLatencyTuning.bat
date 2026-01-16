@@ -286,9 +286,9 @@ for /f "tokens=*" %%a in ('powershell -Command "(Get-PhysicalDisk | Where-Object
 if "%is_ssd%"=="1" (
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableSuperfetch" /t REG_DWORD /d 0 /f >nul 2>&1
-    echo %GREEN%   [OK] Prefetch disabled (SSD detected as system drive)%RESET%
+    echo %GREEN%   [OK] Prefetch disabled ^(SSD detected as system drive^)%RESET%
 ) else (
-    echo %YELLOW%   [INFO] Prefetch kept enabled (HDD or mixed storage)%RESET%
+    echo %YELLOW%   [INFO] Prefetch kept enabled ^(HDD or mixed storage^)%RESET%
 )
 
 :: Defragmentation settings
