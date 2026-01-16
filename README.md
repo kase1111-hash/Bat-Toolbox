@@ -258,6 +258,48 @@ DIRECT LINKS
 
 ---
 
+### StorageLatencyTuning.bat
+
+**Purpose:** Optimizes NVMe/SSD storage for minimum latency and maximum I/O throughput.
+
+**Impact:** ⭐⭐⭐⭐⭐ - Storage touches everything (OS, apps, games, file operations)
+
+**What it optimizes:**
+| Category | Changes |
+|----------|---------|
+| NVMe Power States | Disables PS3/PS4 states, APST, minimizes wake latency |
+| AHCI Link Power | Disables HIPM/DIPM, prevents I/O stalls |
+| PCIe ASPM | Disables Active State Power Management for storage |
+| Write Cache | Enables write-back caching, optimizes NTFS behavior |
+| Queue Depth | Increases to 256 (Windows defaults are conservative) |
+| Interrupts | Disables coalescing, enables MSI-X |
+
+**Technical background:**
+- NVMe supports up to 64K queues × 64K entries, but Windows defaults are conservative
+- Power-saving states (PS3/PS4) can add 100-500+ microseconds latency
+- Queue depth mismatch = underutilized SSD potential
+
+**Expected improvements:**
+- Reduced 4K random I/O latency (0.5ms → 0.1-0.2ms)
+- More consistent sequential throughput
+- Faster application launches and game loading
+- Reduced micro-stutters from asset streaming
+
+**Trade-offs:**
+- ~1-3W higher power consumption
+- Slightly warmer SSD temperatures
+- Less battery life on laptops
+
+**When to use:**
+- Desktop gaming/workstation PCs
+- After fresh Windows install
+- Before benchmarking storage
+- If experiencing random micro-stutters
+
+**Admin required:** Yes
+
+---
+
 ### RemoveAsusBloat.bat
 
 **Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
@@ -488,6 +530,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ScreenSleepGuard.bat | No |
 | ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
+| StorageLatencyTuning.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
