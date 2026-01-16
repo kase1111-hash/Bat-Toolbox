@@ -193,6 +193,35 @@ DIRECT LINKS
 
 ---
 
+### ProcessScanner.bat
+
+**Purpose:** Scans running processes to identify bloatware, forgotten background programs, and resource hogs.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| HIGH MEMORY | Processes using >500MB RAM |
+| BLOATWARE | Known unnecessary programs - offers to terminate |
+| OPTIONAL | Legitimate but potentially unnecessary |
+| UNKNOWN | Unrecognized - research before terminating |
+
+**What it detects:**
+- Third-party antivirus running alongside Defender
+- PUPs and scareware (Segurazo, registry cleaners, driver updaters)
+- Forgotten background apps (Steam, Discord, Spotify)
+- Unnecessary updaters (Java, Adobe, Google Update)
+- Vendor bloatware processes
+
+**Features:**
+- Shows memory usage per process
+- Calculates total bloatware memory impact
+- Offers to terminate bloatware with permission
+- Links to StartupAnalyzer for permanent fixes
+
+**Admin required:** Yes (recommended)
+
+---
+
 ### RemoveAsusBloat.bat
 
 **Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
@@ -415,6 +444,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | FirmwareCheck.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
+| ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
