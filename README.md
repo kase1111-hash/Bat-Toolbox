@@ -93,6 +93,52 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 
 ---
 
+### FirmwareCheck.bat
+
+**Purpose:** Scans system firmware and driver versions, outputs search-ready strings for checking updates online.
+
+**What it detects:**
+| Component | Information Gathered |
+|-----------|---------------------|
+| BIOS/UEFI | Manufacturer, version, date, motherboard model |
+| CPU | Processor name for chipset driver search |
+| GPU | Graphics card model, driver version and date |
+| Network | Adapter names, driver versions |
+| Audio | Sound device names, driver versions |
+| Storage | Disk models, firmware revisions |
+| Chipset | Platform detection for driver search |
+
+**Output:** Creates `FirmwareInfo_COMPUTERNAME.txt` on Desktop
+
+**Sample output:**
+```
+QUICK SEARCH STRINGS [Copy into your browser]
+
+  BIOS:    ASUS ROG STRIX B550-F GAMING BIOS update download
+  Chipset: ASUS ROG STRIX B550-F GAMING chipset driver
+  GPU:     NVIDIA GeForce driver download
+
+DIRECT LINKS
+  NVIDIA:   https://www.nvidia.com/Download/index.aspx
+  AMD:      https://www.amd.com/en/support
+  Intel:    https://www.intel.com/content/www/us/en/download-center/home.html
+```
+
+**Features:**
+- Pre-formatted search strings ready to paste into Google
+- Direct download links for major vendors (NVIDIA, AMD, Intel, Realtek)
+- Motherboard-specific support links (ASUS, MSI, Gigabyte, ASRock, Dell, HP, Lenovo)
+- Current driver versions to compare against latest available
+
+**When to use:**
+- After a fresh Windows install to update drivers
+- Periodically to check for firmware/driver updates
+- Before troubleshooting hardware issues
+
+**Admin required:** No
+
+---
+
 ### Honeypot.bat
 
 **Purpose:** A decoy file that logs information about anyone who opens it, then shuts down the computer.
@@ -309,6 +355,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 |--------|----------------|
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
+| FirmwareCheck.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
