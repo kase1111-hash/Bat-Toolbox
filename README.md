@@ -1,12 +1,90 @@
 # Bat-Toolbox
 
-A collection of Windows batch scripts for system maintenance, security, debloating, and automation tasks.
+> **Angry at your PC? Grab a bat!**
+
+Your Windows PC came with bloatware. It's collecting telemetry. Services you've never heard of are eating RAM. Your game stutters for no reason. Manufacturers installed seventeen different "helper" apps that do nothing but slow you down.
+
+Time to fight back.
+
+---
+
+## What Is This?
+
+**Bat-Toolbox** is a collection of Windows batch scripts that do what the "Settings" app won't let you. No installers. No subscriptions. No "cleaning" apps that are themselves bloatware. Just `.bat` files you can read, understand, and run.
+
+```
+Double-click → Read what it does → Confirm → Done.
+```
+
+Every script tells you what it's about to do. Every script asks before making changes. Every script has a README explaining how to undo everything.
+
+---
+
+## What Can It Do?
+
+| Category | Scripts | What They Fix |
+|----------|---------|---------------|
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck | Find what's slowing you down |
+| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
+| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot | Backup, organize, security |
+
+---
 
 ## Quick Start
 
-1. **Run as Administrator** - Right-click each `.bat` file and select "Run as administrator"
-2. **Read the prompts** - Most scripts ask for confirmation before making changes
-3. **Reboot when prompted** - Some changes require a restart to take effect
+### First Time? Start Here:
+
+1. **Diagnose first** — Run `StartupAnalyzer.bat`, `ProcessScanner.bat`, and `ServiceAnalyzer.bat` to see what's running
+2. **Remove bloatware** — Run the debloat scripts for your hardware (NVIDIA, ASUS, etc.)
+3. **Optimize performance** — Run the latency tuning scripts if you game or need responsiveness
+
+### Running Scripts:
+
+1. **Right-click** the `.bat` file
+2. **Select "Run as administrator"** (most scripts need this)
+3. **Read the prompts** — scripts ask before making changes
+4. **Reboot when prompted** — some changes require restart
+
+### Safety:
+
+- ✅ Scripts create restore points when offered
+- ✅ Scripts ask for confirmation before changes
+- ✅ Each script has a `*_README.txt` with undo instructions
+- ✅ You can read every line of code yourself
+
+---
+
+## For Gamers: The Latency Stack
+
+Want the lowest possible input lag? Run these in order:
+
+```
+1. StorageLatencyTuning.bat     → Fix NVMe/SSD power states
+2. InterruptLatencyTuning.bat   → Fix DPC/ISR microstutter
+3. GPUDriverOptimizer.bat       → Set competitive profile
+4. StartupAnalyzer.bat          → Disable unnecessary startup items
+5. ServiceAnalyzer.bat          → Set bloatware services to manual
+```
+
+Then install [LatencyMon](https://www.resplendence.com/latencymon) to verify your DPC latency is under 500μs.
+
+---
+
+## For Clean Installs: The Recovery Stack
+
+About to reinstall Windows? Run this first:
+
+```
+1. ExportInstalledPrograms.bat  → Creates list + winget JSON
+2. FirmwareCheck.bat            → Saves driver versions to find later
+```
+
+After reinstalling:
+```
+winget import -i InstalledPrograms_COMPUTERNAME_winget.json
+```
 
 ---
 
@@ -139,6 +217,45 @@ DIRECT LINKS
 
 ---
 
+### GPUDriverOptimizer.bat
+
+**Purpose:** Configures GPU driver profiles for optimal performance based on workload.
+
+**Impact:** ⭐⭐☆☆☆ → ⭐⭐⭐⭐☆ (situational - depends heavily on workload)
+
+**Profiles available:**
+| Profile | Best For | Key Settings |
+|---------|----------|--------------|
+| Competitive Gaming | FPS, fighting, racing games | Ultra-low latency, max power, V-Sync off |
+| Balanced Gaming | Most games, general use | Low latency, quality textures, VRR enabled |
+| Quality / Content Creation | AAA games, video editing, 3D | Max quality, stable frametimes, V-Sync on |
+| Power Efficient | Laptops, quiet operation | Adaptive power, dynamic FPS features |
+
+**What it configures:**
+| Category | Settings |
+|----------|----------|
+| Windows | Hardware GPU scheduling, VRR, Game Mode, fullscreen optimization |
+| NVIDIA | Power mode, shader cache, telemetry, low latency guidance |
+| AMD | ULPS, telemetry tasks, Anti-Lag/Boost/Chill guidance |
+| Intel | Power plan, Arc-specific settings |
+
+**Technical background:**
+- Driver heuristics guess what games need (often wrong)
+- Power management can add latency when GPU throttles
+- Frame queue depth trades latency for smoothness
+- V-Sync adds input lag; VRR is better alternative
+
+**Companion tools recommended:**
+- RTSS (RivaTuner) for precise frame limiting
+- NVIDIA Profile Inspector for hidden settings
+- CapFrameX for latency analysis
+
+**Note:** Many settings require manual configuration in GPU control panel - the script provides guidance.
+
+**Admin required:** Yes
+
+---
+
 ### Honeypot.bat
 
 **Purpose:** A decoy file that logs information about anyone who opens it, then shuts down the computer.
@@ -164,6 +281,51 @@ DIRECT LINKS
 **Warning:** This script WILL shut down the computer when run.
 
 **Admin required:** No (but shutdown may be blocked by system policies)
+
+---
+
+### InterruptLatencyTuning.bat
+
+**Purpose:** Reduces interrupt (ISR) and DPC latency to eliminate microstutter, audio crackling, and input lag.
+
+**Impact:** ⭐⭐⭐⭐⭐ - This is what causes "microstutter"
+
+**What it optimizes:**
+| Category | Changes |
+|----------|---------|
+| MSI Mode | Enables MSI/MSI-X for GPU, NIC, Storage, USB controllers |
+| Interrupt Affinity | Distributes interrupts across CPU cores (prevents core 0 bottleneck) |
+| System Timer | Disables dynamic tick, configures TSC over HPET |
+| Kernel Scheduler | Optimizes thread quantum, disables DPC watchdog timeout |
+| Core Parking | Disables CPU core parking and deep C-states |
+| Driver Fixes | NVIDIA telemetry, AMD ULPS, NIC interrupt moderation |
+| MMCSS | Optimizes Multimedia Class Scheduler for gaming |
+| Network | Disables Nagle's algorithm for lower latency |
+
+**Technical background:**
+- ISRs (Interrupt Service Routines) handle hardware interrupts
+- DPCs (Deferred Procedure Calls) queue work for later processing
+- Poor drivers can block the CPU for milliseconds (should be <100μs)
+- This causes frame drops, audio pops, and input lag spikes
+
+**Target metrics (use LatencyMon to verify):**
+- Average DPC latency: <500μs
+- Max DPC latency: <1000μs
+- Average ISR latency: <100μs
+
+**Common high-DPC drivers:**
+- Realtek HD Audio (update or use generic driver)
+- NVIDIA HD Audio (disable if using external DAC)
+- Wireless drivers (update to latest)
+- ACPI.sys (may need BIOS update)
+
+**When to use:**
+- Experiencing microstutter in games
+- Audio crackling during gaming/video
+- Inconsistent frame pacing
+- Mouse movement feels "chunky"
+
+**Admin required:** Yes
 
 ---
 
@@ -253,6 +415,48 @@ DIRECT LINKS
 - To reduce background resource usage
 - To improve privacy by disabling telemetry
 - To speed up boot time
+
+**Admin required:** Yes
+
+---
+
+### StorageLatencyTuning.bat
+
+**Purpose:** Optimizes NVMe/SSD storage for minimum latency and maximum I/O throughput.
+
+**Impact:** ⭐⭐⭐⭐⭐ - Storage touches everything (OS, apps, games, file operations)
+
+**What it optimizes:**
+| Category | Changes |
+|----------|---------|
+| NVMe Power States | Disables PS3/PS4 states, APST, minimizes wake latency |
+| AHCI Link Power | Disables HIPM/DIPM, prevents I/O stalls |
+| PCIe ASPM | Disables Active State Power Management for storage |
+| Write Cache | Enables write-back caching, optimizes NTFS behavior |
+| Queue Depth | Increases to 256 (Windows defaults are conservative) |
+| Interrupts | Disables coalescing, enables MSI-X |
+
+**Technical background:**
+- NVMe supports up to 64K queues × 64K entries, but Windows defaults are conservative
+- Power-saving states (PS3/PS4) can add 100-500+ microseconds latency
+- Queue depth mismatch = underutilized SSD potential
+
+**Expected improvements:**
+- Reduced 4K random I/O latency (0.5ms → 0.1-0.2ms)
+- More consistent sequential throughput
+- Faster application launches and game loading
+- Reduced micro-stutters from asset streaming
+
+**Trade-offs:**
+- ~1-3W higher power consumption
+- Slightly warmer SSD temperatures
+- Less battery life on laptops
+
+**When to use:**
+- Desktop gaming/workstation PCs
+- After fresh Windows install
+- Before benchmarking storage
+- If experiencing random micro-stutters
 
 **Admin required:** Yes
 
@@ -478,7 +682,9 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
+| GPUDriverOptimizer.bat | Yes |
 | Honeypot.bat | No |
+| InterruptLatencyTuning.bat | Yes |
 | NetworkReset.bat | Yes |
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
@@ -488,6 +694,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ScreenSleepGuard.bat | No |
 | ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
+| StorageLatencyTuning.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
