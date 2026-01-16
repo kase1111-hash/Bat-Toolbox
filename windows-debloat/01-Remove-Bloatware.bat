@@ -81,21 +81,79 @@ echo     'Microsoft.ZuneMusic',
 echo     'Microsoft.ZuneVideo'
 echo ^)
 echo.
+echo $removedCount = 0
+echo $skippedCount = 0
+echo.
 echo foreach ^($app in $bloatware^) {
-echo     Write-Host "Removing $app..." -ForegroundColor Yellow
-echo     Get-AppxPackage -Name $app -AllUsers 2^>$null ^| Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-echo     Get-AppxProvisionedPackage -Online 2^>$null ^| Where-Object DisplayName -Like $app ^| Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+echo     $packages = Get-AppxPackage -Name $app -ErrorAction SilentlyContinue
+echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $app
+echo.
+echo     if ^($packages -or $provPackages^) {
+echo         Write-Host "Removing $app..." -ForegroundColor Yellow
+echo         $success = $false
+echo.
+echo         # Remove for current user
+echo         foreach ^($pkg in $packages^) {
+echo             try {
+echo                 Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
+echo                 $success = $true
+echo             } catch {
+echo                 # Try without -AllUsers if it fails
+echo             }
+echo         }
+echo.
+echo         # Remove provisioned package ^(prevents reinstall for new users^)
+echo         foreach ^($provPkg in $provPackages^) {
+echo             try {
+echo                 Remove-AppxProvisionedPackage -Online -PackageName $provPkg.PackageName -ErrorAction Stop ^| Out-Null
+echo                 $success = $true
+echo             } catch {
+echo                 # Package may already be removed
+echo             }
+echo         }
+echo.
+echo         if ^($success^) {
+echo             Write-Host "  Removed." -ForegroundColor Green
+echo             $removedCount++
+echo         } else {
+echo             Write-Host "  Could not remove ^(may require restart or already removed^)." -ForegroundColor DarkYellow
+echo             $skippedCount++
+echo         }
+echo     }
 echo }
 echo.
 echo Write-Host ''
 echo Write-Host 'Removing third-party bloatware...' -ForegroundColor Cyan
-echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*'^)
+echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*', '*Disney*', '*Amazon*', '*TikTok*', '*Instagram*'^)
+echo.
 echo foreach ^($pattern in $thirdParty^) {
-echo     Get-AppxPackage -Name $pattern -AllUsers 2^>$null ^| Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-echo     Get-AppxProvisionedPackage -Online 2^>$null ^| Where-Object DisplayName -Like $pattern ^| Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+echo     $packages = Get-AppxPackage -Name $pattern -ErrorAction SilentlyContinue
+echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $pattern
+echo.
+echo     foreach ^($pkg in $packages^) {
+echo         Write-Host "Removing $^($pkg.Name^)..." -ForegroundColor Yellow
+echo         try {
+echo             Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
+echo             Write-Host "  Removed." -ForegroundColor Green
+echo             $removedCount++
+echo         } catch {
+echo             Write-Host "  Could not remove." -ForegroundColor DarkYellow
+echo             $skippedCount++
+echo         }
+echo     }
+echo.
+echo     foreach ^($provPkg in $provPackages^) {
+echo         try {
+echo             Remove-AppxProvisionedPackage -Online -PackageName $provPkg.PackageName -ErrorAction Stop ^| Out-Null
+echo         } catch { }
+echo     }
 echo }
+echo.
 echo Write-Host ''
-echo Write-Host 'Done!' -ForegroundColor Green
+echo Write-Host "========================================" -ForegroundColor Cyan
+echo Write-Host "  Removed: $removedCount apps" -ForegroundColor Green
+echo Write-Host "  Skipped/Failed: $skippedCount apps" -ForegroundColor Yellow
+echo Write-Host "========================================" -ForegroundColor Cyan
 ) > "%PSSCRIPT%"
 
 :: Run the PowerShell script
@@ -111,6 +169,10 @@ echo ===========================================================================
 echo.
 echo NOTE: Some apps may reappear after Windows updates.
 echo Run this script again after major updates if needed.
+echo.
+echo If some apps failed to remove:
+echo  - Try restarting and running again
+echo  - Some system apps cannot be removed without third-party tools
 echo.
 echo A reboot is recommended to complete the removal process.
 echo.
