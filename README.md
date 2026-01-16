@@ -288,6 +288,35 @@ DIRECT LINKS
 
 ---
 
+### StartupAnalyzer.bat
+
+**Purpose:** Scans all startup programs and categorizes them for easy cleanup.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| KEEP | Essential programs (drivers, security) - do not disable |
+| OPTIONAL | Legitimate but non-essential - your choice to disable |
+| UNKNOWN | Not recognized - research before disabling |
+| REMOVE | Known bloatware - recommended for removal |
+
+**What it detects as bloatware:**
+- Third-party antivirus (McAfee, Norton, Avast)
+- Updater services (Java, Adobe, Google Update)
+- Auto-starting apps (Steam, Discord, Spotify)
+- PUPs (Driver Booster, IObit, registry cleaners)
+- Scareware (Segurazo, ByteFence, Reimage)
+
+**Features:**
+- Scans registry Run keys and Startup folders
+- Provides explanations for each program
+- Asks permission before removing anything
+- Opens Task Manager for optional items review
+
+**Admin required:** Yes (recommended for full access)
+
+---
+
 ### ScreenSleepGuard.bat
 
 **Purpose:** Turns off the monitor and forces a logout if someone tries to wake it without knowing the secret key combination.
@@ -391,6 +420,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | RemoveNvidiaBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
 | ScreenSleepGuard.bat | No |
+| StartupAnalyzer.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
