@@ -41,6 +41,58 @@ Before:                    After:
 
 ---
 
+### ExportInstalledPrograms.bat
+
+**Purpose:** Scans and exports a list of all installed programs for clean install recovery.
+
+**What it captures:**
+| Source | Description |
+|--------|-------------|
+| 64-bit Registry | Standard desktop applications |
+| 32-bit Registry (WoW64) | 32-bit apps on 64-bit Windows |
+| User Registry | Per-user installed applications |
+| Microsoft Store | AppX packages (non-framework) |
+| Windows Features | Enabled optional features |
+| Detailed List | Name, version, and publisher info |
+
+**Output:** Creates `InstalledPrograms_COMPUTERNAME_DATE.txt` on Desktop
+
+**Sample output:**
+```
+============================================================================
+ DESKTOP APPLICATIONS (64-bit)
+============================================================================
+
+Mozilla Firefox
+Google Chrome
+Visual Studio Code
+...
+
+============================================================================
+ DETAILED PROGRAM LIST (Name, Version, Publisher)
+============================================================================
+
+NAME                                      | VERSION     | PUBLISHER
+----------------------------------------- | ----------- | --------------------
+7-Zip                                     | 23.01       | Igor Pavlov
+Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
+...
+```
+
+**Also includes:**
+- Manual checklist (browser extensions, bookmarks, license keys, etc.)
+- Tips for using Ninite, Chocolatey, and Winget for reinstallation
+- Winget export command for automated bulk reinstall
+
+**When to use:**
+- Before a clean Windows install
+- Before major system changes
+- For system documentation/inventory
+
+**Admin required:** No (but some features detected may require admin)
+
+---
+
 ### Honeypot.bat
 
 **Purpose:** A decoy file that logs information about anyone who opens it, then shuts down the computer.
@@ -195,6 +247,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 
 | Script | Admin Required |
 |--------|----------------|
+| ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
