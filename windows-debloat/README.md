@@ -266,6 +266,46 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 ---
 
+### 12-Interactive-Remover.bat
+
+**Purpose:** Interactive guided removal of optional Windows programs and features.
+
+**How it works:**
+- Goes through each removable item one by one
+- Shows what the program/feature does
+- Warns if removal may break something
+- Asks Y/N before each removal
+- Only shows items that are actually installed
+
+**Categories covered:**
+
+| Category | Examples |
+|----------|----------|
+| 3D Apps | 3D Builder, 3D Viewer, Print 3D, Mixed Reality |
+| Bing Apps | Finance, News, Sports, Weather |
+| Communication | People, Messaging, Skype, Phone Link |
+| Entertainment | Groove Music, Movies & TV, Solitaire |
+| Office | Office Hub, OneNote |
+| Utilities | Alarms, Camera, Maps, Paint 3D, Feedback Hub |
+| Xbox | Game Bar, Xbox App, Identity Provider |
+| Third-Party | Candy Crush, Spotify, Netflix, Facebook, etc. |
+| Caution Items | Photos, Calculator, Store (warns before removal) |
+| Windows Features | IE11, Media Player, SMB1, PowerShell 2.0 |
+
+**When to use:**
+- First time debloating (learn what each app does)
+- When you want fine-grained control
+- When unsure what's safe to remove
+
+**Default behavior:**
+- Safe-to-remove items default to Y (remove)
+- Items that may break things default to N (keep)
+- Press Enter to accept the default
+
+**Reversibility:** Most apps can be reinstalled from Microsoft Store. Features can be re-enabled via DISM.
+
+---
+
 ## Recommended Order of Operations
 
 1. **00-Create-Restore-Point.bat** - Always first!
