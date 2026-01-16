@@ -139,6 +139,45 @@ DIRECT LINKS
 
 ---
 
+### GPUDriverOptimizer.bat
+
+**Purpose:** Configures GPU driver profiles for optimal performance based on workload.
+
+**Impact:** ⭐⭐☆☆☆ → ⭐⭐⭐⭐☆ (situational - depends heavily on workload)
+
+**Profiles available:**
+| Profile | Best For | Key Settings |
+|---------|----------|--------------|
+| Competitive Gaming | FPS, fighting, racing games | Ultra-low latency, max power, V-Sync off |
+| Balanced Gaming | Most games, general use | Low latency, quality textures, VRR enabled |
+| Quality / Content Creation | AAA games, video editing, 3D | Max quality, stable frametimes, V-Sync on |
+| Power Efficient | Laptops, quiet operation | Adaptive power, dynamic FPS features |
+
+**What it configures:**
+| Category | Settings |
+|----------|----------|
+| Windows | Hardware GPU scheduling, VRR, Game Mode, fullscreen optimization |
+| NVIDIA | Power mode, shader cache, telemetry, low latency guidance |
+| AMD | ULPS, telemetry tasks, Anti-Lag/Boost/Chill guidance |
+| Intel | Power plan, Arc-specific settings |
+
+**Technical background:**
+- Driver heuristics guess what games need (often wrong)
+- Power management can add latency when GPU throttles
+- Frame queue depth trades latency for smoothness
+- V-Sync adds input lag; VRR is better alternative
+
+**Companion tools recommended:**
+- RTSS (RivaTuner) for precise frame limiting
+- NVIDIA Profile Inspector for hidden settings
+- CapFrameX for latency analysis
+
+**Note:** Many settings require manual configuration in GPU control panel - the script provides guidance.
+
+**Admin required:** Yes
+
+---
+
 ### Honeypot.bat
 
 **Purpose:** A decoy file that logs information about anyone who opens it, then shuts down the computer.
@@ -565,6 +604,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
+| GPUDriverOptimizer.bat | Yes |
 | Honeypot.bat | No |
 | InterruptLatencyTuning.bat | Yes |
 | NetworkReset.bat | Yes |
