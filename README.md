@@ -198,6 +198,22 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 
 ---
 
+### RestoreRecycleBin.bat
+
+**Purpose:** Restores the Recycle Bin icon to the Windows desktop if it was accidentally hidden or removed.
+
+**What it does:**
+1. Removes registry flags that hide the Recycle Bin
+2. Re-registers the Recycle Bin in the desktop namespace
+3. Sets visibility flag to "show"
+4. Restarts Explorer to apply changes
+
+**When to use:** If the Recycle Bin disappeared from your desktop after running debloat scripts or registry tweaks.
+
+**Admin required:** No
+
+---
+
 ### ScreenSleepGuard.bat
 
 **Purpose:** Turns off the monitor and forces a logout if someone tries to wake it without knowing the secret key combination.
@@ -214,6 +230,50 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 **Companion file:** Requires `ScreenSleepGuard.ps1` in the same directory.
 
 **Admin required:** No
+
+---
+
+### WindowsTweaks.bat
+
+**Purpose:** Interactive menu for applying advanced Windows customizations not easily accessible through normal settings.
+
+**Categories available:**
+
+| Category | Tweaks Included |
+|----------|-----------------|
+| Performance | Disable SysMain/Superfetch, Search Indexing, Prefetch, Fast Startup, Power Throttling, NTFS optimizations |
+| Gaming | Disable Game DVR, Fullscreen Optimizations, HPET; Enable Hardware GPU Scheduling; CPU/GPU priority tweaks |
+| UI/Visual | Disable transparency, animations, Aero Shake; Restore classic context menu (Win11); Show clock seconds |
+| Privacy | Disable telemetry, Cortana, Bing search, Activity History, advertising ID, app suggestions |
+| Explorer | Show file extensions/hidden files, open to This PC, disable Quick Access history, remove 3D Objects |
+| Network | Disable Nagle's algorithm, network throttling, auto-tuning; Optimize DNS priority |
+| Input | Disable mouse acceleration, Sticky/Filter/Toggle Keys popups; Max keyboard repeat rate |
+
+**Menu options:**
+```
+[1] Apply ALL Tweaks (Recommended)
+[2] Performance Tweaks
+[3] Gaming Tweaks
+[4] UI / Visual Tweaks
+[5] Privacy Tweaks
+[6] Explorer Tweaks
+[7] Network Tweaks
+[8] Input Tweaks
+[9] Restore Defaults
+[0] Exit
+```
+
+**Highlights:**
+- Disables Game DVR background recording (frees GPU resources)
+- Enables Hardware-accelerated GPU Scheduling
+- Restores Windows 10 right-click menu on Windows 11
+- Disables mouse acceleration for raw input (better for gaming)
+- Removes Bing from Start Menu search
+- Disables all accessibility key popups (Sticky Keys, etc.)
+
+**When to use:** After a fresh Windows install to optimize for performance and privacy.
+
+**Admin required:** Yes
 
 ---
 
@@ -253,7 +313,9 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | NetworkReset.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
+| RestoreRecycleBin.bat | No |
 | ScreenSleepGuard.bat | No |
+| WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
 ---
