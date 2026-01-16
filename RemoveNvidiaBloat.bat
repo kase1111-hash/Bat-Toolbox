@@ -117,28 +117,25 @@ echo [3/6] Uninstalling GeForce Experience...
 :: Try standard uninstall first
 set "GFE_UNINSTALL="
 
-:: Check common uninstall locations
-for %%U in (
-    "%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
-    "%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
-) do (
-    if exist "%%U" (
-        set "GFE_UNINSTALL=%%U"
-    )
-)
+:: Check common uninstall locations (avoid parentheses in for loop)
+set "GFE_PATH1=%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
+set "GFE_PATH2=%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
+
+if exist "!GFE_PATH1!" set "GFE_UNINSTALL=!GFE_PATH1!"
+if exist "!GFE_PATH2!" set "GFE_UNINSTALL=!GFE_PATH2!"
 
 if defined GFE_UNINSTALL (
     echo       - Found GeForce Experience uninstaller
-    echo       - Running uninstaller (this may take a moment)...
-    start /wait "" "%GFE_UNINSTALL%" /silent /noreboot 2>nul
+    echo       - Running uninstaller [this may take a moment]...
+    start /wait "" "!GFE_UNINSTALL!" /silent /noreboot 2>nul
     if not errorlevel 1 (
         echo       - GeForce Experience uninstalled
         set /a success+=1
     ) else (
-        echo       - Uninstaller returned an error (may already be removed)
+        echo       - Uninstaller returned an error [may already be removed]
     )
 ) else (
-    echo       - GeForce Experience uninstaller not found (may not be installed)
+    echo       - GeForce Experience uninstaller not found [may not be installed]
 )
 
 :: Also try using WMIC
@@ -206,32 +203,20 @@ echo.
 
 echo [6/6] Removing NVIDIA bloatware files and folders...
 
-:: Remove GeForce Experience folders
-for %%D in (
-    "%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience"
-    "%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience"
-    "%ProgramFiles%\NVIDIA Corporation\NvContainer"
-    "%ProgramFiles%\NVIDIA Corporation\NvTelemetry"
-    "%ProgramFiles%\NVIDIA Corporation\NvNode"
-    "%ProgramFiles%\NVIDIA Corporation\NvBackend"
-    "%ProgramFiles%\NVIDIA Corporation\ShadowPlay"
-    "%ProgramFiles%\NVIDIA Corporation\Update Core"
-    "%LocalAppData%\NVIDIA\NvBackend"
-    "%LocalAppData%\NVIDIA Corporation\NVIDIA GeForce Experience"
-    "%ProgramData%\NVIDIA\NvTelemetry"
-    "%ProgramData%\NVIDIA Corporation\NvTelemetry"
-    "%ProgramData%\NVIDIA Corporation\GeForce Experience"
-) do (
-    if exist "%%D" (
-        rd /s /q "%%D" >nul 2>&1
-        if not errorlevel 1 (
-            echo       - Removed: %%D
-            set /a success+=1
-        ) else (
-            echo       - Could not remove: %%D (in use or protected)
-        )
-    )
-)
+:: Remove GeForce Experience folders (using call to handle paths with parentheses)
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience"
+call :RemoveFolder "%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvContainer"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvTelemetry"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvNode"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvBackend"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\ShadowPlay"
+call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\Update Core"
+call :RemoveFolder "%LocalAppData%\NVIDIA\NvBackend"
+call :RemoveFolder "%LocalAppData%\NVIDIA Corporation\NVIDIA GeForce Experience"
+call :RemoveFolder "%ProgramData%\NVIDIA\NvTelemetry"
+call :RemoveFolder "%ProgramData%\NVIDIA Corporation\NvTelemetry"
+call :RemoveFolder "%ProgramData%\NVIDIA Corporation\GeForce Experience"
 
 echo       - File cleanup complete
 
@@ -281,3 +266,19 @@ if /i "%reboot%"=="Y" (
 echo.
 pause
 exit /b 0
+
+:: ============================================================================
+:: Subroutine: RemoveFolder
+:: Safely removes a folder if it exists
+:: ============================================================================
+:RemoveFolder
+if exist "%~1" (
+    rd /s /q "%~1" >nul 2>&1
+    if not errorlevel 1 (
+        echo       - Removed: %~1
+        set /a success+=1
+    ) else (
+        echo       - Could not remove: %~1 [in use or protected]
+    )
+)
+goto :eof
