@@ -1,12 +1,90 @@
 # Bat-Toolbox
 
-A collection of Windows batch scripts for system maintenance, security, debloating, and automation tasks.
+> **Angry at your PC? Grab a bat!**
+
+Your Windows PC came with bloatware. It's collecting telemetry. Services you've never heard of are eating RAM. Your game stutters for no reason. Manufacturers installed seventeen different "helper" apps that do nothing but slow you down.
+
+Time to fight back.
+
+---
+
+## What Is This?
+
+**Bat-Toolbox** is a collection of Windows batch scripts that do what the "Settings" app won't let you. No installers. No subscriptions. No "cleaning" apps that are themselves bloatware. Just `.bat` files you can read, understand, and run.
+
+```
+Double-click → Read what it does → Confirm → Done.
+```
+
+Every script tells you what it's about to do. Every script asks before making changes. Every script has a README explaining how to undo everything.
+
+---
+
+## What Can It Do?
+
+| Category | Scripts | What They Fix |
+|----------|---------|---------------|
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck | Find what's slowing you down |
+| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
+| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot | Backup, organize, security |
+
+---
 
 ## Quick Start
 
-1. **Run as Administrator** - Right-click each `.bat` file and select "Run as administrator"
-2. **Read the prompts** - Most scripts ask for confirmation before making changes
-3. **Reboot when prompted** - Some changes require a restart to take effect
+### First Time? Start Here:
+
+1. **Diagnose first** — Run `StartupAnalyzer.bat`, `ProcessScanner.bat`, and `ServiceAnalyzer.bat` to see what's running
+2. **Remove bloatware** — Run the debloat scripts for your hardware (NVIDIA, ASUS, etc.)
+3. **Optimize performance** — Run the latency tuning scripts if you game or need responsiveness
+
+### Running Scripts:
+
+1. **Right-click** the `.bat` file
+2. **Select "Run as administrator"** (most scripts need this)
+3. **Read the prompts** — scripts ask before making changes
+4. **Reboot when prompted** — some changes require restart
+
+### Safety:
+
+- ✅ Scripts create restore points when offered
+- ✅ Scripts ask for confirmation before changes
+- ✅ Each script has a `*_README.txt` with undo instructions
+- ✅ You can read every line of code yourself
+
+---
+
+## For Gamers: The Latency Stack
+
+Want the lowest possible input lag? Run these in order:
+
+```
+1. StorageLatencyTuning.bat     → Fix NVMe/SSD power states
+2. InterruptLatencyTuning.bat   → Fix DPC/ISR microstutter
+3. GPUDriverOptimizer.bat       → Set competitive profile
+4. StartupAnalyzer.bat          → Disable unnecessary startup items
+5. ServiceAnalyzer.bat          → Set bloatware services to manual
+```
+
+Then install [LatencyMon](https://www.resplendence.com/latencymon) to verify your DPC latency is under 500μs.
+
+---
+
+## For Clean Installs: The Recovery Stack
+
+About to reinstall Windows? Run this first:
+
+```
+1. ExportInstalledPrograms.bat  → Creates list + winget JSON
+2. FirmwareCheck.bat            → Saves driver versions to find later
+```
+
+After reinstalling:
+```
+winget import -i InstalledPrograms_COMPUTERNAME_winget.json
+```
 
 ---
 
