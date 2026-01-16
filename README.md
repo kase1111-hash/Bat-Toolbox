@@ -167,6 +167,51 @@ DIRECT LINKS
 
 ---
 
+### InterruptLatencyTuning.bat
+
+**Purpose:** Reduces interrupt (ISR) and DPC latency to eliminate microstutter, audio crackling, and input lag.
+
+**Impact:** ⭐⭐⭐⭐⭐ - This is what causes "microstutter"
+
+**What it optimizes:**
+| Category | Changes |
+|----------|---------|
+| MSI Mode | Enables MSI/MSI-X for GPU, NIC, Storage, USB controllers |
+| Interrupt Affinity | Distributes interrupts across CPU cores (prevents core 0 bottleneck) |
+| System Timer | Disables dynamic tick, configures TSC over HPET |
+| Kernel Scheduler | Optimizes thread quantum, disables DPC watchdog timeout |
+| Core Parking | Disables CPU core parking and deep C-states |
+| Driver Fixes | NVIDIA telemetry, AMD ULPS, NIC interrupt moderation |
+| MMCSS | Optimizes Multimedia Class Scheduler for gaming |
+| Network | Disables Nagle's algorithm for lower latency |
+
+**Technical background:**
+- ISRs (Interrupt Service Routines) handle hardware interrupts
+- DPCs (Deferred Procedure Calls) queue work for later processing
+- Poor drivers can block the CPU for milliseconds (should be <100μs)
+- This causes frame drops, audio pops, and input lag spikes
+
+**Target metrics (use LatencyMon to verify):**
+- Average DPC latency: <500μs
+- Max DPC latency: <1000μs
+- Average ISR latency: <100μs
+
+**Common high-DPC drivers:**
+- Realtek HD Audio (update or use generic driver)
+- NVIDIA HD Audio (disable if using external DAC)
+- Wireless drivers (update to latest)
+- ACPI.sys (may need BIOS update)
+
+**When to use:**
+- Experiencing microstutter in games
+- Audio crackling during gaming/video
+- Inconsistent frame pacing
+- Mouse movement feels "chunky"
+
+**Admin required:** Yes
+
+---
+
 ### NetworkReset.bat
 
 **Purpose:** Performs a complete network stack reset to fix connectivity issues.
@@ -521,6 +566,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
 | Honeypot.bat | No |
+| InterruptLatencyTuning.bat | Yes |
 | NetworkReset.bat | Yes |
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
