@@ -193,6 +193,35 @@ DIRECT LINKS
 
 ---
 
+### ProcessScanner.bat
+
+**Purpose:** Scans running processes to identify bloatware, forgotten background programs, and resource hogs.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| HIGH MEMORY | Processes using >500MB RAM |
+| BLOATWARE | Known unnecessary programs - offers to terminate |
+| OPTIONAL | Legitimate but potentially unnecessary |
+| UNKNOWN | Unrecognized - research before terminating |
+
+**What it detects:**
+- Third-party antivirus running alongside Defender
+- PUPs and scareware (Segurazo, registry cleaners, driver updaters)
+- Forgotten background apps (Steam, Discord, Spotify)
+- Unnecessary updaters (Java, Adobe, Google Update)
+- Vendor bloatware processes
+
+**Features:**
+- Shows memory usage per process
+- Calculates total bloatware memory impact
+- Offers to terminate bloatware with permission
+- Links to StartupAnalyzer for permanent fixes
+
+**Admin required:** Yes (recommended)
+
+---
+
 ### RemoveAsusBloat.bat
 
 **Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
@@ -285,6 +314,35 @@ DIRECT LINKS
 **When to use:** If the Recycle Bin disappeared from your desktop after running debloat scripts or registry tweaks.
 
 **Admin required:** No
+
+---
+
+### StartupAnalyzer.bat
+
+**Purpose:** Scans all startup programs and categorizes them for easy cleanup.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| KEEP | Essential programs (drivers, security) - do not disable |
+| OPTIONAL | Legitimate but non-essential - your choice to disable |
+| UNKNOWN | Not recognized - research before disabling |
+| REMOVE | Known bloatware - recommended for removal |
+
+**What it detects as bloatware:**
+- Third-party antivirus (McAfee, Norton, Avast)
+- Updater services (Java, Adobe, Google Update)
+- Auto-starting apps (Steam, Discord, Spotify)
+- PUPs (Driver Booster, IObit, registry cleaners)
+- Scareware (Segurazo, ByteFence, Reimage)
+
+**Features:**
+- Scans registry Run keys and Startup folders
+- Provides explanations for each program
+- Asks permission before removing anything
+- Opens Task Manager for optional items review
+
+**Admin required:** Yes (recommended for full access)
 
 ---
 
@@ -386,11 +444,13 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | FirmwareCheck.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
+| ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
 | ScreenSleepGuard.bat | No |
+| StartupAnalyzer.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
