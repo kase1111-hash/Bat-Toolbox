@@ -233,6 +233,39 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 ---
 
+### 11-Cleanup-Temp-Cache.bat
+
+**Purpose:** Cleans up temporary files and caches to free disk space.
+
+**What it cleans:**
+| Location | Description |
+|----------|-------------|
+| User Temp (%TEMP%) | User temporary files |
+| Windows Temp | System temporary files |
+| Windows Update Cache | Downloaded update files |
+| Prefetch | Application prefetch data |
+| Thumbnail Cache | Explorer thumbnail database |
+| Icon Cache | Explorer icon database |
+| Edge Cache | Microsoft Edge browser cache |
+| Chrome Cache | Google Chrome browser cache |
+| Firefox Cache | Mozilla Firefox browser cache |
+| DNS Cache | DNS resolver cache |
+| Windows Installer | Orphaned patch cache |
+| Error Reports | Windows Error Reporting files |
+| Recent Documents | Recent files list |
+
+**When to use:**
+- Run periodically to free up disk space
+- Before creating a system backup
+- When disk space is running low
+- After uninstalling many programs
+
+**Warning:** Close all browsers before running this script.
+
+**Reversibility:** Caches will rebuild automatically as needed. Recent documents list will repopulate with use.
+
+---
+
 ## Recommended Order of Operations
 
 1. **00-Create-Restore-Point.bat** - Always first!
@@ -245,7 +278,8 @@ These scripts make significant changes to your Windows installation. **Always cr
 8. **08-Firewall-Rules.bat** - Block executables
 9. **09-Uninstall-OneDrive.bat** - Remove OneDrive (optional)
 10. **10-Performance-Tweaks.bat** - Performance tuning
-11. **Reboot**
+11. **11-Cleanup-Temp-Cache.bat** - Clean temp files and caches
+12. **Reboot**
 
 ---
 
