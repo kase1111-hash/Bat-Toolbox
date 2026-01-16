@@ -193,6 +193,34 @@ DIRECT LINKS
 
 ---
 
+### RemoveAsusBloat.bat
+
+**Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
+
+**What it removes:**
+| Category | Software |
+|----------|----------|
+| ASUS Utilities | MyASUS, GIFTBOX, AI Suite, WebStorage, Live Update, Splendid |
+| Gaming/Audio | GameFirst, Sonic Studio, Sonic Radar, Nahimic |
+| Optional | Armoury Crate, Aura Sync, ROG software (you choose) |
+| Third-Party | McAfee, Norton, WinZip, ExpressVPN trials |
+
+**What it keeps:**
+- Hardware drivers (chipset, audio, network, Bluetooth)
+- BIOS/UEFI components
+- Basic system functionality
+
+**Features:**
+- Interactive prompt for Armoury Crate removal decision
+- Removes services, scheduled tasks, and startup items
+- Cleans up leftover folders
+
+**Note:** If you use RGB lighting or custom fan profiles, consider keeping Armoury Crate.
+
+**Admin required:** Yes
+
+---
+
 ### RemoveEOSNotification.bat
 
 **Purpose:** Removes the Windows 10 "End of Support" notification that appears in the system tray.
@@ -358,6 +386,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | FirmwareCheck.bat | No |
 | Honeypot.bat | No |
 | NetworkReset.bat | Yes |
+| RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
