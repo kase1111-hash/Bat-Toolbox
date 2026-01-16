@@ -18,10 +18,11 @@ echo This script will scan your system and create a list of installed programs.
 echo Useful for documenting what to reinstall after a clean Windows install.
 echo.
 echo The following will be exported:
-echo  - Desktop applications (from Registry)
-echo  - Microsoft Store apps (AppX packages)
+echo  - Desktop applications [from Registry]
+echo  - Microsoft Store apps [AppX packages]
 echo  - Windows optional features
-echo  - Installed drivers (optional)
+echo  - Detailed program list with versions
+echo  - Winget JSON file [for automated bulk reinstall]
 echo.
 
 :: Set output directory and filename
@@ -60,7 +61,7 @@ echo. >> "%EXPORT_FILE%"
 :: ============================================================================
 :: Section 1: Desktop Applications (Registry - 64-bit)
 :: ============================================================================
-echo [1/6] Scanning desktop applications (64-bit registry)...
+echo [1/7] Scanning desktop applications (64-bit registry)...
 
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  DESKTOP APPLICATIONS (64-bit) >> "%EXPORT_FILE%"
@@ -81,7 +82,7 @@ echo   Found %count% programs
 :: ============================================================================
 :: Section 2: Desktop Applications (Registry - 32-bit on 64-bit Windows)
 :: ============================================================================
-echo [2/6] Scanning desktop applications (32-bit registry)...
+echo [2/7] Scanning desktop applications (32-bit registry)...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
@@ -103,7 +104,7 @@ echo   Found %count% programs
 :: ============================================================================
 :: Section 3: User-Installed Applications
 :: ============================================================================
-echo [3/6] Scanning user-installed applications...
+echo [3/7] Scanning user-installed applications...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
@@ -125,7 +126,7 @@ echo   Found %count% programs
 :: ============================================================================
 :: Section 4: Microsoft Store Apps (PowerShell)
 :: ============================================================================
-echo [4/6] Scanning Microsoft Store apps...
+echo [4/7] Scanning Microsoft Store apps...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
@@ -158,7 +159,7 @@ echo   Found %count% apps
 :: ============================================================================
 :: Section 5: Windows Optional Features
 :: ============================================================================
-echo [5/6] Scanning Windows optional features...
+echo [5/7] Scanning Windows optional features...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
@@ -178,7 +179,7 @@ echo   Found %count% features
 :: ============================================================================
 :: Section 6: Detailed Program List with Versions
 :: ============================================================================
-echo [6/6] Creating detailed program list with versions...
+echo [6/7] Creating detailed program list with versions...
 
 echo. >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
@@ -193,7 +194,44 @@ echo ------------------------------------------------------------ ^| -----------
 powershell -ExecutionPolicy Bypass -Command "$paths = @('HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'); $programs = $paths | ForEach-Object { Get-ItemProperty $_ -ErrorAction SilentlyContinue } | Where-Object { $_.DisplayName } | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName -Unique; foreach ($p in $programs) { $n = if ($p.DisplayName.Length -gt 55) { $p.DisplayName.Substring(0,55) + '...' } else { $p.DisplayName }; $v = if ($p.DisplayVersion) { $p.DisplayVersion } else { 'N/A' }; $pub = if ($p.Publisher) { $p.Publisher } else { 'Unknown' }; if ($v.Length -gt 18) { $v = $v.Substring(0,18) }; if ($pub.Length -gt 28) { $pub = $pub.Substring(0,28) }; Write-Output ('{0,-60} | {1,-20} | {2}' -f $n, $v, $pub) }" >> "%EXPORT_FILE%" 2>nul
 
 :: ============================================================================
-:: Section 7: Browser Extensions Reminder
+:: Section 7: Winget Export
+:: ============================================================================
+echo [7/7] Creating Winget export file...
+
+set "WINGET_FILE=%EXPORT_DIR%\WingetPrograms_%COMPUTERNAME%_%TIMESTAMP%.json"
+
+:: Check if winget is available
+where winget >nul 2>&1
+if %errorlevel% equ 0 (
+    echo       - Winget found, exporting programs...
+    winget export -o "%WINGET_FILE%" --accept-source-agreements >nul 2>&1
+    if exist "%WINGET_FILE%" (
+        :: Count packages in JSON
+        set "winget_count=0"
+        for /f %%a in ('powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages.Count" 2^>nul') do set "winget_count=%%a"
+        echo       - Exported !winget_count! programs to Winget JSON
+        echo. >> "%EXPORT_FILE%"
+        echo ============================================================================ >> "%EXPORT_FILE%"
+        echo  WINGET EXPORT >> "%EXPORT_FILE%"
+        echo ============================================================================ >> "%EXPORT_FILE%"
+        echo. >> "%EXPORT_FILE%"
+        echo Winget JSON file created: %WINGET_FILE% >> "%EXPORT_FILE%"
+        echo. >> "%EXPORT_FILE%"
+        echo To reinstall after clean install, run: >> "%EXPORT_FILE%"
+        echo   winget import -i "%WINGET_FILE%" --accept-source-agreements --accept-package-agreements >> "%EXPORT_FILE%"
+        echo. >> "%EXPORT_FILE%"
+        echo Programs included in Winget export: >> "%EXPORT_FILE%"
+        powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages | ForEach-Object { Write-Output ('  - ' + $_.PackageIdentifier) }" >> "%EXPORT_FILE%" 2>nul
+    ) else (
+        echo       - Winget export failed [no matching packages found]
+    )
+) else (
+    echo       - Winget not found [skipping winget export]
+    echo       - Install from: https://github.com/microsoft/winget-cli
+)
+
+:: ============================================================================
+:: Section 8: Browser Extensions Reminder
 :: ============================================================================
 
 echo. >> "%EXPORT_FILE%"
@@ -228,8 +266,11 @@ echo ===========================================================================
 echo  Export Complete!
 echo ============================================================================
 echo.
-echo File saved to:
-echo  %EXPORT_FILE%
+echo Files saved to:
+echo  Text report: %EXPORT_FILE%
+if exist "%WINGET_FILE%" (
+    echo  Winget JSON: %WINGET_FILE%
+)
 echo.
 
 :: Count total lines (approximate program count)
@@ -239,7 +280,7 @@ echo Report contains approximately %totallines% lines.
 echo.
 
 :: Ask if user wants to open the file
-set /p "openfile=Would you like to open the file now? (Y/N): "
+set /p "openfile=Would you like to open the text report now? [Y/N]: "
 if /i "%openfile%"=="Y" (
     notepad "%EXPORT_FILE%"
 )
@@ -249,17 +290,22 @@ echo ===========================================================================
 echo  Tips for Clean Install Recovery
 echo ============================================================================
 echo.
-echo 1. Save this file to a USB drive or cloud storage
+echo 1. Save BOTH files to a USB drive or cloud storage
 echo 2. Use Ninite.com for quick reinstallation of common programs
-echo 3. Consider using Chocolatey or Winget for automated installs
+echo 3. The Winget JSON can bulk-install programs automatically
 echo 4. Export browser bookmarks and extension lists separately
 echo 5. Back up license keys before formatting
 echo.
-echo Winget bulk install tip: After clean install, you can use:
-echo   winget import -i programs.json
-echo.
-echo To create a Winget export, run:
-echo   winget export -o "%USERPROFILE%\Desktop\winget-programs.json"
+if exist "%WINGET_FILE%" (
+    echo Winget reinstall command [run after clean install]:
+    echo   winget import -i "WingetPrograms_%COMPUTERNAME%_DATE.json" --accept-package-agreements
+    echo.
+    echo NOTE: Only programs available in Winget repository are in the JSON.
+    echo       Use the text report to manually install the rest.
+) else (
+    echo Winget was not available. Install it from:
+    echo   https://github.com/microsoft/winget-cli
+)
 echo.
 
 pause
