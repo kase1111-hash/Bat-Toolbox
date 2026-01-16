@@ -222,6 +222,42 @@ DIRECT LINKS
 
 ---
 
+### ServiceAnalyzer.bat
+
+**Purpose:** Analyzes Windows services to identify unnecessary automatic services that could be set to manual or disabled.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| BLOATWARE | Third-party services (Adobe updaters, vendor bloatware) - recommended to disable |
+| TELEMETRY | Windows data collection services - can be disabled for privacy |
+| CAN BE MANUAL | Services that don't need to auto-start (Fax, RDP, Hyper-V) |
+| XBOX | Xbox-related services - disable if not gaming on PC |
+| ESSENTIAL | Core Windows services - never touched |
+
+**What it detects:**
+- Adobe update services (AdobeARMservice, AGSService)
+- Google/Mozilla updaters (gupdate, MozillaMaintenance)
+- Vendor bloatware (ASUS, Dell, HP, Lenovo services)
+- Windows telemetry (DiagTrack, dmwappushservice)
+- Unused Windows features (Fax, RemoteRegistry, Xbox services)
+
+**Features:**
+- Shows current service state (Running/Stopped)
+- Groups services by category with color coding
+- Asks permission before making changes
+- Only changes services to Manual (not Disabled) for safe reversal
+
+**When to use:**
+- After a fresh Windows install
+- To reduce background resource usage
+- To improve privacy by disabling telemetry
+- To speed up boot time
+
+**Admin required:** Yes
+
+---
+
 ### RemoveAsusBloat.bat
 
 **Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
@@ -450,6 +486,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | RemoveNvidiaBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
 | ScreenSleepGuard.bat | No |
+| ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
