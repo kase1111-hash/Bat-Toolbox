@@ -1,0 +1,302 @@
+# Windows 10 Debloat Scripts
+
+A collection of batch scripts for stripping Windows 10 down to essentials by removing bloatware, disabling telemetry, and optimizing performance.
+
+## Important Warning
+
+These scripts make significant changes to your Windows installation. **Always create a restore point first** (use script `00`) and understand what each script does before running it.
+
+---
+
+## Quick Start
+
+1. **Run as Administrator** - Right-click each `.bat` file and select "Run as administrator"
+2. **Start with script 00** - Always create a restore point first
+3. **Run scripts in order** - The numbering suggests the recommended order
+4. **Reboot after** - Restart your computer after running scripts
+
+---
+
+## Script Reference
+
+### 00-Create-Restore-Point.bat
+
+**Purpose:** Creates a Windows System Restore point before making changes.
+
+**What it does:**
+- Enables System Restore if disabled
+- Creates a restore point named "Before Windows 10 Debloat"
+
+**When to use:** ALWAYS run this first before any other scripts.
+
+**Reversibility:** N/A - This is your safety net.
+
+---
+
+### 01-Remove-Bloatware.bat
+
+**Purpose:** Removes pre-installed Windows apps (AppX packages).
+
+**What it removes:**
+- 3D apps (3D Builder, 3D Viewer, Mixed Reality Portal)
+- Bing apps (Finance, News, Sports, Weather)
+- Entertainment (Solitaire, Groove Music, Movies & TV)
+- Communication (Skype, People, Messaging, Your Phone)
+- Xbox apps (if you don't PC game)
+- Utilities (Maps, Alarms, Camera, Sound Recorder)
+- Microsoft apps (Office Hub, OneNote, Feedback Hub)
+- Third-party bloat (Candy Crush, Facebook, Spotify, etc.)
+
+**When to use:** Safe for most users who don't use these apps.
+
+**Reversibility:** Most apps can be reinstalled from Microsoft Store.
+
+**Note:** Some apps may return after Windows updates.
+
+---
+
+### 02-Disable-Services.bat
+
+**Purpose:** Disables unnecessary Windows services.
+
+**Services disabled:**
+
+| Category | Services |
+|----------|----------|
+| Telemetry | DiagTrack, dmwappushservice, WMPNetworkSvc |
+| Xbox | XblAuthManager, XblGameSave, XboxGipSvc, XboxNetApiSvc |
+| Consumer | MapsBroker, lfsvc (Location), RetailDemo |
+| Rarely Used | Fax, WpcMonSvc, wisvc, PhoneSvc, WerSvc |
+
+**When to use:**
+- Safe if you don't use Xbox features, location services, or fax
+- Skip Xbox services if you play games on PC
+
+**Reversibility:** Run `sc config "ServiceName" start=auto` to re-enable.
+
+---
+
+### 03-Disable-Tasks.bat
+
+**Purpose:** Disables telemetry and data collection scheduled tasks.
+
+**Tasks disabled:**
+- Compatibility Appraiser (telemetry)
+- Customer Experience Improvement Program
+- Disk Diagnostic Data Collector
+- Feedback/DmClient tasks
+- Maps update tasks
+- Family Safety monitoring
+
+**When to use:** Safe for all users concerned about privacy.
+
+**Reversibility:** Run `schtasks /Change /TN "TaskPath" /Enable` to re-enable.
+
+---
+
+### 04-Registry-Privacy.bat
+
+**Purpose:** Applies registry tweaks to enhance privacy.
+
+**What it disables:**
+- Windows telemetry
+- Cortana
+- Bing/web search in Start Menu
+- Activity history and timeline
+- Advertising ID
+- App suggestions and silent app installs
+- Lock screen spotlight/ads
+- OneDrive integration
+- Windows tips and suggestions
+
+**When to use:** Recommended for privacy-conscious users.
+
+**Reversibility:** Changes can be reversed via Registry Editor (regedit).
+
+---
+
+### 05-Registry-Performance.bat
+
+**Purpose:** Applies registry tweaks for better performance.
+
+**What it disables:**
+- Window minimize/maximize animations
+- Taskbar animations
+- Aero Peek
+
+**When to use:** Good for older hardware or if you prefer snappy UI.
+
+**Reversibility:**
+- System Properties > Advanced > Performance Settings
+- Select "Let Windows choose what's best"
+
+---
+
+### 06-Remove-Features.bat
+
+**Purpose:** Removes optional Windows features using DISM.
+
+**Features removed:**
+| Feature | Reason |
+|---------|--------|
+| Internet Explorer 11 | Legacy browser |
+| Windows Media Player | Legacy media player |
+| Work Folders Client | Enterprise feature |
+| XPS Printing | Rarely used |
+| Fax Services | Legacy feature |
+| SMB 1.0 Protocol | **Security risk** (WannaCry) |
+| PowerShell 2.0 | **Security risk** (bypasses security) |
+
+**When to use:** Safe for most users. SMB1 and PS2 should be removed for security.
+
+**Reversibility:** Run `dism /online /Enable-Feature /FeatureName:FeatureName`
+
+**Note:** Requires reboot to complete.
+
+---
+
+### 07-Block-Telemetry-Hosts.bat
+
+**Purpose:** Adds entries to the Windows hosts file to block telemetry domains.
+
+**What it blocks:**
+- Microsoft telemetry servers (vortex, watson, etc.)
+- Feedback servers
+- Advertising networks (MSN ads, DoubleClick)
+
+**When to use:** Additional layer of protection after disabling services.
+
+**Reversibility:**
+- Backup is created automatically
+- Edit `C:\Windows\System32\drivers\etc\hosts` to remove entries
+
+---
+
+### 08-Firewall-Rules.bat
+
+**Purpose:** Creates firewall rules to block telemetry executables.
+
+**What it blocks:**
+| Executable | Purpose |
+|------------|---------|
+| CompatTelRunner.exe | Compatibility Telemetry |
+| DeviceCensus.exe | Device Census |
+| smartscreen.exe | SmartScreen filter |
+| wsqmcons.exe | SQM Consolidator |
+
+**When to use:** For maximum telemetry blocking.
+
+**Warning:** Blocking smartscreen.exe reduces security protection against malicious downloads.
+
+**Reversibility:** Delete rules in Windows Firewall with Advanced Security.
+
+---
+
+### 09-Uninstall-OneDrive.bat
+
+**Purpose:** Completely removes Microsoft OneDrive.
+
+**What it does:**
+- Stops and uninstalls OneDrive
+- Removes OneDrive folders
+- Removes OneDrive from Explorer sidebar
+
+**When to use:** If you don't use OneDrive cloud storage.
+
+**Warning:** Any files only in OneDrive will be lost! Sync important files first.
+
+**Reversibility:** Re-download OneDrive from Microsoft.
+
+---
+
+### 10-Performance-Tweaks.bat
+
+**Purpose:** Applies performance optimizations.
+
+**What it does:**
+| Tweak | Benefit |
+|-------|---------|
+| Disable Hibernation | Saves GB of disk space |
+| Clear Temp Files | Frees disk space |
+| Disable Prefetch/Superfetch | Better for SSDs |
+| Disable Windows Search | Reduces disk activity |
+
+**When to use:**
+- Hibernation: If you shut down instead of hibernate
+- Prefetch: If you have an SSD
+- Windows Search: If using alternative search (Everything)
+
+**Reversibility:**
+- Hibernation: `powercfg /hibernate on`
+- Superfetch: `sc config SysMain start=auto && net start SysMain`
+- Search: `sc config WSearch start=auto && net start WSearch`
+
+---
+
+## Recommended Order of Operations
+
+1. **00-Create-Restore-Point.bat** - Always first!
+2. **01-Remove-Bloatware.bat** - Remove unwanted apps
+3. **04-Registry-Privacy.bat** - Apply privacy settings
+4. **02-Disable-Services.bat** - Disable unnecessary services
+5. **03-Disable-Tasks.bat** - Disable scheduled tasks
+6. **06-Remove-Features.bat** - Remove optional features
+7. **07-Block-Telemetry-Hosts.bat** - Block at network level
+8. **08-Firewall-Rules.bat** - Block executables
+9. **09-Uninstall-OneDrive.bat** - Remove OneDrive (optional)
+10. **10-Performance-Tweaks.bat** - Performance tuning
+11. **Reboot**
+
+---
+
+## Things That May Break
+
+| If You Remove/Disable | This May Break |
+|-----------------------|----------------|
+| Xbox services | Xbox Game Bar, Game DVR |
+| Your Phone app | Phone Link integration |
+| Windows Search | Start menu search (use Everything instead) |
+| OneDrive | Cloud file sync |
+| SmartScreen firewall rule | Download protection |
+| Location service | Weather, Maps, location-aware apps |
+| BITS service | Windows Update downloads |
+
+---
+
+## Recommended Alternative Software
+
+| Purpose | Recommendation |
+|---------|----------------|
+| File Search | [Everything](https://www.voidtools.com/) |
+| Archive Handling | [7-Zip](https://www.7-zip.org/) |
+| Media Player | [VLC](https://www.videolan.org/) |
+| Image Viewer | [IrfanView](https://www.irfanview.com/) |
+| Text Editor | [Notepad++](https://notepad-plus-plus.org/) |
+| Browser | Firefox or Brave |
+
+---
+
+## Troubleshooting
+
+**Script won't run:**
+- Right-click and select "Run as administrator"
+- Check that execution policy allows scripts
+
+**Something broke after running scripts:**
+- Use System Restore to revert to the restore point created by script 00
+- Control Panel > Recovery > Open System Restore
+
+**Apps came back after update:**
+- Re-run script 01 after Windows updates
+
+**Need to re-enable a service:**
+```batch
+sc config "ServiceName" start=auto
+net start "ServiceName"
+```
+
+---
+
+## License
+
+These scripts are provided as-is for educational and personal use. Use at your own risk.
