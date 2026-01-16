@@ -27,7 +27,7 @@ echo  - Bing Finance, News, Sports, Weather
 echo  - Microsoft Solitaire, Office Hub, OneNote
 echo  - Skype, People, Messaging, Your Phone
 echo  - Xbox apps (if you don't game on PC)
-echo  - Groove Music, Movies ^& TV (Zune apps)
+echo  - Groove Music, Movies and TV (Zune apps)
 echo  - Maps, Alarms, Camera, Sound Recorder
 echo  - Feedback Hub, Get Help, Tips
 echo  - Wallet, Print3D, OneConnect
@@ -40,58 +40,69 @@ echo.
 echo Removing Microsoft bloatware apps...
 echo.
 
-powershell -ExecutionPolicy Bypass -Command ^"^
-$bloatware = @(^
-    'Microsoft.3DBuilder',^
-    'Microsoft.3DViewer',^
-    'Microsoft.BingFinance',^
-    'Microsoft.BingNews',^
-    'Microsoft.BingSports',^
-    'Microsoft.BingWeather',^
-    'Microsoft.GetHelp',^
-    'Microsoft.Getstarted',^
-    'Microsoft.Messaging',^
-    'Microsoft.Microsoft3DViewer',^
-    'Microsoft.MicrosoftOfficeHub',^
-    'Microsoft.MicrosoftSolitaireCollection',^
-    'Microsoft.MixedReality.Portal',^
-    'Microsoft.MSPaint',^
-    'Microsoft.Office.OneNote',^
-    'Microsoft.OneConnect',^
-    'Microsoft.People',^
-    'Microsoft.Print3D',^
-    'Microsoft.SkypeApp',^
-    'Microsoft.Wallet',^
-    'Microsoft.WindowsAlarms',^
-    'Microsoft.WindowsCamera',^
-    'Microsoft.WindowsFeedbackHub',^
-    'Microsoft.WindowsMaps',^
-    'Microsoft.WindowsSoundRecorder',^
-    'Microsoft.Xbox.TCUI',^
-    'Microsoft.XboxApp',^
-    'Microsoft.XboxGameOverlay',^
-    'Microsoft.XboxGamingOverlay',^
-    'Microsoft.XboxIdentityProvider',^
-    'Microsoft.XboxSpeechToTextOverlay',^
-    'Microsoft.YourPhone',^
-    'Microsoft.ZuneMusic',^
-    'Microsoft.ZuneVideo'^
-);^
-^
-foreach ($app in $bloatware) {^
-    Write-Host \"Removing $app...\" -ForegroundColor Yellow;^
-    Get-AppxPackage -Name $app -AllUsers 2>$null | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue;^
-    Get-AppxProvisionedPackage -Online 2>$null | Where-Object DisplayName -Like $app | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;^
-}^
-^
-Write-Host '';^
-Write-Host 'Removing third-party bloatware...' -ForegroundColor Cyan;^
-$thirdParty = @('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*');^
-foreach ($pattern in $thirdParty) {^
-    Get-AppxPackage -Name $pattern -AllUsers 2>$null | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue;^
-    Get-AppxProvisionedPackage -Online 2>$null | Where-Object DisplayName -Like $pattern | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;^
-}^
-^"
+:: Create temporary PowerShell script
+set "PSSCRIPT=%TEMP%\remove-bloatware.ps1"
+
+(
+echo $bloatware = @^(
+echo     'Microsoft.3DBuilder',
+echo     'Microsoft.3DViewer',
+echo     'Microsoft.BingFinance',
+echo     'Microsoft.BingNews',
+echo     'Microsoft.BingSports',
+echo     'Microsoft.BingWeather',
+echo     'Microsoft.GetHelp',
+echo     'Microsoft.Getstarted',
+echo     'Microsoft.Messaging',
+echo     'Microsoft.Microsoft3DViewer',
+echo     'Microsoft.MicrosoftOfficeHub',
+echo     'Microsoft.MicrosoftSolitaireCollection',
+echo     'Microsoft.MixedReality.Portal',
+echo     'Microsoft.MSPaint',
+echo     'Microsoft.Office.OneNote',
+echo     'Microsoft.OneConnect',
+echo     'Microsoft.People',
+echo     'Microsoft.Print3D',
+echo     'Microsoft.SkypeApp',
+echo     'Microsoft.Wallet',
+echo     'Microsoft.WindowsAlarms',
+echo     'Microsoft.WindowsCamera',
+echo     'Microsoft.WindowsFeedbackHub',
+echo     'Microsoft.WindowsMaps',
+echo     'Microsoft.WindowsSoundRecorder',
+echo     'Microsoft.Xbox.TCUI',
+echo     'Microsoft.XboxApp',
+echo     'Microsoft.XboxGameOverlay',
+echo     'Microsoft.XboxGamingOverlay',
+echo     'Microsoft.XboxIdentityProvider',
+echo     'Microsoft.XboxSpeechToTextOverlay',
+echo     'Microsoft.YourPhone',
+echo     'Microsoft.ZuneMusic',
+echo     'Microsoft.ZuneVideo'
+echo ^)
+echo.
+echo foreach ^($app in $bloatware^) {
+echo     Write-Host "Removing $app..." -ForegroundColor Yellow
+echo     Get-AppxPackage -Name $app -AllUsers 2^>$null ^| Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+echo     Get-AppxProvisionedPackage -Online 2^>$null ^| Where-Object DisplayName -Like $app ^| Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+echo }
+echo.
+echo Write-Host ''
+echo Write-Host 'Removing third-party bloatware...' -ForegroundColor Cyan
+echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*'^)
+echo foreach ^($pattern in $thirdParty^) {
+echo     Get-AppxPackage -Name $pattern -AllUsers 2^>$null ^| Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+echo     Get-AppxProvisionedPackage -Online 2^>$null ^| Where-Object DisplayName -Like $pattern ^| Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+echo }
+echo Write-Host ''
+echo Write-Host 'Done!' -ForegroundColor Green
+) > "%PSSCRIPT%"
+
+:: Run the PowerShell script
+powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
+
+:: Clean up
+del "%PSSCRIPT%" 2>nul
 
 echo.
 echo ============================================================================

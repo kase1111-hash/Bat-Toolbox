@@ -37,30 +37,42 @@ echo.
 echo ============================================================================
 echo  Creating Firewall Rules...
 echo ============================================================================
+echo.
 
-powershell -ExecutionPolicy Bypass -Command ^"^
-$telemetryApps = @(^
-    @{Path='$env:SystemRoot\System32\CompatTelRunner.exe'; Name='Block CompatTelRunner (Telemetry)'},^
-    @{Path='$env:SystemRoot\System32\DeviceCensus.exe'; Name='Block DeviceCensus (Telemetry)'},^
-    @{Path='$env:SystemRoot\System32\smartscreen.exe'; Name='Block SmartScreen (Telemetry)'},^
-    @{Path='$env:SystemRoot\System32\wsqmcons.exe'; Name='Block wsqmcons (Telemetry)'}^
-);^
-^
-foreach ($app in $telemetryApps) {^
-    $expandedPath = [Environment]::ExpandEnvironmentVariables($app.Path);^
-    if (Test-Path $expandedPath) {^
-        $existingRule = Get-NetFirewallRule -DisplayName $app.Name -ErrorAction SilentlyContinue;^
-        if ($existingRule) {^
-            Write-Host \"Rule already exists: $($app.Name)\" -ForegroundColor Yellow;^
-        } else {^
-            Write-Host \"Creating rule: $($app.Name)\" -ForegroundColor Green;^
-            New-NetFirewallRule -DisplayName $app.Name -Direction Outbound -Program $expandedPath -Action Block | Out-Null;^
-        }^
-    } else {^
-        Write-Host \"File not found (skipping): $expandedPath\" -ForegroundColor Gray;^
-    }^
-}^
-^"
+:: Create temporary PowerShell script
+set "PSSCRIPT=%TEMP%\firewall-rules.ps1"
+
+(
+echo $telemetryApps = @^(
+echo     @{Path="$env:SystemRoot\System32\CompatTelRunner.exe"; Name='Block CompatTelRunner ^(Telemetry^)'},
+echo     @{Path="$env:SystemRoot\System32\DeviceCensus.exe"; Name='Block DeviceCensus ^(Telemetry^)'},
+echo     @{Path="$env:SystemRoot\System32\smartscreen.exe"; Name='Block SmartScreen ^(Telemetry^)'},
+echo     @{Path="$env:SystemRoot\System32\wsqmcons.exe"; Name='Block wsqmcons ^(Telemetry^)'}
+echo ^)
+echo.
+echo foreach ^($app in $telemetryApps^) {
+echo     $expandedPath = [Environment]::ExpandEnvironmentVariables^($app.Path^)
+echo     if ^(Test-Path $expandedPath^) {
+echo         $existingRule = Get-NetFirewallRule -DisplayName $app.Name -ErrorAction SilentlyContinue
+echo         if ^($existingRule^) {
+echo             Write-Host "Rule already exists: $^($app.Name^)" -ForegroundColor Yellow
+echo         } else {
+echo             Write-Host "Creating rule: $^($app.Name^)" -ForegroundColor Green
+echo             New-NetFirewallRule -DisplayName $app.Name -Direction Outbound -Program $expandedPath -Action Block ^| Out-Null
+echo         }
+echo     } else {
+echo         Write-Host "File not found ^(skipping^): $expandedPath" -ForegroundColor Gray
+echo     }
+echo }
+echo Write-Host ''
+echo Write-Host 'Done!' -ForegroundColor Green
+) > "%PSSCRIPT%"
+
+:: Run the PowerShell script
+powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
+
+:: Clean up
+del "%PSSCRIPT%" 2>nul
 
 echo.
 echo ============================================================================
