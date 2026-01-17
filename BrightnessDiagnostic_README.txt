@@ -2,6 +2,13 @@
  BRIGHTNESS DIAGNOSTIC TOOL - README
 ================================================================================
 
+REQUIRED FILES
+--------------
+* BrightnessDiagnostic.bat  - Main batch file (run this)
+* BrightnessDiagnostic.ps1  - PowerShell helper script (must be in same folder)
+
+Both files must be in the same directory for the tool to work.
+
 DESCRIPTION
 -----------
 A comprehensive diagnostic and repair tool for screen brightness issues.
