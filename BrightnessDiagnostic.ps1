@@ -84,15 +84,24 @@ function Get-PowerPlanBrightness {
     Write-Host "  Checking display brightness settings..." -ForegroundColor White
 
     $dimSettings = powercfg /query $activeGuid 7516b95f-f776-4464-8c53-06167f40cc99 2>$null
-    if ($dimSettings -match 'Current AC Power Setting Index:\s*0x([0-9a-fA-F]+)') {
+    $dimSettingsText = $dimSettings | Out-String
+
+    # Parse AC setting
+    if ($dimSettingsText -match 'Current AC Power Setting Index:\s*0x([0-9a-fA-F]+)') {
         $acDim = [int]('0x' + $matches[1])
         $acColor = if ($acDim -lt 100) { 'Yellow' } else { 'Green' }
         Write-Host "  Display Dim Brightness (AC): $acDim%" -ForegroundColor $acColor
+    } else {
+        Write-Host "  Display Dim Brightness (AC): Not available" -ForegroundColor Gray
     }
-    if ($dimSettings -match 'Current DC Power Setting Index:\s*0x([0-9a-fA-F]+)') {
+
+    # Parse DC (battery) setting
+    if ($dimSettingsText -match 'Current DC Power Setting Index:\s*0x([0-9a-fA-F]+)') {
         $dcDim = [int]('0x' + $matches[1])
         $dcColor = if ($dcDim -lt 100) { 'Yellow' } else { 'Green' }
         Write-Host "  Display Dim Brightness (Battery): $dcDim%" -ForegroundColor $dcColor
+    } else {
+        Write-Host "  Display Dim Brightness (Battery): Not available (desktop PC)" -ForegroundColor Gray
     }
 }
 
