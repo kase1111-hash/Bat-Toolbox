@@ -14,6 +14,20 @@ color 0B
 :: Also provides gamma boost for brightness beyond Windows limits
 :: ============================================================================
 
+:: Get the directory where this script is located
+set "SCRIPT_DIR=%~dp0"
+set "PS_HELPER=%SCRIPT_DIR%BrightnessDiagnostic.ps1"
+
+:: Check if helper script exists
+if not exist "%PS_HELPER%" (
+    color 0C
+    echo [ERROR] BrightnessDiagnostic.ps1 not found!
+    echo Please ensure BrightnessDiagnostic.ps1 is in the same folder as this batch file.
+    echo.
+    pause
+    exit /b 1
+)
+
 :: ANSI color codes for better output
 for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
 set "RED=%ESC%[91m"
@@ -64,52 +78,17 @@ echo.
 
 echo %YELLOW%[1/8]%RESET% Checking current brightness level...
 echo.
-set "DIAG_PS=%TEMP%\brightness_diag.ps1"
-
-:: Create diagnostic script for brightness check
-(
-echo $brightness = Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness -ErrorAction SilentlyContinue
-echo if ^($brightness^) {
-echo     Write-Host "  Current Brightness: $($brightness.CurrentBrightness)%%" -ForegroundColor Cyan
-echo     Write-Host "  Brightness Levels Available: $($brightness.Level -join ', ')" -ForegroundColor Gray
-echo } else {
-echo     Write-Host "  [WARNING] Cannot read brightness - may be desktop monitor or unsupported display" -ForegroundColor Yellow
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-brightness
 echo.
 
 echo %YELLOW%[2/8]%RESET% Checking display adapters...
 echo.
-(
-echo $adapters = Get-CimInstance Win32_VideoController
-echo foreach ^($adapter in $adapters^) {
-echo     Write-Host "  Display: $($adapter.Name)" -ForegroundColor White
-echo     Write-Host "  Driver Version: $($adapter.DriverVersion)" -ForegroundColor Gray
-echo     $statusColor = if^($adapter.Status -eq 'OK'^){'Green'}else{'Red'}
-echo     Write-Host "  Status: $($adapter.Status)" -ForegroundColor $statusColor
-echo     Write-Host ""
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-adapters
 echo.
 
 echo %YELLOW%[3/8]%RESET% Checking for Adaptive Brightness...
 echo.
-(
-echo $service = Get-Service -Name 'SensrSvc' -ErrorAction SilentlyContinue
-echo if ^($service^) {
-echo     $status = $service.Status
-echo     $color = if^($status -eq 'Running'^){'Yellow'}else{'Green'}
-echo     Write-Host "  Sensor Monitoring Service: $status" -ForegroundColor $color
-echo     if ^($status -eq 'Running'^) {
-echo         Write-Host "  [!] This service can cause auto-dimming based on ambient light" -ForegroundColor Yellow
-echo     }
-echo } else {
-echo     Write-Host "  Sensor Monitoring Service: Not Found" -ForegroundColor Green
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-sensor
 echo.
 
 :: Check adaptive brightness registry settings
@@ -126,78 +105,25 @@ echo.
 
 echo %YELLOW%[5/8]%RESET% Checking Power Plan Brightness Settings...
 echo.
-(
-echo $activeGuid = ^(powercfg /getactivescheme^) -replace '.*GUID: ([a-f0-9-]+).*','$1'
-echo Write-Host "  Active Power Plan GUID: $activeGuid" -ForegroundColor Gray
-echo Write-Host ""
-echo Write-Host "  Checking display brightness settings..." -ForegroundColor White
-echo $dimSettings = powercfg /query $activeGuid 7516b95f-f776-4464-8c53-06167f40cc99 2^>$null
-echo if ^($dimSettings -match 'Current AC Power Setting Index:\s*0x([0-9a-fA-F]+)'^) {
-echo     $acDim = [int]^('0x' + $matches[1]^)
-echo     $acColor = if^($acDim -lt 100^){'Yellow'}else{'Green'}
-echo     Write-Host "  Display Dim Brightness (AC): $acDim%%" -ForegroundColor $acColor
-echo }
-echo if ^($dimSettings -match 'Current DC Power Setting Index:\s*0x([0-9a-fA-F]+)'^) {
-echo     $dcDim = [int]^('0x' + $matches[1]^)
-echo     $dcColor = if^($dcDim -lt 100^){'Yellow'}else{'Green'}
-echo     Write-Host "  Display Dim Brightness (Battery): $dcDim%%" -ForegroundColor $dcColor
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-powerplan
 echo.
 
 echo %YELLOW%[6/8]%RESET% Checking for Content Adaptive Brightness Control (CABC)...
 echo.
-(
-echo $cabc = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000' -Name 'KMD_EnableBrightnessInterface2' -ErrorAction SilentlyContinue
-echo if ^($cabc^) {
-echo     if ^($cabc.KMD_EnableBrightnessInterface2 -eq 1^) {
-echo         Write-Host "  CABC (Content Adaptive): ENABLED - may cause dimming based on content" -ForegroundColor Yellow
-echo     } else {
-echo         Write-Host "  CABC (Content Adaptive): DISABLED" -ForegroundColor Green
-echo     }
-echo } else {
-echo     Write-Host "  CABC: Setting not found (GPU may not support it)" -ForegroundColor Gray
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-cabc
 echo.
 
 echo %YELLOW%[7/8]%RESET% Checking Intel/AMD/NVIDIA Display Power Saving...
 echo.
-:: Intel Display Power Saving Technology (DPST)
 for /f "tokens=3" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl 2^>nul ^| findstr /i "FeatureTestControl"') do (
     echo   Intel DPST Registry Value: %%a
 )
-(
-echo $dpst = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000' -Name 'DPST_Enabled' -ErrorAction SilentlyContinue
-echo if ^($dpst^) {
-echo     if ^($dpst.DPST_Enabled -eq 1^) {
-echo         Write-Host "  Intel DPST: ENABLED - causes auto-dimming!" -ForegroundColor Yellow
-echo     } else {
-echo         Write-Host "  Intel DPST: DISABLED" -ForegroundColor Green
-echo     }
-echo }
-echo $variBright = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000' -Name 'PP_VariBrightFeatureControl' -ErrorAction SilentlyContinue
-echo if ^($variBright^) {
-echo     Write-Host "  AMD Vari-Bright: Value = $($variBright.PP_VariBrightFeatureControl)" -ForegroundColor Yellow
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-dpst
 echo.
 
 echo %YELLOW%[8/8]%RESET% Checking Night Light Status...
 echo.
-(
-echo $nightLight = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.bluelightreduction.bluelightreductionstate\windows.data.bluelightreduction.bluelightreductionstate' -ErrorAction SilentlyContinue
-echo if ^($nightLight.Data^) {
-echo     Write-Host "  Night Light: Configuration exists (may affect perceived brightness)" -ForegroundColor Yellow
-echo } else {
-echo     Write-Host "  Night Light: Not configured or disabled" -ForegroundColor Green
-echo }
-) > "%DIAG_PS%"
-powershell -ExecutionPolicy Bypass -File "%DIAG_PS%"
-del "%DIAG_PS%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-nightlight
 echo.
 
 echo %CYAN%============================================================================%RESET%
@@ -303,26 +229,7 @@ echo.
 
 echo Setting brightness to 100%%...
 echo.
-
-set "BRIGHT_PS=%TEMP%\set_brightness.ps1"
-(
-echo $brightness = Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightnessMethods -ErrorAction SilentlyContinue
-echo if ^($brightness^) {
-echo     $brightness ^| Invoke-CimMethod -MethodName WmiSetBrightness -Arguments @{Brightness=100; Timeout=0} ^| Out-Null
-echo     Write-Host "[OK] Brightness set to 100%%" -ForegroundColor Green
-echo } else {
-echo     Write-Host "[WARNING] Cannot set brightness via WMI - trying alternate method..." -ForegroundColor Yellow
-echo     try {
-echo         ^(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods^).WmiSetBrightness^(0, 100^)
-echo         Write-Host "[OK] Brightness set to 100%%" -ForegroundColor Green
-echo     } catch {
-echo         Write-Host "[ERROR] Could not set brightness. This may be a desktop monitor." -ForegroundColor Red
-echo         Write-Host "Desktop monitors typically use physical buttons for brightness." -ForegroundColor Yellow
-echo     }
-echo }
-) > "%BRIGHT_PS%"
-powershell -ExecutionPolicy Bypass -File "%BRIGHT_PS%"
-del "%BRIGHT_PS%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action set-max
 
 echo.
 pause
@@ -371,10 +278,7 @@ if "%gchoice%"=="4" (
     goto APPLY_GAMMA
 )
 if "%gchoice%"=="5" goto CUSTOM_GAMMA
-if "%gchoice%"=="6" (
-    set "GAMMA_VALUE=1.0"
-    goto APPLY_GAMMA
-)
+if "%gchoice%"=="6" goto RESET_GAMMA
 if "%gchoice%"=="0" goto MAIN_MENU
 goto GAMMA_BOOST_MENU
 
@@ -395,65 +299,24 @@ echo.
 echo   Applying gamma value: %GAMMA_VALUE%
 echo.
 
-:: Create PowerShell script for gamma adjustment
-set "GAMMA_SCRIPT=%TEMP%\set_gamma.ps1"
-
-(
-echo Add-Type @"
-echo using System;
-echo using System.Runtime.InteropServices;
-echo public class GammaRamp {
-echo     [DllImport^("gdi32.dll"^)]
-echo     public static extern bool SetDeviceGammaRamp^(IntPtr hDC, ref RAMP lpRamp^);
-echo     [DllImport^("gdi32.dll"^)]
-echo     public static extern bool GetDeviceGammaRamp^(IntPtr hDC, ref RAMP lpRamp^);
-echo     [DllImport^("user32.dll"^)]
-echo     public static extern IntPtr GetDC^(IntPtr hWnd^);
-echo     [DllImport^("user32.dll"^)]
-echo     public static extern int ReleaseDC^(IntPtr hWnd, IntPtr hDC^);
-echo     [StructLayout^(LayoutKind.Sequential, CharSet = CharSet.Ansi^)]
-echo     public struct RAMP {
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Red;
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Green;
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Blue;
-echo     }
-echo }
-echo "@
-echo.
-echo $gamma = %GAMMA_VALUE%
-echo $hdc = [GammaRamp]::GetDC^([IntPtr]::Zero^)
-echo $ramp = New-Object GammaRamp+RAMP
-echo $ramp.Red = New-Object UInt16[] 256
-echo $ramp.Green = New-Object UInt16[] 256
-echo $ramp.Blue = New-Object UInt16[] 256
-echo.
-echo for ^($i = 0; $i -lt 256; $i++^) {
-echo     $value = [Math]::Pow^($i / 255.0, 1.0 / $gamma^) * 65535
-echo     $value = [Math]::Min^(65535, [Math]::Max^(0, $value^)^)
-echo     $ramp.Red[$i] = [UInt16]$value
-echo     $ramp.Green[$i] = [UInt16]$value
-echo     $ramp.Blue[$i] = [UInt16]$value
-echo }
-echo.
-echo $result = [GammaRamp]::SetDeviceGammaRamp^($hdc, [ref]$ramp^)
-echo [GammaRamp]::ReleaseDC^([IntPtr]::Zero, $hdc^) ^| Out-Null
-echo.
-echo if ^($result^) {
-echo     Write-Host "[OK] Gamma set to $gamma" -ForegroundColor Green
-echo } else {
-echo     Write-Host "[ERROR] Failed to set gamma" -ForegroundColor Red
-echo }
-) > "%GAMMA_SCRIPT%"
-
-powershell -ExecutionPolicy Bypass -File "%GAMMA_SCRIPT%"
-del "%GAMMA_SCRIPT%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action set-gamma -GammaValue %GAMMA_VALUE%
 
 echo.
 echo   %YELLOW%NOTE:%RESET% Gamma resets when you restart or log off.
 echo   To make permanent, use this tool at startup or use GPU control panel.
+echo.
+pause
+goto GAMMA_BOOST_MENU
+
+:RESET_GAMMA
+cls
+echo %CYAN%============================================================================%RESET%
+echo %WHITE%                      RESETTING GAMMA%RESET%
+echo %CYAN%============================================================================%RESET%
+echo.
+
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-gamma
+
 echo.
 pause
 goto GAMMA_BOOST_MENU
@@ -477,49 +340,7 @@ if /i not "%confirm%"=="Y" goto MAIN_MENU
 
 echo.
 echo %YELLOW%[1/3]%RESET% Resetting gamma to default...
-set "GAMMA_VALUE=1.0"
-
-set "GAMMA_SCRIPT=%TEMP%\reset_gamma.ps1"
-(
-echo Add-Type @"
-echo using System;
-echo using System.Runtime.InteropServices;
-echo public class GammaRamp {
-echo     [DllImport^("gdi32.dll"^)]
-echo     public static extern bool SetDeviceGammaRamp^(IntPtr hDC, ref RAMP lpRamp^);
-echo     [DllImport^("user32.dll"^)]
-echo     public static extern IntPtr GetDC^(IntPtr hWnd^);
-echo     [DllImport^("user32.dll"^)]
-echo     public static extern int ReleaseDC^(IntPtr hWnd, IntPtr hDC^);
-echo     [StructLayout^(LayoutKind.Sequential, CharSet = CharSet.Ansi^)]
-echo     public struct RAMP {
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Red;
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Green;
-echo         [MarshalAs^(UnmanagedType.ByValArray, SizeConst = 256^)]
-echo         public UInt16[] Blue;
-echo     }
-echo }
-echo "@
-echo $hdc = [GammaRamp]::GetDC^([IntPtr]::Zero^)
-echo $ramp = New-Object GammaRamp+RAMP
-echo $ramp.Red = New-Object UInt16[] 256
-echo $ramp.Green = New-Object UInt16[] 256
-echo $ramp.Blue = New-Object UInt16[] 256
-echo for ^($i = 0; $i -lt 256; $i++^) {
-echo     $value = $i * 256
-echo     $ramp.Red[$i] = [UInt16]$value
-echo     $ramp.Green[$i] = [UInt16]$value
-echo     $ramp.Blue[$i] = [UInt16]$value
-echo }
-echo [GammaRamp]::SetDeviceGammaRamp^($hdc, [ref]$ramp^) ^| Out-Null
-echo [GammaRamp]::ReleaseDC^([IntPtr]::Zero, $hdc^) ^| Out-Null
-echo Write-Host "[OK] Gamma reset to default" -ForegroundColor Green
-) > "%GAMMA_SCRIPT%"
-
-powershell -ExecutionPolicy Bypass -File "%GAMMA_SCRIPT%"
-del "%GAMMA_SCRIPT%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-gamma
 
 echo %YELLOW%[2/3]%RESET% Re-enabling adaptive brightness...
 net session >nul 2>&1
@@ -533,17 +354,7 @@ if %errorlevel% equ 0 (
 )
 
 echo %YELLOW%[3/3]%RESET% Restarting display driver...
-set "RESTART_PS=%TEMP%\restart_display.ps1"
-(
-echo try {
-echo     pnputil /restart-device "DISPLAY\*" 2^>$null
-echo     Write-Host "[OK] Display driver restart requested" -ForegroundColor Green
-echo } catch {
-echo     Write-Host "[INFO] Could not restart display driver - may require restart" -ForegroundColor Yellow
-echo }
-) > "%RESTART_PS%"
-powershell -ExecutionPolicy Bypass -File "%RESTART_PS%"
-del "%RESTART_PS%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action restart-driver
 
 echo.
 echo %GREEN%[COMPLETE]%RESET% Display settings have been reset.
@@ -561,39 +372,7 @@ echo %WHITE%                    CURRENT BRIGHTNESS INFO%RESET%
 echo %CYAN%============================================================================%RESET%
 echo.
 
-set "VIEW_PS=%TEMP%\view_brightness.ps1"
-(
-echo Write-Host "Monitor Brightness Information" -ForegroundColor Cyan
-echo Write-Host "==============================" -ForegroundColor Cyan
-echo Write-Host ""
-echo $brightness = Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness -ErrorAction SilentlyContinue
-echo if ^($brightness^) {
-echo     Write-Host "Current Brightness Level: " -NoNewline
-echo     Write-Host "$($brightness.CurrentBrightness)%%" -ForegroundColor Green
-echo     Write-Host ""
-echo     Write-Host "Available Brightness Levels:" -ForegroundColor White
-echo     $levels = $brightness.Level
-echo     Write-Host ^($levels -join '%%  '^) -ForegroundColor Gray
-echo     Write-Host ""
-echo } else {
-echo     Write-Host "[INFO] Software brightness control not available" -ForegroundColor Yellow
-echo     Write-Host "This is normal for desktop monitors - use physical buttons" -ForegroundColor Gray
-echo     Write-Host ""
-echo }
-echo Write-Host ""
-echo Write-Host "Connected Monitors" -ForegroundColor Cyan
-echo Write-Host "==================" -ForegroundColor Cyan
-echo $monitors = Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorID -ErrorAction SilentlyContinue
-echo foreach ^($mon in $monitors^) {
-echo     $name = ^($mon.UserFriendlyName ^| Where-Object {$_ -ne 0} ^| ForEach-Object {[char]$_}^) -join ''
-echo     $mfg = ^($mon.ManufacturerName ^| Where-Object {$_ -ne 0} ^| ForEach-Object {[char]$_}^) -join ''
-echo     Write-Host "  Monitor: $name" -ForegroundColor White
-echo     Write-Host "  Manufacturer: $mfg" -ForegroundColor Gray
-echo     Write-Host ""
-echo }
-) > "%VIEW_PS%"
-powershell -ExecutionPolicy Bypass -File "%VIEW_PS%"
-del "%VIEW_PS%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action view-brightness
 
 echo.
 pause
@@ -703,19 +482,7 @@ echo This will briefly flash your screen.
 set /p "confirm=Continue? (Y/N): "
 if /i not "%confirm%"=="Y" goto ADVANCED_MENU
 
-set "ADAPTER_PS=%TEMP%\reset_adapter.ps1"
-(
-echo $adapters = Get-PnpDevice -Class Display -Status OK
-echo foreach ^($adapter in $adapters^) {
-echo     Write-Host "Restarting: $($adapter.FriendlyName)" -ForegroundColor Yellow
-echo     Disable-PnpDevice -InstanceId $adapter.InstanceId -Confirm:$false -ErrorAction SilentlyContinue
-echo     Start-Sleep -Seconds 2
-echo     Enable-PnpDevice -InstanceId $adapter.InstanceId -Confirm:$false -ErrorAction SilentlyContinue
-echo     Write-Host "[OK] Adapter restarted" -ForegroundColor Green
-echo }
-) > "%ADAPTER_PS%"
-powershell -ExecutionPolicy Bypass -File "%ADAPTER_PS%"
-del "%ADAPTER_PS%" >nul 2>&1
+powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-adapter
 
 echo.
 pause
