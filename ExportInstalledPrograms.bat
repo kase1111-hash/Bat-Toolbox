@@ -138,14 +138,14 @@ set "PSSCRIPT=%TEMP%\get-appx.ps1"
 
 :: Write PowerShell script line by line to avoid parentheses issues
 echo $apps = Get-AppxPackage ^| Where-Object { $_.IsFramework -eq $false } ^| Sort-Object Name > "%PSSCRIPT%"
-echo foreach { $app in $apps } { >> "%PSSCRIPT%"
+echo foreach ^($app in $apps^) { >> "%PSSCRIPT%"
 echo     $name = $app.Name >> "%PSSCRIPT%"
 echo     $skip = $false >> "%PSSCRIPT%"
-echo     if { $name -match '^Microsoft\.' } { $skip = $true } >> "%PSSCRIPT%"
-echo     if { $name -match '^Windows' } { $skip = $true } >> "%PSSCRIPT%"
-echo     if { $name -match '^\d+\.' } { $skip = $true } >> "%PSSCRIPT%"
-echo     if { $name -match '^InputApp' } { $skip = $true } >> "%PSSCRIPT%"
-echo     if { -not $skip } { Write-Output $name } >> "%PSSCRIPT%"
+echo     if ^($name -match '^Microsoft\.'  ^) { $skip = $true } >> "%PSSCRIPT%"
+echo     if ^($name -match '^Windows'^) { $skip = $true } >> "%PSSCRIPT%"
+echo     if ^($name -match '^\d+\.'^) { $skip = $true } >> "%PSSCRIPT%"
+echo     if ^($name -match '^InputApp'^) { $skip = $true } >> "%PSSCRIPT%"
+echo     if ^(-not $skip^) { Write-Output $name } >> "%PSSCRIPT%"
 echo } >> "%PSSCRIPT%"
 
 :: Alternative: just run PowerShell directly
