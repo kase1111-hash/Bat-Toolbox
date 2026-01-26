@@ -18,7 +18,7 @@ echo.
 
 :: Check for admin privileges
 net session >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     color 0C
     echo [ERROR] This script requires administrator privileges.
     echo Please right-click and select "Run as administrator".
@@ -51,7 +51,7 @@ set "errors=0"
 :: Step 1: Kill any running EOSNotify processes
 echo [1/5] Terminating EOSNotify processes...
 taskkill /f /im EOSNotify.exe >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     echo       - No running EOSNotify process found ^(OK^)
 ) else (
     echo       - EOSNotify process terminated successfully
@@ -61,7 +61,7 @@ if errorlevel 1 (
 :: Step 2: Disable EOS notification via registry (User Policy)
 echo [2/5] Disabling EOS notification via registry...
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "DisableOSUpgrade" /t REG_DWORD /d 1 /f >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     echo       - Failed to set DisableOSUpgrade policy
     set /a errors+=1
 ) else (
@@ -72,7 +72,7 @@ if errorlevel 1 (
 :: Step 3: Disable End of Support notification specifically
 echo [3/5] Disabling End of Support notification registry key...
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\OSUpgrade" /v "AllowOSUpgrade" /t REG_DWORD /d 0 /f >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     echo       - Failed to set AllowOSUpgrade key
     set /a errors+=1
 ) else (
@@ -83,7 +83,7 @@ if errorlevel 1 (
 :: Step 4: Disable EOS notification scheduled tasks
 echo [4/5] Disabling related scheduled tasks...
 schtasks /change /tn "\Microsoft\Windows\Setup\EOSNotify" /disable >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     echo       - EOSNotify task not found or already disabled
 ) else (
     echo       - EOSNotify scheduled task disabled
@@ -91,7 +91,7 @@ if errorlevel 1 (
 )
 
 schtasks /change /tn "\Microsoft\Windows\Setup\EOSNotify2" /disable >nul 2>&1
-if errorlevel 1 (
+if !errorlevel! neq 0 (
     echo       - EOSNotify2 task not found or already disabled
 ) else (
     echo       - EOSNotify2 scheduled task disabled
@@ -105,7 +105,7 @@ if exist "%eosPath%" (
     takeown /f "%eosPath%" >nul 2>&1
     icacls "%eosPath%" /grant administrators:F >nul 2>&1
     ren "%eosPath%" "EOSNotify.exe.bak" >nul 2>&1
-    if errorlevel 1 (
+    if !errorlevel! neq 0 (
         echo       - Failed to rename EOSNotify.exe
         set /a errors+=1
     ) else (
