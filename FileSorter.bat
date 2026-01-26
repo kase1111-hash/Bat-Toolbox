@@ -66,7 +66,7 @@ for /r "%basedir%" %%F in (*) do (
             :: Create folder if it doesn't exist
             if not exist "!targetdir!" (
                 mkdir "!targetdir!" 2>nul
-                if errorlevel 1 (
+                if !errorlevel! neq 0 (
                     echo [ERROR] Could not create folder: !typename!
                     set /a errors+=1
                 ) else (
@@ -81,7 +81,7 @@ for /r "%basedir%" %%F in (*) do (
             ) else (
                 :: Move the file
                 move "!filepath!" "!targetdir!\" >nul 2>&1
-                if errorlevel 1 (
+                if !errorlevel! neq 0 (
                     echo [ERROR] !filename!
                     set /a errors+=1
                 ) else (

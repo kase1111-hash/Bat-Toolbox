@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 title Restore Recycle Bin
 color 0A
 
@@ -23,7 +23,7 @@ echo [1/4] Unhiding Recycle Bin from desktop icons...
 
 :: Remove hide flags for NewStartPanel (Windows 7+)
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "%RECYCLE_BIN%" /f >nul 2>&1
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     echo       - Removed hide flag [NewStartPanel]
 ) else (
     echo       - No hide flag found [NewStartPanel]
@@ -31,7 +31,7 @@ if %errorlevel% equ 0 (
 
 :: Remove hide flags for ClassicStartMenu
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu" /v "%RECYCLE_BIN%" /f >nul 2>&1
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     echo       - Removed hide flag [ClassicStartMenu]
 ) else (
     echo       - No hide flag found [ClassicStartMenu]
