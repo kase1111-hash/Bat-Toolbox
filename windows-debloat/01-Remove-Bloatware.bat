@@ -22,6 +22,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: Clean up any leftover temp files from interrupted runs
+del "%TEMP%\remove-bloatware.ps1" 2>nul
+
 echo This script will remove the following types of apps:
 echo  - 3D Builder, 3D Viewer, Mixed Reality Portal
 echo  - Bing Finance, News, Sports, Weather

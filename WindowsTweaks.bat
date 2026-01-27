@@ -157,9 +157,9 @@ fsutil behavior set memoryusage 2 >nul 2>&1
 echo   - Disabling 8.3 filename creation [improves NTFS performance]...
 fsutil behavior set disable8dot3 1 >nul 2>&1
 
-:: Split large memory threshold
-echo   - Optimizing memory management...
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "LargeSystemCache" /t REG_DWORD /d 1 /f >nul 2>&1
+:: Optimize memory for programs (0) rather than system cache (1)
+echo   - Optimizing memory management for programs...
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "LargeSystemCache" /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo.
 echo [PERFORMANCE] Performance tweaks applied.
