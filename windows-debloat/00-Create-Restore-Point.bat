@@ -57,3 +57,4 @@ if %errorlevel% equ 0 (
 )
 
 pause
+exit /b 0

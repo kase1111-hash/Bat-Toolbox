@@ -25,6 +25,13 @@ set "TEMP_KEEP=%TEMP%\startup_keep.txt"
 set "TEMP_OPTIONAL=%TEMP%\startup_optional.txt"
 set "TEMP_REMOVE=%TEMP%\startup_remove.txt"
 
+:: Clean up any leftover temp files from interrupted runs
+del "%TEMP%\categorize_startup.ps1" 2>nul
+del "%TEMP_ALL%" 2>nul
+del "%TEMP_KEEP%" 2>nul
+del "%TEMP_OPTIONAL%" 2>nul
+del "%TEMP_REMOVE%" 2>nul
+
 :: Clear temp files
 echo. > "%TEMP_ALL%"
 echo. > "%TEMP_KEEP%"

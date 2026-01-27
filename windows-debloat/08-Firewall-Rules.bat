@@ -22,6 +22,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: Clean up any leftover temp files from interrupted runs
+del "%TEMP%\firewall-rules.ps1" 2>nul
+
 echo This script will create firewall rules to block:
 echo  - CompatTelRunner.exe (Compatibility Telemetry)
 echo  - DeviceCensus.exe (Device Census)

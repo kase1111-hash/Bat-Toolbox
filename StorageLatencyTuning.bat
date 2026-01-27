@@ -47,7 +47,7 @@ if %errorlevel%==1 (
     echo.
     echo %CYAN%Creating restore point...%RESET%
     powershell -Command "Checkpoint-Computer -Description 'Before StorageLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
-    if !errorlevel!==0 (
+    if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
     ) else (
         echo %YELLOW%[WARN] Could not create restore point - System Protection may be disabled%RESET%
@@ -267,7 +267,7 @@ echo.
 echo %WHITE%[1/4] Verifying TRIM is enabled...%RESET%
 for /f "tokens=*" %%a in ('fsutil behavior query disabledeletenotify') do (
     echo %%a | findstr /i "0" >nul
-    if !errorlevel!==0 (
+    if !errorlevel! equ 0 (
         echo %GREEN%   [OK] TRIM is enabled%RESET%
     ) else (
         fsutil behavior set disabledeletenotify 0 >nul 2>&1
