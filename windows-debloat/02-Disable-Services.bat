@@ -52,12 +52,12 @@ echo ===========================================================================
 
 for %%s in (DiagTrack dmwappushservice WMPNetworkSvc) do (
     echo Disabling %%s...
-    sc config "%%s" start=disabled >nul 2>&1
+    sc config "%%s" start= disabled >nul 2>&1
     net stop "%%s" >nul 2>&1
 )
 
 :: This one has a longer name
-sc config "diagnosticshub.standardcollector.service" start=disabled >nul 2>&1
+sc config "diagnosticshub.standardcollector.service" start= disabled >nul 2>&1
 net stop "diagnosticshub.standardcollector.service" >nul 2>&1
 
 echo.
@@ -67,7 +67,7 @@ echo ===========================================================================
 
 for %%s in (XblAuthManager XblGameSave XboxGipSvc XboxNetApiSvc) do (
     echo Disabling %%s...
-    sc config "%%s" start=disabled >nul 2>&1
+    sc config "%%s" start= disabled >nul 2>&1
     net stop "%%s" >nul 2>&1
 )
 
@@ -78,7 +78,7 @@ echo ===========================================================================
 
 for %%s in (MapsBroker lfsvc RetailDemo) do (
     echo Disabling %%s...
-    sc config "%%s" start=disabled >nul 2>&1
+    sc config "%%s" start= disabled >nul 2>&1
     net stop "%%s" >nul 2>&1
 )
 
@@ -89,7 +89,7 @@ echo ===========================================================================
 
 for %%s in (Fax WpcMonSvc wisvc PhoneSvc WerSvc) do (
     echo Disabling %%s...
-    sc config "%%s" start=disabled >nul 2>&1
+    sc config "%%s" start= disabled >nul 2>&1
     net stop "%%s" >nul 2>&1
 )
 
@@ -99,7 +99,7 @@ echo  Services disabled successfully!
 echo ============================================================================
 echo.
 echo NOTE: If you need any of these services later, you can re-enable them
-echo using: sc config "ServiceName" start=auto
+echo using: sc config "ServiceName" start= auto
 echo.
 echo A reboot is recommended to apply all changes.
 echo.
