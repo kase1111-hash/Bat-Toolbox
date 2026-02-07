@@ -72,7 +72,7 @@ echo  Disabling Prefetch/Superfetch (SysMain)...
 echo ============================================================================
 
 echo Disabling SysMain service...
-sc config SysMain start=disabled >nul 2>&1
+sc config SysMain start= disabled >nul 2>&1
 net stop SysMain >nul 2>&1
 
 echo Disabling Prefetch in registry...
@@ -87,7 +87,7 @@ echo  Disabling Windows Search Indexing...
 echo ============================================================================
 
 echo Disabling WSearch service...
-sc config WSearch start=disabled >nul 2>&1
+sc config WSearch start= disabled >nul 2>&1
 net stop WSearch >nul 2>&1
 
 echo Windows Search indexing disabled.
@@ -101,7 +101,7 @@ echo NOTES:
 echo  - Consider installing "Everything" search (voidtools.com) as a
 echo    faster alternative to Windows Search
 echo  - If you use a HDD (not SSD), you may want to re-enable Superfetch:
-echo      sc config SysMain start=auto
+echo      sc config SysMain start= auto
 echo      net start SysMain
 echo.
 echo A reboot is recommended to complete all changes.

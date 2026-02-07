@@ -18,13 +18,14 @@ if %errorlevel% neq 0 (
 title Interrupt ^& DPC Latency Tuning
 
 :: Colors
-set "RED=[91m"
-set "GREEN=[92m"
-set "YELLOW=[93m"
-set "CYAN=[96m"
-set "MAGENTA=[95m"
-set "WHITE=[97m"
-set "RESET=[0m"
+for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
+set "RED=%ESC%[91m"
+set "GREEN=%ESC%[92m"
+set "YELLOW=%ESC%[93m"
+set "CYAN=%ESC%[96m"
+set "MAGENTA=%ESC%[95m"
+set "WHITE=%ESC%[97m"
+set "RESET=%ESC%[0m"
 
 echo %CYAN%============================================================%RESET%
 echo %WHITE%     INTERRUPT ^& DPC LATENCY TUNING%RESET%
@@ -55,7 +56,7 @@ if %errorlevel%==1 (
     echo.
     echo %CYAN%Creating restore point...%RESET%
     powershell -Command "Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
-    if !errorlevel!==0 (
+    if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
     ) else (
         echo %YELLOW%[WARN] Could not create restore point - System Protection may be disabled%RESET%

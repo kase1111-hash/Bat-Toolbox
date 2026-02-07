@@ -110,12 +110,12 @@ echo.
 
 :: Disable SysMain/Superfetch (better for SSDs)
 echo   - Disabling SysMain/Superfetch [improves SSD lifespan]...
-sc config "SysMain" start=disabled >nul 2>&1
+sc config "SysMain" start= disabled >nul 2>&1
 sc stop "SysMain" >nul 2>&1
 
 :: Disable Windows Search Indexing
 echo   - Disabling Windows Search Indexing [reduces disk usage]...
-sc config "WSearch" start=disabled >nul 2>&1
+sc config "WSearch" start= disabled >nul 2>&1
 sc stop "WSearch" >nul 2>&1
 
 :: Disable Prefetch
@@ -592,11 +592,11 @@ echo.
 
 :: Re-enable services
 echo   - Re-enabling SysMain...
-sc config "SysMain" start=auto >nul 2>&1
+sc config "SysMain" start= auto >nul 2>&1
 sc start "SysMain" >nul 2>&1
 
 echo   - Re-enabling Windows Search...
-sc config "WSearch" start=delayed-auto >nul 2>&1
+sc config "WSearch" start= delayed-auto >nul 2>&1
 sc start "WSearch" >nul 2>&1
 
 :: Re-enable Fast Startup
