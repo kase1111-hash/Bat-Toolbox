@@ -24,11 +24,11 @@ Every script tells you what it's about to do. Every script asks before making ch
 
 | Category | Scripts | What They Fix |
 |----------|---------|---------------|
-| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
-| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck | Find what's slowing you down |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck, BrightnessDiagnostic | Find what's slowing you down |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
-| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot | Backup, organize, security |
+| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
 
 ---
 
@@ -89,6 +89,35 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 ---
 
 ## Main Scripts
+
+### BrightnessDiagnostic.bat
+
+**Purpose:** Diagnoses and fixes screen brightness issues including auto-dimming, adaptive brightness interference, and power plan dimming. Also provides gamma boost for brightness beyond Windows limits.
+
+**Features:**
+| Option | Description |
+|--------|-------------|
+| Full Diagnostic | Checks all brightness-related settings, services, and driver features |
+| Quick Fix | One-click disable of all auto-dimming features |
+| Max Brightness | Sets screen to 100% via Windows API |
+| Gamma Boost | Increases perceived brightness beyond Windows' 100% limit |
+| Reset to Default | Restores all display settings to Windows defaults |
+| Advanced Options | Fine-grained control over Intel DPST, AMD Vari-Bright, Panel Self-Refresh |
+
+**What it diagnoses:**
+- Adaptive Brightness (light sensor interference)
+- Intel DPST (Display Power Saving Technology)
+- AMD Vari-Bright
+- Content Adaptive Brightness Control (CABC)
+- Panel Self-Refresh (PSR)
+- Power plan display dim settings
+- Night Light status
+
+**Companion file:** Requires `BrightnessDiagnostic.ps1` in the same directory.
+
+**Admin required:** Partial (diagnostics work without admin, fixes require admin)
+
+---
 
 ### FileSorter.bat
 
@@ -679,6 +708,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 
 | Script | Admin Required |
 |--------|----------------|
+| BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |

@@ -18,7 +18,7 @@ Bat-Toolbox is a collection of Windows batch scripts and PowerShell utilities fo
 
 ```
 /
-├── *.bat                    # Root-level scripts (28 main scripts)
+├── *.bat                    # Root-level scripts (18 main scripts)
 ├── *.ps1                    # PowerShell helper scripts (2 files)
 ├── *_README.txt             # Individual documentation per script (18 files)
 ├── windows-debloat/         # Windows debloat suite (13 numbered scripts 00-12)
@@ -27,6 +27,8 @@ Bat-Toolbox is a collection of Windows batch scripts and PowerShell utilities fo
 ├── CONTRIBUTING.md          # Contribution guidelines
 ├── SECURITY.md              # Security policy
 ├── AUDIT_REPORT.md          # Software audit findings
+├── CLAUDE.md                # AI assistant guidelines
+├── .gitignore               # Git ignore rules
 └── LICENSE                  # CC0 1.0 Universal
 ```
 
@@ -43,7 +45,9 @@ No compilation needed. Scripts are run directly:
 2. Select "Run as administrator" (most scripts require admin)
 3. Follow the confirmation prompts
 
-Scripts that do NOT require admin: `BrightnessDiagnostic.bat`, `ExportInstalledPrograms.bat`, `FileSorter.bat`, `FirmwareCheck.bat`, `Honeypot.bat`, `RestoreRecycleBin.bat`, `ScreenSleepGuard.bat`
+Scripts that do NOT require admin: `ExportInstalledPrograms.bat`, `FileSorter.bat`, `FirmwareCheck.bat`, `Honeypot.bat`, `RestoreRecycleBin.bat`, `ScreenSleepGuard.bat`
+
+Scripts with partial admin requirements: `BrightnessDiagnostic.bat` (diagnostic features work without admin, but fixes require admin)
 
 ## Code Conventions
 
@@ -115,10 +119,11 @@ No automated test framework. Manual testing approach:
 
 | Category | Scripts | Purpose |
 |----------|---------|---------|
-| Diagnostic | `StartupAnalyzer.bat`, `ProcessScanner.bat`, `ServiceAnalyzer.bat`, `FirmwareCheck.bat` | Analyze system state |
+| Diagnostic | `StartupAnalyzer.bat`, `ProcessScanner.bat`, `ServiceAnalyzer.bat`, `FirmwareCheck.bat`, `BrightnessDiagnostic.bat` | Analyze system state |
 | Performance | `StorageLatencyTuning.bat`, `InterruptLatencyTuning.bat`, `GPUDriverOptimizer.bat` | Optimize system performance |
-| Debloat | `RemoveNvidiaBloat.bat`, `RemoveAsusBloat.bat`, `windows-debloat/` suite | Remove bloatware |
-| Utilities | `FileSorter.bat`, `ExportInstalledPrograms.bat`, `NetworkReset.bat` | General utilities |
+| Debloat | `RemoveNvidiaBloat.bat`, `RemoveAsusBloat.bat`, `RemoveEOSNotification.bat`, `windows-debloat/` suite | Remove bloatware |
+| Maintenance | `WindowsTweaks.bat`, `NetworkReset.bat`, `RestoreRecycleBin.bat` | Fix issues, customize Windows |
+| Utilities | `FileSorter.bat`, `ExportInstalledPrograms.bat`, `Honeypot.bat`, `ScreenSleepGuard.bat` | Backup, organize, security |
 
 ## Documentation Requirements
 
