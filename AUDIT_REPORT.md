@@ -116,18 +116,21 @@ del "%TEMP%\bat-toolbox-*.ps1" 2>nul
 
 #### 3.3 ScreenSleepGuard.bat references .ps1 that must be co-located
 
-**Location:** `ScreenSleepGuard.bat` (file referenced but not found in review), `ScreenSleepGuard.ps1`
+**Location:** `ScreenSleepGuard.bat:6-13`, `ScreenSleepGuard.ps1`
 
-**Issue:** The documentation states a companion `.ps1` file is required, but there's no validation in the script to check if it exists before execution.
-
-**Recommendation:** Add existence check at script start:
+**Issue:** N/A — The script already includes a proper existence check for its companion `.ps1` file before execution:
 ```batch
 if not exist "%~dp0ScreenSleepGuard.ps1" (
-    echo ERROR: ScreenSleepGuard.ps1 not found in the same directory
+    color 0C
+    echo ERROR: ScreenSleepGuard.ps1 not found in the same directory as this script.
+    echo Please ensure both files are in the same folder.
+    echo.
     pause
     exit /b 1
 )
 ```
+
+**Status:** Already addressed. No action needed.
 
 ---
 
@@ -180,9 +183,11 @@ The codebase was thoroughly reviewed for:
 | InterruptLatencyTuning.bat | DPC/ISR latency reduction | Well-researched optimizations |
 | NetworkReset.bat | Network stack reset | Standard troubleshooting steps |
 | ProcessScanner.bat | Identify bloatware processes | Comprehensive detection |
+| RemoveAsusBloat.bat | Remove ASUS bloatware | Thorough removal with interactive options |
 | RemoveEOSNotification.bat | Remove Win10 EOS notification | Effective and targeted |
 | RemoveNvidiaBloat.bat | Remove NVIDIA bloatware | Thorough removal process |
 | RestoreRecycleBin.bat | Restore Recycle Bin icon | Simple and effective |
+| ScreenSleepGuard.bat | Monitor lock with key-based unlock | Functions as intended, proper .ps1 validation |
 | ServiceAnalyzer.bat | Analyze unnecessary services | Good categorization |
 | StartupAnalyzer.bat | Categorize startup programs | Extensive pattern matching |
 | StorageLatencyTuning.bat | NVMe/SSD optimization | Well-researched settings |
@@ -209,9 +214,7 @@ The main README is **accurate and comprehensive**:
 
 ### Minor Documentation Issues
 
-1. **ScreenSleepGuard.bat README reference**: Documentation mentions a `*_README.txt` for each script, but some may be missing.
-
-2. **License section**: States "Use at your own risk" which is appropriate, but the actual LICENSE file shows CC0 1.0 Universal - these should be consistent.
+1. **License section**: The README states "Use at your own risk" which is appropriate as a disclaimer, alongside the CC0 1.0 Universal LICENSE file. These serve different purposes (disclaimer vs. copyright license) and are not contradictory.
 
 ---
 
