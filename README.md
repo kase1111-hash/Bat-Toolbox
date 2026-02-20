@@ -25,6 +25,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 | Category | Scripts | What They Fix |
 |----------|---------|---------------|
 | **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck, BrightnessDiagnostic | Find what's slowing you down |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
@@ -89,6 +90,37 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 ---
 
 ## Main Scripts
+
+### DisableWindowsUpdate.bat
+
+**Purpose:** Disables Windows Update and silences all update-related notifications, warnings, and restart prompts. Includes a full restore option to re-enable everything.
+
+**Menu options:**
+```
+[1] Disable Windows Update (Full)
+[2] Restore Windows Update (Undo All Changes)
+[0] Exit
+```
+
+**What it disables:**
+| Category | Details |
+|----------|---------|
+| Services | Windows Update, Update Medic, Update Orchestrator, BITS, Delivery Optimization |
+| Tasks | All WindowsUpdate, UpdateOrchestrator, and WaaSMedic scheduled tasks |
+| Notifications | Toast notifications, restart warnings, Action Center badges, system tray balloons |
+| Policies | Automatic updates, driver delivery, OS upgrade prompts, recommended updates |
+
+**Key features:**
+- Disables Windows Update Medic service (prevents Windows from re-enabling updates)
+- Locks service Start values via registry to survive OS re-enable attempts
+- Defers feature and quality updates by 365 days as a fallback
+- Full restore option reverses all changes
+
+**Warning:** With updates disabled, your system will not receive security patches. Consider periodically re-enabling updates for critical patches.
+
+**Admin required:** Yes
+
+---
 
 ### BrightnessDiagnostic.bat
 
@@ -709,6 +741,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | Script | Admin Required |
 |--------|----------------|
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
+| DisableWindowsUpdate.bat | Yes |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
