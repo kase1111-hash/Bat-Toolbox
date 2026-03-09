@@ -28,6 +28,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck, BrightnessDiagnostic | Find what's slowing you down |
+| **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
 | **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
 
@@ -90,6 +91,48 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 ---
 
 ## Main Scripts
+
+### BatteryChargeLimit.bat
+
+**Purpose:** Sets the maximum battery charge threshold on supported laptops to extend battery lifespan.
+
+**Menu options:**
+```
+[1] Set charge limit to 50%   (Maximum longevity)
+[2] Set charge limit to 80%   (Recommended balance)
+[3] Set charge limit to 90%   (Slight protection)
+[4] Set charge limit to 100%  (No limit - full charge)
+[5] View current battery status
+[6] Detect supported method
+[0] Exit
+```
+
+**Supported manufacturers:**
+| Manufacturer | Method |
+|-------------|--------|
+| Lenovo | Energy Management WMI / registry |
+| ASUS | ATK ACPI WMI / Battery Health Charging |
+| Microsoft Surface | UEFI Battery Limit registry |
+| HP | Instrumented BIOS WMI / Battery Health Manager |
+| Dell | DCIM WMI / Dell Command Configure (CCTK) |
+| Huawei | PC Manager registry |
+| Samsung | Battery Life Extender WMI |
+| LG | Control Center registry |
+| MSI | MSI WMI interface |
+| Razer | Synapse 3 registry |
+| Toshiba/Dynabook | ACPI eco Charge WMI |
+
+**Features:**
+- Auto-detects laptop manufacturer and applies the correct method
+- Multiple fallback methods per manufacturer (WMI, registry, CLI tools)
+- Battery health and status viewer with design vs. current capacity
+- Interface detection scan to verify compatibility before applying
+
+**Note:** Most manufacturers require their companion software/driver to be installed (e.g., Lenovo Vantage, MyASUS, Dell Command | Power Manager).
+
+**Admin required:** Yes
+
+---
 
 ### DisableWindowsUpdate.bat
 
@@ -740,6 +783,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 
 | Script | Admin Required |
 |--------|----------------|
+| BatteryChargeLimit.bat | Yes |
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
 | DisableWindowsUpdate.bat | Yes |
 | ExportInstalledPrograms.bat | No |
