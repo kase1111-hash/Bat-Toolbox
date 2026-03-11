@@ -5,7 +5,9 @@
 DESCRIPTION
 -----------
 Removes ASUS pre-installed bloatware from ASUS laptops, desktops, and
-motherboards while keeping essential hardware drivers intact.
+motherboards while keeping essential hardware drivers intact. Also disables
+ASUS auto-reinstallers and update agents to prevent removed software from
+coming back.
 
 
 HOW TO USE
@@ -61,8 +63,20 @@ ASUS Software:
   - ASUS HiPost
   - ASUS Product Register
   - ASUS Instant Connect
+  - ASUS Console / Tutor / Screen Saver
+  - ASUS GlideX
+  - ASUS ScreenXpert
+  - ASUS Link (Near/Remote)
   - Nahimic audio software
   - (Optional) Armoury Crate, Aura Sync, ROG software
+
+Auto-Reinstallers (blocked):
+  - ASUS Software Manager and its agent
+  - ASUS Live Update auto-updater
+  - ASUS Download Agent
+  - ASUS Update Check service
+  - All ASUS scheduled tasks that trigger reinstallation
+  - ASUS installer cache and promotion directories
 
 Bundled Third-Party Software:
   - McAfee (antivirus trial)
@@ -70,6 +84,7 @@ Bundled Third-Party Software:
   - WinZip (trial)
   - ExpressVPN (trial)
   - Dropbox
+  - Spotify (if bundled)
 
 
 WHAT STAYS INTACT
@@ -101,6 +116,11 @@ Option 3: Reinstall All ASUS Software
   2. Enter your product model
   3. Download desired utilities from the Drivers & Tools section
 
+To re-enable ASUS auto-updates (if needed):
+  1. Reinstall ASUS Software Manager from your model's support page
+  2. The script sets registry keys to disable auto-install; reinstalling
+     the software will restore these settings
+
 
 IF YOU REMOVED ARMOURY CRATE
 ----------------------------
@@ -129,9 +149,24 @@ If McAfee wasn't fully removed, use the official removal tool:
   3. Restart your computer
 
 
+PREVENTING RE-INSTALLATION
+--------------------------
+This script blocks known ASUS auto-reinstall mechanisms including:
+  - ASUS Software Manager service and scheduled tasks
+  - ASUS Live Update service
+  - ASUS Download Agent
+  - Update check registry entries
+  - Installer staging/cache directories
+
+If ASUS software still returns after a Windows feature update:
+  1. Run this script again after the update completes
+  2. Windows feature updates can restore provisioned AppX packages;
+     the script removes provisioning to prevent this where possible
+
+
 NOTES
 -----
-- Some ASUS software may reinstall after Windows updates
+- Some ASUS software may reinstall after major Windows feature updates
 - Run this script again if bloatware returns
 - Removing AI Suite won't affect CPU/RAM overclocking in BIOS
 - BIOS updates can still be done manually via EZ Flash
