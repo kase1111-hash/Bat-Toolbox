@@ -23,25 +23,25 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Open Port Scanner%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %YELLOW%[WARNING] Running without admin. Some process names may show as "Unknown".%RESET%
     echo %YELLOW%For full results, right-click and select "Run as administrator".%RESET%
-    echo(
+    echo/
 )
 
 echo This script scans all listening ports on your system and flags
 echo suspicious or unexpected services.
-echo(
+echo/
 echo %YELLOW%This is a read-only audit. No changes will be made.%RESET%
-echo(
+echo/
 
 set /p "confirm=Start the port scan? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo(
+    echo/
     echo Operation cancelled.
     pause
     exit /b 0
@@ -51,14 +51,14 @@ if /i not "%confirm%"=="Y" (
 for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
 set "REPORT=%USERPROFILE%\Desktop\PortScan_%COMPUTERNAME%_%dt:~0,8%.txt"
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Scanning Listening Ports%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [1/4] Gathering all listening TCP ports...
-echo(
+echo/
 
 :: Header
 echo %WHITE%  PROTO  LOCAL ADDRESS                PORT    PID     PROCESS              STATUS%RESET%
@@ -71,7 +71,7 @@ echo  Open Port Scanner Report
 echo  Computer: %COMPUTERNAME%
 echo  Date: %dt:~0,4%-%dt:~4,2%-%dt:~6,2% %dt:~8,2%:%dt:~10,2%:%dt:~12,2%
 echo ============================================================================
-echo(
+echo/
 echo PROTO  LOCAL ADDRESS                PORT    PID     PROCESS              STATUS
 echo -----  ---------------------------  ------  ------  -------------------  --------
 ) > "%REPORT%"
@@ -87,7 +87,7 @@ set "PSSCRIPT=%TEMP%\portscan.ps1"
 (
 echo # Get all listening TCP connections with process info
 echo $listeners = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue ^| Sort-Object LocalPort
-echo(
+echo/
 echo # Known suspicious ports
 echo $suspiciousPorts = @{
 echo     4444 = 'Metasploit/Meterpreter default'
@@ -121,7 +121,7 @@ echo     9200 = 'Elasticsearch ^(check exposure^)'
 echo     2375 = 'Docker unencrypted API'
 echo     2376 = 'Docker TLS API'
 echo }
-echo(
+echo/
 echo # Known safe system ports
 echo $safePorts = @{
 echo     135 = 'Windows RPC'
@@ -137,29 +137,29 @@ echo     49668 = 'Windows Dynamic RPC'
 echo     49669 = 'Windows Dynamic RPC'
 echo     49670 = 'Windows Dynamic RPC'
 echo }
-echo(
+echo/
 echo $totalPorts = 0
 echo $suspiciousCount = 0
 echo $wildcardCount = 0
 echo $highRiskCount = 0
 echo $results = @(^)
-echo(
+echo/
 echo foreach ^($conn in $listeners^) {
 echo     $totalPorts++
 echo     $port = $conn.LocalPort
 echo     $addr = $conn.LocalAddress
 echo     $pid = $conn.OwningProcess
 echo     $procName = 'Unknown'
-echo(
+echo/
 echo     try {
 echo         $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
-echo(
+echo/
 echo     $status = 'OK'
 echo     $color = 'Green'
 echo     $isWildcard = ^($addr -eq '0.0.0.0' -or $addr -eq '::'^)
-echo(
+echo/
 echo     # Check suspicious ports
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
 echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
@@ -176,15 +176,15 @@ echo         $status = 'WILDCARD - exposed on all interfaces'
 echo         $color = 'Yellow'
 echo         $wildcardCount++
 echo     }
-echo(
+echo/
 echo     if ^($isWildcard^) {
 echo         $addrDisplay = if ^($addr -eq '::'^) { '[::]' } else { $addr }
 echo     } else {
 echo         $addrDisplay = $addr
 echo     }
-echo(
+echo/
 echo     $fullAddr = "${addrDisplay}:${port}"
-echo(
+echo/
 echo     $obj = [PSCustomObject]@{
 echo         Proto = 'TCP'
 echo         Address = $fullAddr
@@ -195,41 +195,41 @@ echo         Status = $status
 echo         Color = $color
 echo     }
 echo     $results += $obj
-echo(
+echo/
 echo     # Console output with color
 echo     $portStr = $port.ToString^(^).PadRight^(8^)
 echo     $pidStr = $pid.ToString^(^).PadRight^(8^)
 echo     $procStr = $procName.PadRight^(21^)
 echo     $addrStr = $fullAddr.PadRight^(29^)
-echo(
+echo/
 echo     switch ^($color^) {
 echo         'Red'    { Write-Host "  TCP    $addrStr $portStr $pidStr $procStr " -NoNewline; Write-Host "$status" -ForegroundColor Red }
 echo         'Yellow' { Write-Host "  TCP    $addrStr $portStr $pidStr $procStr " -NoNewline; Write-Host "$status" -ForegroundColor Yellow }
 echo         'Green'  { Write-Host "  TCP    $addrStr $portStr $pidStr $procStr $status" }
 echo     }
 echo }
-echo(
+echo/
 echo # Also check UDP listeners
 echo Write-Host ""
 echo Write-Host "  Scanning UDP listeners..." -ForegroundColor Cyan
 echo Write-Host ""
-echo(
+echo/
 echo $udpListeners = Get-NetUDPEndpoint -ErrorAction SilentlyContinue ^| Sort-Object LocalPort
 echo foreach ^($udp in $udpListeners^) {
 echo     $port = $udp.LocalPort
 echo     $addr = $udp.LocalAddress
 echo     $pid = $udp.OwningProcess
 echo     $procName = 'Unknown'
-echo(
+echo/
 echo     try {
 echo         $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
-echo(
+echo/
 echo     $isWildcard = ^($addr -eq '0.0.0.0' -or $addr -eq '::'^)
 echo     $status = 'OK'
 echo     $color = 'Green'
-echo(
+echo/
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
 echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
 echo         $color = 'Red'
@@ -240,22 +240,22 @@ echo         $status = 'WILDCARD - exposed on all interfaces'
 echo         $color = 'Yellow'
 echo         $wildcardCount++
 echo     }
-echo(
+echo/
 echo     $addrDisplay = if ^($addr -eq '::'^) { '[::]' } else { $addr }
 echo     $fullAddr = "${addrDisplay}:${port}"
 echo     $portStr = $port.ToString^(^).PadRight^(8^)
 echo     $pidStr = $pid.ToString^(^).PadRight^(8^)
 echo     $procStr = $procName.PadRight^(21^)
 echo     $addrStr = $fullAddr.PadRight^(29^)
-echo(
+echo/
 echo     $totalPorts++
-echo(
+echo/
 echo     switch ^($color^) {
 echo         'Red'    { Write-Host "  UDP    $addrStr $portStr $pidStr $procStr " -NoNewline; Write-Host "$status" -ForegroundColor Red }
 echo         'Yellow' { Write-Host "  UDP    $addrStr $portStr $pidStr $procStr " -NoNewline; Write-Host "$status" -ForegroundColor Yellow }
 echo         'Green'  { Write-Host "  UDP    $addrStr $portStr $pidStr $procStr $status" }
 echo     }
-echo(
+echo/
 echo     $obj = [PSCustomObject]@{
 echo         Proto = 'UDP'
 echo         Address = $fullAddr
@@ -267,13 +267,13 @@ echo         Color = $color
 echo     }
 echo     $results += $obj
 echo }
-echo(
+echo/
 echo # Write summary counts to temp file for batch script to read
 echo "$totalPorts" ^| Out-File -FilePath "$env:TEMP\portscan_total.txt" -Encoding ascii
 echo "$suspiciousCount" ^| Out-File -FilePath "$env:TEMP\portscan_suspicious.txt" -Encoding ascii
 echo "$wildcardCount" ^| Out-File -FilePath "$env:TEMP\portscan_wildcard.txt" -Encoding ascii
 echo "$highRiskCount" ^| Out-File -FilePath "$env:TEMP\portscan_highrisk.txt" -Encoding ascii
-echo(
+echo/
 echo # Write full results to report
 echo $results ^| ForEach-Object {
 echo     $line = "$^($_.Proto.PadRight^(7^)^)$^($_.Address.PadRight^(29^)^)$^($_.Port.ToString^(^).PadRight^(8^)^)$^($_.PID.ToString^(^).PadRight^(8^)^)$^($_.Process.PadRight^(21^)^)$^($_.Status^)"
@@ -314,16 +314,16 @@ if exist "%TEMP%\portscan_highrisk.txt" (
 
 del "%PSSCRIPT%" 2>nul
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Checking Windows Firewall Status%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [2/4] Checking firewall profile status...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  FIREWALL STATUS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -339,16 +339,16 @@ for %%P in (Domain Standard Public) do (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: Checking Remote Access Services%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [3/4] Checking remote access configuration...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  REMOTE ACCESS STATUS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -397,16 +397,16 @@ if not errorlevel 1 (
     echo [OK] Telnet Server is not running>> "%REPORT%"
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Established Connections Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [4/4] Checking established outbound connections...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  ESTABLISHED CONNECTIONS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -435,11 +435,11 @@ echo }
 powershell -ExecutionPolicy Bypass -File "%PSESTABLISHED%" 2>nul >> "%REPORT%"
 del "%PSESTABLISHED%" 2>nul
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 :: Trim whitespace from counts
 for /f "tokens=* delims= " %%a in ("!totalPorts!") do set "totalPorts=%%a"
@@ -451,9 +451,9 @@ echo   Total listening ports:    %totalPorts%
 echo   Suspicious ports:         %suspiciousPorts%
 echo   Wildcard listeners:       %wildcardPorts%
 echo   High-risk ports:          %highRiskPorts%
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  SUMMARY) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -469,37 +469,37 @@ if not "!highRiskPorts!"=="0" (
     echo %RED%[CRITICAL] High-risk ports detected! These are commonly used by malware.%RESET%
     echo %RED%           Investigate the processes immediately.%RESET%
     set "assessment=CRITICAL"
-    echo(>> "%REPORT%"
+    echo/>> "%REPORT%"
     echo ASSESSMENT: CRITICAL - High-risk ports detected>> "%REPORT%"
 ) else if not "!suspiciousPorts!"=="0" (
     echo %YELLOW%[WARNING] Suspicious ports detected. Verify these are intentional.%RESET%
     set "assessment=WARNING"
-    echo(>> "%REPORT%"
+    echo/>> "%REPORT%"
     echo ASSESSMENT: WARNING - Suspicious ports found, verify intentional>> "%REPORT%"
 ) else if not "!wildcardPorts!"=="0" (
     echo %YELLOW%[INFO] Some services are listening on all interfaces ^(0.0.0.0^).%RESET%
     echo %YELLOW%       This is normal for some services but verify they are expected.%RESET%
     set "assessment=INFO"
-    echo(>> "%REPORT%"
+    echo/>> "%REPORT%"
     echo ASSESSMENT: INFO - Wildcard listeners found, verify expected>> "%REPORT%"
 ) else (
     echo %GREEN%[OK] No suspicious ports detected. System looks clean.%RESET%
-    echo(>> "%REPORT%"
+    echo/>> "%REPORT%"
     echo ASSESSMENT: CLEAN - No suspicious ports detected>> "%REPORT%"
 )
 
-echo(
+echo/
 echo %YELLOW%RECOMMENDATIONS:%RESET%
 echo  - Investigate any SUSPICIOUS or HIGH RISK entries
 echo  - Ensure wildcard listeners ^(0.0.0.0^) are intentional
 echo  - Disable RDP/SSH/WinRM if not actively used
 echo  - Keep Windows Firewall enabled on all profiles
 echo  - Run this scan periodically or after installing new software
-echo(
+echo/
 echo Report saved to: %REPORT%
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo RECOMMENDATIONS:) >> "%REPORT%"
 (echo  - Investigate any SUSPICIOUS or HIGH RISK entries) >> "%REPORT%"
 (echo  - Ensure wildcard listeners are intentional) >> "%REPORT%"

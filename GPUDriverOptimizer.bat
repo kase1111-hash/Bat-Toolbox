@@ -32,11 +32,11 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%          GPU DRIVER OPTIMIZER%RESET%
 echo %WHITE%     Performance Profiles ^& Latency Tuning%RESET%
 echo %CYAN%============================================================%RESET%
-echo(
+echo/
 
 :: Detect GPU
 echo %YELLOW%Detecting GPU(s)...%RESET%
-echo(
+echo/
 
 set "has_nvidia=0"
 set "has_amd=0"
@@ -59,7 +59,7 @@ if "%has_nvidia%"=="0" if "%has_amd%"=="0" if "%has_intel%"=="0" (
     exit /b 1
 )
 
-echo(
+echo/
 echo %WHITE%This script optimizes:%RESET%
 echo   - Power management (max performance)
 echo   - Shader cache behavior
@@ -67,16 +67,16 @@ echo   - Low latency modes
 echo   - Frame pacing and V-Sync
 echo   - Texture filtering quality
 echo   - Driver heuristics
-echo(
+echo/
 echo %YELLOW%Impact: Depends heavily on workload%RESET%
 echo   - Competitive gaming: Major improvement (latency)
 echo   - Productivity: Moderate (consistent performance)
 echo   - Content creation: Variable (depends on app)
-echo(
+echo/
 
 choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
-    echo(
+    echo/
     echo %CYAN%Creating restore point...%RESET%
     powershell -Command "Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
     if !errorlevel! equ 0 (
@@ -86,31 +86,31 @@ if %errorlevel%==1 (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  SELECT OPTIMIZATION PROFILE%RESET%
 echo %CYAN%============================================================%RESET%
-echo(
+echo/
 echo %WHITE%[1]%RESET% %GREEN%Competitive Gaming%RESET%
 echo     - Lowest latency, disable all smoothing
 echo     - Best for: FPS, fighting games, racing
 echo     - Tradeoff: May have slight visual artifacts
-echo(
+echo/
 echo %WHITE%[2]%RESET% %CYAN%Balanced Gaming%RESET%
 echo     - Low latency with quality textures
 echo     - Best for: Most games, general use
 echo     - Tradeoff: None significant
-echo(
+echo/
 echo %WHITE%[3]%RESET% %MAGENTA%Quality / Content Creation%RESET%
 echo     - Maximum quality, stable frametimes
 echo     - Best for: AAA games, video editing, 3D work
 echo     - Tradeoff: Slightly higher latency
-echo(
+echo/
 echo %WHITE%[4]%RESET% %YELLOW%Power Efficient%RESET%
 echo     - Adaptive performance, lower temps
 echo     - Best for: Laptops, quiet operation
 echo     - Tradeoff: Variable performance
-echo(
+echo/
 
 choice /c 1234 /m "Select profile"
 set "profile=%errorlevel%"
@@ -120,9 +120,9 @@ if "%profile%"=="2" set "profile_name=Balanced Gaming"
 if "%profile%"=="3" set "profile_name=Quality / Content Creation"
 if "%profile%"=="4" set "profile_name=Power Efficient"
 
-echo(
+echo/
 echo %GREEN%Selected: %profile_name%%RESET%
-echo(
+echo/
 
 :: ============================================================
 :: Windows GPU Settings (applies to all GPUs)
@@ -131,7 +131,7 @@ echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 1: Windows GPU Settings%RESET%
 echo %CYAN%============================================================%RESET%
-echo(
+echo/
 
 :: Hardware-accelerated GPU scheduling
 echo %WHITE%[1/4] Hardware-accelerated GPU scheduling...%RESET%
@@ -184,11 +184,11 @@ if "%profile%"=="1" (
 :: ============================================================
 
 if "%has_nvidia%"=="1" (
-    echo(
+    echo/
     echo %CYAN%============================================================%RESET%
     echo %WHITE%  PHASE 2: NVIDIA Driver Optimizations%RESET%
     echo %CYAN%============================================================%RESET%
-    echo(
+    echo/
 
     :: Find NVIDIA profile registry path
     set "nv_path="
@@ -299,11 +299,11 @@ if "%has_nvidia%"=="1" (
     schtasks /change /tn "NvTmRep_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1
     echo %GREEN%   [OK] Telemetry disabled%RESET%
 
-    echo(
+    echo/
     echo %CYAN%NVIDIA Profile Inspector recommended settings:%RESET%
     echo   For advanced per-game profiles, download NVIDIA Profile Inspector
     echo   https://github.com/Orbmu2k/nvidiaProfileInspector
-    echo(
+    echo/
     echo   Key settings to adjust:
     if "%profile%"=="1" (
         echo     - Frame Rate Limiter Mode: Limiter V3
@@ -334,11 +334,11 @@ if "%has_nvidia%"=="1" (
 :: ============================================================
 
 if "%has_amd%"=="1" (
-    echo(
+    echo/
     echo %CYAN%============================================================%RESET%
     echo %WHITE%  PHASE 3: AMD Driver Optimizations%RESET%
     echo %CYAN%============================================================%RESET%
-    echo(
+    echo/
 
     echo %WHITE%[1/12] Radeon Anti-Lag...%RESET%
     if "%profile%"=="1" (
@@ -451,7 +451,7 @@ if "%has_amd%"=="1" (
     schtasks /change /tn "StartDVR" /disable >nul 2>&1
     echo %GREEN%   [OK] Telemetry tasks disabled%RESET%
 
-    echo(
+    echo/
     echo %CYAN%AMD Software recommended settings for %profile_name%:%RESET%
     if "%profile%"=="1" (
         echo   Gaming ^> Graphics:
@@ -493,11 +493,11 @@ if "%has_amd%"=="1" (
 :: ============================================================
 
 if "%has_intel%"=="1" (
-    echo(
+    echo/
     echo %CYAN%============================================================%RESET%
     echo %WHITE%  PHASE 4: Intel Graphics Optimizations%RESET%
     echo %CYAN%============================================================%RESET%
-    echo(
+    echo/
 
     :: Check if it's Intel Arc or integrated
     set "is_arc=0"
@@ -505,7 +505,7 @@ if "%has_intel%"=="1" (
 
     if "%is_arc%"=="1" (
         echo %WHITE%Intel Arc GPU detected%RESET%
-        echo(
+        echo/
 
         echo %WHITE%[1/6] Resizable BAR...%RESET%
         echo %GREEN%   [CHECK] Verify enabled in BIOS ^(critical for Arc performance^)%RESET%
@@ -538,7 +538,7 @@ if "%has_intel%"=="1" (
         echo %GREEN%   [SET] Enabled ^(may improve DX12 performance^)%RESET%
     ) else (
         echo %WHITE%Intel Integrated Graphics detected%RESET%
-        echo(
+        echo/
 
         echo %WHITE%[1/4] Graphics Power Plan...%RESET%
         :: Intel graphics power settings
@@ -576,11 +576,11 @@ if "%has_intel%"=="1" (
 :: Summary and Additional Recommendations
 :: ============================================================
 
-echo(
+echo/
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  ADDITIONAL OPTIMIZATIONS%RESET%
 echo %CYAN%============================================================%RESET%
-echo(
+echo/
 
 echo %WHITE%[1/3] Frame rate limiting...%RESET%
 if "%profile%"=="1" (
@@ -593,14 +593,14 @@ if "%profile%"=="1" (
     echo     - Or use driver FPS limiter ^(NVIDIA/AMD control panel^)
 )
 
-echo(
+echo/
 echo %WHITE%[2/3] Monitor settings...%RESET%
 echo %GREEN%   - Enable highest refresh rate in Windows Display Settings%RESET%
 echo     - Enable G-Sync/FreeSync in monitor OSD
 echo     - Set monitor to "Game" or "Fast" response time mode
 echo     - Consider disabling motion blur reduction if using VRR
 
-echo(
+echo/
 echo %WHITE%[3/3] In-game settings for %profile_name%...%RESET%
 if "%profile%"=="1" (
     echo %GREEN%   Recommended:%RESET%
@@ -630,13 +630,13 @@ if "%profile%"=="1" (
     echo     - Prefer integrated GPU when possible
 )
 
-echo(
+echo/
 echo %CYAN%============================================================%RESET%
 echo %WHITE%                OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
-echo(
+echo/
 echo %GREEN%GPU driver profile "%profile_name%" applied!%RESET%
-echo(
+echo/
 echo %WHITE%Changes applied:%RESET%
 echo   [+] Windows GPU scheduling configured
 echo   [+] Game Mode settings adjusted
@@ -644,7 +644,7 @@ echo   [+] Fullscreen optimization settings applied
 if "%has_nvidia%"=="1" echo   [+] NVIDIA power and telemetry settings
 if "%has_amd%"=="1" echo   [+] AMD ULPS and telemetry settings
 if "%has_intel%"=="1" echo   [+] Intel graphics power settings
-echo(
+echo/
 echo %YELLOW%Manual steps required:%RESET%
 echo   1. Open your GPU control panel to verify/adjust settings
 if "%has_nvidia%"=="1" echo      - NVIDIA Control Panel ^> Manage 3D Settings
@@ -652,7 +652,7 @@ if "%has_amd%"=="1" echo      - AMD Software ^> Gaming ^> Graphics
 if "%has_intel%"=="1" echo      - Intel Graphics Command Center / Arc Control
 echo   2. Restart your computer to apply all changes
 echo   3. Test with your games and adjust as needed
-echo(
+echo/
 
 choice /c YN /m "Would you like to open the GPU control panel now"
 if %errorlevel%==1 (
@@ -668,14 +668,14 @@ if %errorlevel%==1 (
     )
 )
 
-echo(
+echo/
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
-    echo(
+    echo/
     echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
     shutdown /r /t 10 /c "Restarting to apply GPU driver optimizations"
 )
 
-echo(
+echo/
 pause
 exit /b 0

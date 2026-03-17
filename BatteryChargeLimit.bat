@@ -46,33 +46,33 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                      BATTERY CHARGE LIMIT%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo   %WHITE%Manufacturer:%RESET% %manufacturer%
 echo   %WHITE%Model:%RESET%        %model%
-echo(
+echo/
 
 if "%hasBattery%"=="0" (
     echo   %RED%[WARNING] No battery detected. This tool is for laptops only.%RESET%
-    echo(
+    echo/
 )
 
 echo   Set the maximum battery charge level to extend battery lifespan.
 echo   Keeping the charge between 50-80%% can significantly reduce
 echo   long-term battery degradation.
-echo(
+echo/
 echo %CYAN%----------------------------------------------------------------------------%RESET%
-echo(
+echo/
 echo   %WHITE%[1]%RESET% Set charge limit to %GREEN%50%%%RESET%    (Maximum longevity)
 echo   %WHITE%[2]%RESET% Set charge limit to %GREEN%80%%%RESET%    (Recommended balance)
 echo   %WHITE%[3]%RESET% Set charge limit to %YELLOW%90%%%RESET%    (Slight protection)
 echo   %WHITE%[4]%RESET% Set charge limit to %RED%100%%%RESET%   (No limit - full charge)
-echo(
+echo/
 echo   %WHITE%[5]%RESET% View current battery status
 echo   %WHITE%[6]%RESET% Detect supported method
 echo   %WHITE%[0]%RESET% Exit
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 set /p "choice=Select an option [0-6]: "
 
 if "%choice%"=="1" (
@@ -104,10 +104,10 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                    CONFIRM CHARGE LIMIT CHANGE%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo   %WHITE%New charge limit:%RESET% %limit%%%
 echo   %WHITE%Manufacturer:%RESET%    %manufacturer%
-echo(
+echo/
 
 if "%limit%"=="100" (
     echo   %YELLOW%This removes any charge limit. Your battery will charge to full.%RESET%
@@ -115,10 +115,10 @@ if "%limit%"=="100" (
     echo   %GREEN%Limiting charge to %limit%%% helps extend battery lifespan.%RESET%
 )
 
-echo(
+echo/
 choice /c YN /m "Apply this charge limit"
 if %errorlevel%==2 goto MAIN_MENU
-echo(
+echo/
 
 goto SET_LIMIT
 
@@ -148,7 +148,7 @@ goto SET_FALLBACK
 :: ============================================================================
 :SET_LENOVO
 echo %CYAN%[Lenovo]%RESET% Applying charge limit via Lenovo Energy Management...
-echo(
+echo/
 
 :: Lenovo uses HKLM\SOFTWARE\Lenovo\PWRMGRV\ConfKeys\Data and WMI
 :: The Lenovo Vantage/PWRMGR driver exposes a WMI interface
@@ -189,7 +189,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_ASUS
 echo %CYAN%[ASUS]%RESET% Applying charge limit via ASUS Battery Health Charging...
-echo(
+echo/
 
 :: ASUS uses the ATKACPI WMI interface (device ID 0x00120057)
 :: Values: 0=Full(100%), 1=Balanced(80%), 2=Maximum Lifespan(60%)
@@ -233,7 +233,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_SURFACE
 echo %CYAN%[Surface]%RESET% Applying charge limit via Surface UEFI...
-echo(
+echo/
 
 :: Surface devices use a registry key read by the firmware
 if "%limit%"=="100" (
@@ -260,7 +260,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_HP
 echo %CYAN%[HP]%RESET% Applying charge limit via HP Battery Health Manager...
-echo(
+echo/
 
 :: HP uses a BIOS/WMI interface via HP_BIOSSetting
 :: HP Battery Health Manager values: Let HP Manage, Maximize Health, Let User Decide
@@ -306,7 +306,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_DELL
 echo %CYAN%[Dell]%RESET% Applying charge limit via Dell thermal management...
-echo(
+echo/
 
 :: Dell uses SMBIOS/WMI through Dell Command | Power Manager
 :: The smbios-thermal-ctl interface or WMI class Dell_SMBIOSBatteryChargeConfiguration
@@ -358,7 +358,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_HUAWEI
 echo %CYAN%[Huawei]%RESET% Applying charge limit via Huawei PC Manager...
-echo(
+echo/
 
 reg add "HKLM\SOFTWARE\Huawei\PCManager\BatteryLife" /v "SmartCharge" /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Huawei\PCManager\BatteryLife" /v "MaxChargeCapacity" /t REG_DWORD /d %limit% /f >nul 2>&1
@@ -377,7 +377,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_SAMSUNG
 echo %CYAN%[Samsung]%RESET% Applying charge limit via Samsung Settings...
-echo(
+echo/
 
 :: Samsung uses the SCCI (Samsung Common Communication Interface) WMI
 powershell -NoProfile -Command ^
@@ -410,7 +410,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_LG
 echo %CYAN%[LG]%RESET% Applying charge limit via LG Control Center...
-echo(
+echo/
 
 reg add "HKLM\SOFTWARE\LG\ControlCenter\BatteryCharge" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
 if %errorlevel%==0 (
@@ -428,7 +428,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_MSI
 echo %CYAN%[MSI]%RESET% Applying charge limit via MSI Center...
-echo(
+echo/
 
 :: MSI uses EC (Embedded Controller) commands through MSI WMI interface
 powershell -NoProfile -Command ^
@@ -454,7 +454,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_RAZER
 echo %CYAN%[Razer]%RESET% Applying charge limit via Razer Synapse...
-echo(
+echo/
 
 reg add "HKLM\SOFTWARE\Razer\Synapse3\BatteryDesktop" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
 if %errorlevel%==0 (
@@ -472,7 +472,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_TOSHIBA
 echo %CYAN%[Toshiba/Dynabook]%RESET% Applying charge limit...
-echo(
+echo/
 
 :: Toshiba uses eco Charge mode via WMI
 powershell -NoProfile -Command ^
@@ -505,7 +505,7 @@ goto SET_FAIL
 :: ============================================================================
 :SET_FALLBACK
 echo %RED%[ERROR] Manufacturer "%manufacturer%" is not directly supported.%RESET%
-echo(
+echo/
 echo %WHITE%The following manufacturers are supported:%RESET%
 echo   - Lenovo (Vantage / Energy Management)
 echo   - ASUS (MyASUS / Battery Health Charging)
@@ -518,12 +518,12 @@ echo   - LG (Control Center)
 echo   - MSI (Center / Dragon Center)
 echo   - Razer (Synapse 3)
 echo   - Toshiba / Dynabook (System Settings)
-echo(
+echo/
 echo %YELLOW%General tips:%RESET%
 echo   1. Check your laptop manufacturer's companion app
 echo   2. Look in BIOS/UEFI settings (usually under Power Management)
 echo   3. Check if your manufacturer provides a WMI/ACPI battery interface
-echo(
+echo/
 pause
 goto MAIN_MENU
 
@@ -531,27 +531,27 @@ goto MAIN_MENU
 :: SUCCESS / FAILURE handlers
 :: ============================================================================
 :SET_SUCCESS
-echo(
+echo/
 echo %CYAN%----------------------------------------------------------------------------%RESET%
 echo %GREEN%  Battery charge limit has been set to %limit%%%.%RESET%
 echo %CYAN%----------------------------------------------------------------------------%RESET%
-echo(
+echo/
 if not "%limit%"=="100" (
     echo %WHITE%How to undo:%RESET%
     echo   Run this script again and select option [4] to restore 100%% charging.
-    echo(
+    echo/
 )
 echo %YELLOW%[NOTE] Some changes may require a reboot or AC adapter reconnection.%RESET%
-echo(
+echo/
 pause
 goto MAIN_MENU
 
 :SET_FAIL
-echo(
+echo/
 echo %CYAN%----------------------------------------------------------------------------%RESET%
 echo %RED%  Failed to set charge limit. See suggestions above.%RESET%
 echo %CYAN%----------------------------------------------------------------------------%RESET%
-echo(
+echo/
 pause
 goto MAIN_MENU
 
@@ -563,7 +563,7 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                      CURRENT BATTERY STATUS%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 powershell -NoProfile -Command ^
     "$bat = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue; " ^
@@ -592,9 +592,9 @@ powershell -NoProfile -Command ^
     "  Write-Host '  No battery detected.' -ForegroundColor Red " ^
     "}"
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 pause
 goto MAIN_MENU
 
@@ -606,12 +606,12 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                 DETECTING SUPPORTED CHARGE LIMIT METHOD%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo   %WHITE%Manufacturer:%RESET% %manufacturer%
 echo   %WHITE%Model:%RESET%        %model%
-echo(
+echo/
 echo %YELLOW%Checking available interfaces...%RESET%
-echo(
+echo/
 
 :: Check each known WMI namespace / registry key
 set "found=0"
@@ -679,10 +679,10 @@ if %errorlevel%==0 (
     echo     %WHITE%[NOT FOUND]%RESET%
 )
 
-echo(
+echo/
 if "%found%"=="0" (
     echo %RED%No supported charge limit interface was detected.%RESET%
-    echo(
+    echo/
     echo %YELLOW%This may mean:%RESET%
     echo   - Your manufacturer's companion software is not installed
     echo   - Your laptop model doesn't expose a WMI/ACPI battery interface
@@ -692,9 +692,9 @@ if "%found%"=="0" (
     echo Use the charge limit options in the main menu to apply changes.
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 pause
 goto MAIN_MENU
 
@@ -702,7 +702,7 @@ goto MAIN_MENU
 :: EXIT
 :: ============================================================================
 :EXIT
-echo(
+echo/
 echo %GREEN%Exiting Battery Charge Limit tool.%RESET%
 endlocal
 exit /b 0

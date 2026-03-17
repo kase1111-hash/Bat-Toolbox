@@ -13,9 +13,9 @@ color 0B
 echo ============================================================================
 echo  Wi-Fi Password Exporter
 echo ============================================================================
-echo(
+echo/
 echo Exports saved Wi-Fi network names and passwords.
-echo(
+echo/
 
 :: Setup colors
 for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
@@ -30,7 +30,7 @@ net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %YELLOW%[NOTE] Running without admin. Some profiles may not show passwords.%RESET%
     echo %YELLOW%       For full access, right-click and "Run as administrator".%RESET%
-    echo(
+    echo/
 )
 
 :: Output file
@@ -38,10 +38,10 @@ set "OUTFILE=%USERPROFILE%\Desktop\WifiPasswords_%COMPUTERNAME%_%DATE:~-4%-%DATE
 
 echo %YELLOW%WARNING: The output file will contain passwords in plain text.%RESET%
 echo          Delete it after use or store it securely.
-echo(
+echo/
 echo Output will be saved to:
 echo   %OUTFILE%
-echo(
+echo/
 
 set /p "CONFIRM=Export Wi-Fi passwords? [Y/N]: "
 if /i not "!CONFIRM!"=="Y" (
@@ -50,9 +50,9 @@ if /i not "!CONFIRM!"=="Y" (
     exit /b 0
 )
 
-echo(
+echo/
 echo %CYAN%Scanning saved Wi-Fi profiles...%RESET%
-echo(
+echo/
 
 :: Initialize output file
 (
@@ -60,12 +60,12 @@ echo ===========================================================================
 echo  Wi-Fi Password Export - %COMPUTERNAME%
 echo  Date: %DATE% %TIME%
 echo ============================================================================
-echo(
+echo/
 echo  WARNING: This file contains passwords in plain text.
 echo  Delete after use or store securely.
-echo(
+echo/
 echo ============================================================================
-echo(
+echo/
 ) > "%OUTFILE%"
 
 :: Get list of all Wi-Fi profiles
@@ -117,7 +117,7 @@ for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /
         echo   Security:   !AUTH!
         echo   Cipher:     !CIPHER!
         echo   Auto-connect: !CONNECTION_MODE!
-        echo(
+        echo/
         ) >> "%OUTFILE%"
     ) else (
         set /a OPEN_COUNT+=1
@@ -126,7 +126,7 @@ for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /
         echo   Network:    !PROFILE!
         echo   Password:   (none - open network)
         echo   Security:   !AUTH!
-        echo(
+        echo/
         ) >> "%OUTFILE%"
     )
 )
@@ -134,23 +134,23 @@ for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /
 :: Handle no profiles found
 if !PROFILE_COUNT! equ 0 (
     echo %RED%[ERROR] No Wi-Fi profiles found.%RESET%
-    echo(
+    echo/
     echo Possible reasons:
     echo   - No Wi-Fi adapter installed
     echo   - Never connected to a Wi-Fi network
     echo   - Profiles were cleared
-    echo(
+    echo/
     del "%OUTFILE%" 2>nul
     pause
     exit /b 1
 )
 
 :: Summary
-echo(
+echo/
 echo ============================================================================
 echo %CYAN% SUMMARY%RESET%
 echo ============================================================================
-echo(
+echo/
 echo   Total profiles found:    !PROFILE_COUNT!
 echo   With saved passwords:    %GREEN%!PASSWORD_COUNT!%RESET%
 echo   Open networks:           !OPEN_COUNT!
@@ -160,21 +160,21 @@ echo   Open networks:           !OPEN_COUNT!
 echo ============================================================================
 echo  SUMMARY
 echo ============================================================================
-echo(
+echo/
 echo   Total profiles:       !PROFILE_COUNT!
 echo   With passwords:       !PASSWORD_COUNT!
 echo   Open networks:        !OPEN_COUNT!
-echo(
+echo/
 echo ============================================================================
 ) >> "%OUTFILE%"
 
-echo(
+echo/
 echo %GREEN%Saved to:%RESET% %OUTFILE%
-echo(
+echo/
 echo %YELLOW%REMINDER: Delete this file after use - it contains plain text passwords.%RESET%
-echo(
+echo/
 echo ============================================================================
 echo  Wi-Fi Password Export Complete
 echo ============================================================================
-echo(
+echo/
 pause

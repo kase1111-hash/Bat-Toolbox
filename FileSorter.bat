@@ -10,12 +10,12 @@ set "scriptname=%~nx0"
 echo ============================================
 echo   FILE SORTER BY TYPE
 echo ============================================
-echo(
+echo/
 echo Base directory: %basedir%
-echo(
+echo/
 echo This will organize all files into folders
 echo named by their file extension.
-echo(
+echo/
 set /p "confirm=Continue? (Y/N): "
 if /i not "%confirm%"=="Y" (
     echo Operation cancelled.
@@ -23,9 +23,9 @@ if /i not "%confirm%"=="Y" (
     exit /b 0
 )
 
-echo(
+echo/
 echo Scanning files...
-echo(
+echo/
 
 set "moved=0"
 set "skipped=0"
@@ -93,14 +93,14 @@ for /r "%basedir%" %%F in (*) do (
     )
 )
 
-echo(
+echo/
 echo ============================================
 echo   COMPLETE
 echo ============================================
-echo(
+echo/
 echo Files moved:   %moved%
 echo Files skipped: %skipped%
 echo Errors:        %errors%
-echo(
+echo/
 echo ============================================
 pause

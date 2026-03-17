@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 title Startup Program Analyzer
 color 0B
+chcp 65001 >nul 2>nul
 
 :: ============================================================================
 :: Startup Program Analyzer
@@ -22,20 +23,20 @@ set "BOLD=%ESC%[1m"
 set "RESET=%ESC%[0m"
 
 cls
-echo(
+echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
 echo   %CYAN%║%RESET%  %BOLD%%WHITE%Startup Program Analyzer%RESET%                                                %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%Categorize startup items: Keep, Optional, or Remove%RESET%                 %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
-echo(
+echo/
 title [1/2] Startup Analyzer - Scanning...
 <nul set /p "=  %CYAN%[%RESET%%WHITE%*%RESET%%CYAN%]%RESET% Scanning startup programs"
 for /l %%i in (1,1,3) do (
     <nul set /p "=."
     timeout /t 0 /nobreak >nul
 )
-echo(
-echo(
+echo/
+echo/
 
 :: Create temp files for categorization
 set "TEMP_ALL=%TEMP%\startup_all.txt"
@@ -51,10 +52,10 @@ del "%TEMP_OPTIONAL%" 2>nul
 del "%TEMP_REMOVE%" 2>nul
 
 :: Clear temp files
-echo( > "%TEMP_ALL%"
-echo( > "%TEMP_KEEP%"
-echo( > "%TEMP_OPTIONAL%"
-echo( > "%TEMP_REMOVE%"
+echo/ > "%TEMP_ALL%"
+echo/ > "%TEMP_KEEP%"
+echo/ > "%TEMP_OPTIONAL%"
+echo/ > "%TEMP_REMOVE%"
 
 :: ============================================================================
 :: Define program categories
@@ -103,7 +104,7 @@ for %%F in ("%ProgramData%\Microsoft\Windows\Start Menu\Programs\Startup\*.lnk" 
 :: Categorize programs using PowerShell for better pattern matching
 :: ============================================================================
 
-echo(
+echo/
 echo Categorizing programs...
 
 :: Create PowerShell script for categorization
@@ -123,7 +124,7 @@ echo     'WavesSvc', 'Waves MaxxAudio',
 echo     'ctfmon', 'SecurityHealth',
 echo     'WindowsDefender', 'Logitech'
 echo ^)
-echo(
+echo/
 echo $removePatterns = @(
 echo     # Bloatware and trials
 echo     'iTunesHelper', 'QuickTime', 'Adobe ARM', 'AcroTray', 'Acrobat Assistant',
@@ -156,7 +157,7 @@ echo     # Known bad actors
 echo     'Segurazo', 'ByteFence', 'SpyHunter', 'Reimage', 'PC Accelerate',
 echo     'MyPC Backup', 'RegClean', 'WinTonic', 'OneSafe', 'TotalAV'
 echo ^)
-echo(
+echo/
 echo $optionalPatterns = @(
 echo     # These are legitimate but not essential at startup
 echo     'Microsoft Office', 'Office Click-to-Run', 'OfficeBackgroundTask',
@@ -175,7 +176,7 @@ echo     'AnyDesk', 'TeamViewer', 'Remote Desktop',
 echo     'Synergy', 'Mouse without Borders', 'Barrier',
 echo     'DisplayFusion', 'UltraMon', 'Actual Multiple Monitors'
 echo ^)
-echo(
+echo/
 echo $optionalDescriptions = @{
 echo     'Office' = 'Microsoft Office background tasks - can slow boot'
 echo     'Printer' = 'Printer software - only needed when printing'
@@ -197,7 +198,7 @@ echo     'AnyDesk' = 'Remote access - security risk if not needed'
 echo     'Adobe' = 'Adobe background services - resource heavy'
 echo     'Creative Cloud' = 'Adobe CC - uses significant resources'
 echo }
-echo(
+echo/
 echo $removeDescriptions = @{
 echo     'iTunes' = 'iTunes Helper - slows boot, launches with iTunes anyway'
 echo     'QuickTime' = 'QuickTime - outdated, security vulnerabilities'
@@ -230,24 +231,24 @@ echo     'Reimage' = 'Scareware - Remove immediately^^!'
 echo     'PC Accelerate' = 'Scareware - Remove immediately^^!'
 echo     'RegClean' = 'Scareware - registry cleaners are unnecessary'
 echo }
-echo(
+echo/
 echo # Read all startup items
 echo $items = Get-Content '%TEMP_ALL%' ^| Where-Object { $_ -match ';' }
-echo(
+echo/
 echo $keepList = @^(^)
 echo $optionalList = @^(^)
 echo $removeList = @^(^)
 echo $unknownList = @^(^)
-echo(
+echo/
 echo foreach ^($item in $items^) {
 echo     $parts = $item -split ';', 3
 echo     if ^($parts.Count -lt 2^) { continue }
 echo     $location = $parts[0]
 echo     $name = $parts[1]
 echo     $path = if ^($parts.Count -gt 2^) { $parts[2] } else { '' }
-echo(
+echo/
 echo     $categorized = $false
-echo(
+echo/
 echo     # Check KEEP patterns
 echo     foreach ^($pattern in $keepPatterns^) {
 echo         if ^($name -match [regex]::Escape^($pattern^) -or $path -match [regex]::Escape^($pattern^)^) {
@@ -257,7 +258,7 @@ echo             break
 echo         }
 echo     }
 echo     if ^($categorized^) { continue }
-echo(
+echo/
 echo     # Check REMOVE patterns
 echo     foreach ^($pattern in $removePatterns^) {
 echo         if ^($name -match [regex]::Escape^($pattern^) -or $path -match [regex]::Escape^($pattern^)^) {
@@ -274,7 +275,7 @@ echo             break
 echo         }
 echo     }
 echo     if ^($categorized^) { continue }
-echo(
+echo/
 echo     # Check OPTIONAL patterns
 echo     foreach ^($pattern in $optionalPatterns^) {
 echo         if ^($name -match [regex]::Escape^($pattern^) -or $path -match [regex]::Escape^($pattern^)^) {
@@ -291,11 +292,11 @@ echo             break
 echo         }
 echo     }
 echo     if ^($categorized^) { continue }
-echo(
+echo/
 echo     # Unknown - add to optional with generic message
 echo     $unknownList += [PSCustomObject]@{Location=$location; Name=$name; Path=$path; Reason='Unknown - research before disabling'}
 echo }
-echo(
+echo/
 echo # Output results
 echo ''
 echo '============================================================================'
@@ -310,7 +311,7 @@ echo         Write-Host "  [OK] $^($item.Name^)" -ForegroundColor Green
 echo         Write-Host "       $^($item.Reason^)" -ForegroundColor DarkGray
 echo     }
 echo }
-echo(
+echo/
 echo ''
 echo '============================================================================'
 echo ' [OPTIONAL] Safe to Disable - Your Choice'
@@ -326,7 +327,7 @@ echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkGray
 echo         $i++
 echo     }
 echo }
-echo(
+echo/
 echo ''
 echo '============================================================================'
 echo ' [UNKNOWN] Not Recognized - Research Before Disabling'
@@ -340,7 +341,7 @@ echo         Write-Host "  [?] $^($item.Name^)" -ForegroundColor Cyan
 echo         Write-Host "      Path: $^($item.Path^)" -ForegroundColor DarkGray
 echo     }
 echo }
-echo(
+echo/
 echo ''
 echo '============================================================================'
 echo ' [REMOVE] Recommended for Removal - Bloatware/Unnecessary'
@@ -356,11 +357,11 @@ echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkYellow
 echo         $i++
 echo     }
 echo }
-echo(
+echo/
 echo # Save remove list for batch file
 echo $removeList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_REMOVE%' -Encoding ASCII
 echo $optionalList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_OPTIONAL%' -Encoding ASCII
-echo(
+echo/
 echo # Output counts
 echo ''
 echo '============================================================================'
@@ -375,15 +376,15 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 set "remove_count=0"
 for /f %%a in ('type "%TEMP_REMOVE%" 2^>nul ^| find /c ";"') do set "remove_count=%%a"
 
-echo(
+echo/
 
 if %remove_count% gtr 0 (
-    echo(
+    echo/
     set /p "doremove=Would you like to disable the [REMOVE] items? [Y/N]: "
     if /i "!doremove!"=="Y" (
-        echo(
+        echo/
         echo Disabling bloatware startup entries...
-        echo(
+        echo/
 
         for /f "tokens=1,2,3 delims=;" %%a in ('type "%TEMP_REMOVE%" 2^>nul') do (
             set "loc=%%a"
@@ -422,7 +423,7 @@ if %remove_count% gtr 0 (
                 echo   [REMOVED] !itemname!
             )
         )
-        echo(
+        echo/
         echo Bloatware startup entries have been disabled.
     )
 )
@@ -432,13 +433,13 @@ set "optional_count=0"
 for /f %%a in ('type "%TEMP_OPTIONAL%" 2^>nul ^| find /c ";"') do set "optional_count=%%a"
 
 if %optional_count% gtr 0 (
-    echo(
+    echo/
     set /p "dooptional=Would you like to review [OPTIONAL] items for removal? [Y/N]: "
     if /i "!dooptional!"=="Y" (
-        echo(
+        echo/
         echo Opening Task Manager for manual review...
         echo Use the Startup tab to disable optional items.
-        echo(
+        echo/
         start taskmgr /0 /startup
     )
 )
@@ -451,7 +452,7 @@ del "%TEMP_OPTIONAL%" 2>nul
 del "%TEMP_REMOVE%" 2>nul
 
 title [2/2] Startup Analyzer - Complete
-echo(
+echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
 echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
@@ -459,7 +460,7 @@ echo   %CYAN%║%RESET%  %DIM%-%RESET% Use Task Manager %DIM%[Ctrl+Shift+Esc]%RE
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Disabled programs can be re-enabled in Task Manager               %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Some changes may require a restart to take effect                  %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
-echo(
+echo/
 
 pause
 exit /b 0

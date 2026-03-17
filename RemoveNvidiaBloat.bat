@@ -14,18 +14,18 @@ color 0A
 echo ============================================================================
 echo  NVIDIA Bloatware Remover
 echo ============================================================================
-echo(
+echo/
 echo This script will remove NVIDIA bloatware while keeping the graphics driver:
-echo(
+echo/
 echo  - GeForce Experience (game optimizer/updater)
 echo  - NVIDIA Telemetry (data collection)
 echo  - NVIDIA Container services
 echo  - NVIDIA NodeJS Backend
 echo  - NVIDIA Web Helper
 echo  - Various NVIDIA scheduled tasks
-echo(
+echo/
 echo Your graphics driver will NOT be affected.
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -33,28 +33,28 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 echo [INFO] Administrator privileges confirmed.
-echo(
+echo/
 
 :: Confirm before proceeding
 set /p "confirm=Do you want to remove NVIDIA bloatware? (Y/N): "
 if /i not "%confirm%"=="Y" (
-    echo(
+    echo/
     echo Operation cancelled by user.
     pause
     exit /b 0
 )
 
-echo(
+echo/
 echo ============================================================================
 echo  Phase 1: Stopping NVIDIA Processes and Services
 echo ============================================================================
-echo(
+echo/
 
 set "success=0"
 set "errors=0"
@@ -84,7 +84,7 @@ echo       - Process termination complete
 set /a success+=1
 
 :: Stop and disable NVIDIA services
-echo(
+echo/
 echo [2/6] Stopping and disabling NVIDIA telemetry/container services...
 
 for %%S in (
@@ -106,11 +106,11 @@ for %%S in (
     )
 )
 
-echo(
+echo/
 echo ============================================================================
 echo  Phase 2: Uninstalling GeForce Experience
 echo ============================================================================
-echo(
+echo/
 
 echo [3/6] Uninstalling GeForce Experience...
 
@@ -141,11 +141,11 @@ if defined GFE_UNINSTALL (
 :: Also try using WMIC
 wmic product where "name like '%%GeForce Experience%%'" call uninstall /nointeractive >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Phase 3: Removing Scheduled Tasks
 echo ============================================================================
-echo(
+echo/
 
 echo [4/6] Removing NVIDIA scheduled tasks...
 
@@ -172,11 +172,11 @@ for %%T in (
 
 echo       - Task cleanup complete
 
-echo(
+echo/
 echo ============================================================================
 echo  Phase 4: Cleaning Up Registry
 echo ============================================================================
-echo(
+echo/
 
 echo [5/6] Removing NVIDIA telemetry registry entries...
 
@@ -195,11 +195,11 @@ reg delete "HKLM\SOFTWARE\NVIDIA Corporation\NvTelemetry" /f >nul 2>&1
 echo       - Registry cleanup complete
 set /a success+=1
 
-echo(
+echo/
 echo ============================================================================
 echo  Phase 5: Removing Leftover Files
 echo ============================================================================
-echo(
+echo/
 
 echo [6/6] Removing NVIDIA bloatware files and folders...
 
@@ -220,13 +220,13 @@ call :RemoveFolder "%ProgramData%\NVIDIA Corporation\GeForce Experience"
 
 echo       - File cleanup complete
 
-echo(
+echo/
 echo ============================================================================
 echo  Summary
 echo ============================================================================
-echo(
+echo/
 echo Successful operations: %success%
-echo(
+echo/
 
 if %success% gtr 5 (
     color 0A
@@ -236,34 +236,34 @@ if %success% gtr 5 (
     echo [INFO] Some items may already have been removed or were not installed.
 )
 
-echo(
+echo/
 echo What was removed:
 echo  - GeForce Experience application
 echo  - NVIDIA telemetry/data collection
 echo  - NVIDIA background services (containers, web helper)
 echo  - NVIDIA scheduled tasks
 echo  - Startup entries
-echo(
+echo/
 echo What remains intact:
 echo  - NVIDIA graphics driver
 echo  - NVIDIA Control Panel
 echo  - Core display functionality
-echo(
+echo/
 echo NOTE: After a driver update, some bloatware may be reinstalled.
 echo       Consider using NVCleanstall for clean driver installations.
-echo(
+echo/
 echo A reboot is recommended to complete the removal process.
-echo(
+echo/
 
 set /p "reboot=Would you like to restart your computer now? (Y/N): "
 if /i "%reboot%"=="Y" (
-    echo(
+    echo/
     echo Restarting computer in 10 seconds...
     echo Press Ctrl+C to cancel.
     shutdown /r /t 10 /c "NVIDIA Bloatware Removal - Restart"
 )
 
-echo(
+echo/
 pause
 exit /b 0
 

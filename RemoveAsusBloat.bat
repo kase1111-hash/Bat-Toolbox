@@ -21,20 +21,20 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% ASUS Bloatware Remover%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 echo This script will remove ASUS bloatware while keeping essential drivers.
-echo(
+echo/
 echo %YELLOW%What will be REMOVED:%RESET%
 echo  - Armoury Crate and ROG software [optional - you choose]
 echo  - MyASUS app
@@ -48,42 +48,42 @@ echo  - ASUS Splendid
 echo  - ASUS GlideX / ScreenXpert / Link
 echo  - ASUS Software Manager and auto-reinstallers
 echo  - Bundled third-party software [McAfee, WinZip, Norton, etc.]
-echo(
+echo/
 echo %GREEN%What will be KEPT:%RESET%
 echo  - Hardware drivers [chipset, audio, network, etc.]
 echo  - BIOS/firmware components
 echo  - Basic system functionality
-echo(
+echo/
 
 :: Confirm before proceeding
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo(
+    echo/
     echo Operation cancelled.
     pause
     exit /b 0
 )
 
 :: Ask about Armoury Crate
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Armoury Crate / ROG Software Decision%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo Armoury Crate controls:
 echo  - RGB lighting [Aura Sync]
 echo  - Fan profiles and performance modes
 echo  - Gaming features [ROG specific]
-echo(
+echo/
 echo %YELLOW%If you use RGB lighting or custom fan profiles, you may want to KEEP it.%RESET%
-echo(
+echo/
 set /p "remove_armoury=Remove Armoury Crate and ROG software? [Y/N]: "
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Stopping ASUS Services and Processes%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [1/8] Terminating ASUS processes...
 
@@ -135,7 +135,7 @@ for %%P in (
 echo       %GREEN%- Process termination complete%RESET%
 
 :: Stop and disable ASUS services
-echo(
+echo/
 echo [2/8] Stopping and disabling ASUS services...
 
 for %%S in (
@@ -171,11 +171,11 @@ for %%S in (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Removing ASUS Applications%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [3/8] Removing ASUS AppX packages...
 
@@ -196,7 +196,7 @@ echo     '*DeviceInformation*',
 echo     '*ASUSPCAssistant*',
 echo     '*ASUSProductRegistration*'
 echo ^)
-echo(
+echo/
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
 echo         Write-Host "       - Removing: $($_.Name)"
@@ -214,7 +214,7 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
 del "%PSSCRIPT%" 2>nul
 
 :: Uninstall using WMIC and standard uninstallers
-echo(
+echo/
 echo [4/8] Removing ASUS desktop applications...
 
 :: AI Suite removal
@@ -263,7 +263,7 @@ wmic product where "name like '%%ASUS System Control%%'" call uninstall /nointer
 
 :: Armoury Crate removal (if user chose to remove it)
 if /i "%remove_armoury%"=="Y" (
-    echo(
+    echo/
     echo       - Removing Armoury Crate and ROG software...
     wmic product where "name like '%%Armoury Crate%%'" call uninstall /nointeractive >nul 2>&1
     wmic product where "name like '%%ARMOURY CRATE%%'" call uninstall /nointeractive >nul 2>&1
@@ -289,11 +289,11 @@ if /i "%remove_armoury%"=="Y" (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: Removing Bundled Third-Party Bloatware%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [5/8] Removing bundled third-party software...
 
@@ -321,11 +321,11 @@ wmic product where "name like '%%Dropbox%%'" call uninstall /nointeractive >nul 
 echo       - Checking Spotify...
 wmic product where "name like '%%Spotify%%'" call uninstall /nointeractive >nul 2>&1
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Removing Scheduled Tasks%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [6/8] Removing ASUS scheduled tasks...
 
@@ -378,11 +378,11 @@ echo }
 powershell -ExecutionPolicy Bypass -File "%PSTASKS%" 2>nul
 del "%PSTASKS%" 2>nul
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 5: Blocking Re-installers and Auto-Updates%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [7/8] Blocking ASUS auto-reinstallation mechanisms...
 
@@ -441,7 +441,7 @@ if exist "%ProgramData%\ASUS\InstallerCache" (
 )
 
 :: Remove startup entries from registry
-echo(
+echo/
 echo       - Cleaning startup entries...
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUS Smart Gesture" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUSWebStorage" /f >nul 2>&1
@@ -469,11 +469,11 @@ if /i "%remove_armoury%"=="Y" (
 
 echo       %GREEN%- Startup cleanup complete%RESET%
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 6: Cleaning Leftover Files%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [8/8] Cleaning leftover folders...
 
@@ -530,13 +530,13 @@ if /i "%remove_armoury%"=="Y" (
     call :CleanFolder "%ProgramData%\ASUS\ROGLiveService"
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo %GREEN%Removal process complete!%RESET%
-echo(
+echo/
 echo What was removed:
 echo  - ASUS utility software and services
 echo  - ASUS scheduled tasks and startup items
@@ -547,30 +547,30 @@ if /i "%remove_armoury%"=="Y" (
 ) else (
     echo  %YELLOW%- [KEPT] Armoury Crate, Aura Sync, and ROG software%RESET%
 )
-echo(
+echo/
 echo What remains:
 echo  - Hardware drivers [chipset, audio, network, Bluetooth]
 echo  - BIOS/UEFI components
 echo  - Basic Windows functionality
-echo(
+echo/
 
 if /i "%remove_armoury%"=="Y" (
     echo %YELLOW%NOTE: RGB lighting will use default settings without Armoury Crate.%RESET%
     echo %YELLOW%      Fan control will use BIOS defaults.%RESET%
-    echo(
+    echo/
 )
 
 echo A reboot is recommended to complete the removal process.
-echo(
+echo/
 
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
-    echo(
+    echo/
     echo Restarting in 10 seconds...
     shutdown /r /t 10 /c "ASUS Bloatware Removal - Restart"
 )
 
-echo(
+echo/
 pause
 exit /b 0
 
