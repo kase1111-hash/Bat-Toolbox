@@ -137,7 +137,7 @@ echo     }
 echo     Add-Line "  Op. Status:     $opStatus"
 echo     Add-Line ""
 echo/
-echo     # Storage Reliability Counters (S.M.A.R.T. equivalent)
+echo     # Storage Reliability Counters ^(S.M.A.R.T. equivalent^)
 echo     $reliability = Get-StorageReliabilityCounter -PhysicalDisk $disk
 echo/
 echo     if ^($reliability^) {
@@ -160,13 +160,13 @@ echo             $hours = $reliability.PowerOnHours
 echo             $days = [math]::Round^($hours / 24, 0^)
 echo             $years = [math]::Round^($hours / 8760, 1^)
 echo             $hourNote = ""
-echo             if ^($hours -ge 35040^) { $hourNote = " (${years} years - consider replacement planning)" }
-echo             elseif ^($hours -ge 17520^) { $hourNote = " (${years} years)" }
-echo             else { $hourNote = " ($days days)" }
+echo             if ^($hours -ge 35040^) { $hourNote = " ^(${years} years - consider replacement planning^)" }
+echo             elseif ^($hours -ge 17520^) { $hourNote = " ^(${years} years^)" }
+echo             else { $hourNote = " ^($days days^)" }
 echo             Add-Line "  Power-On Hours: $hours$hourNote"
 echo         }
 echo/
-echo         # Wear level (SSD specific)
+echo         # Wear level ^(SSD specific^)
 echo         if ^($reliability.Wear -ne $null^) {
 echo             $wear = $reliability.Wear
 echo             $wearColor = "Green"
@@ -212,7 +212,7 @@ echo             }
 echo         }
 echo     } else {
 echo         Add-Line "  --- S.M.A.R.T. data not available for this drive ---"
-echo         Add-Line "  (Some USB drives and virtual disks don't report S.M.A.R.T.)"
+echo         Add-Line "  ^(Some USB drives and virtual disks don't report S.M.A.R.T.^)"
 echo     }
 echo/
 echo     Add-Line ""
@@ -231,7 +231,7 @@ echo                 $spaceColor = "Green"
 echo                 $spaceNote = ""
 echo                 if ^($usedPct -ge 95^) { $spaceColor = "Red"; $spaceNote = " [CRITICAL - Nearly full^^!]"; $warningCount++ }
 echo                 elseif ^($usedPct -ge 90^) { $spaceColor = "Yellow"; $spaceNote = " [Low space]" }
-echo                 Add-ColorLine "  $^($vol.DriveLetter^): $^($vol.FileSystemLabel^) - ${freeGB}GB free / ${totalGB}GB (${usedPct}%% used)${spaceNote}" $spaceColor
+echo                 Add-ColorLine "  $^($vol.DriveLetter^): $^($vol.FileSystemLabel^) - ${freeGB}GB free / ${totalGB}GB ^(${usedPct}%% used^)${spaceNote}" $spaceColor
 echo             }
 echo         }
 echo     }
@@ -240,7 +240,7 @@ echo }
 echo/
 echo # WMIC fallback for additional info
 echo Add-Line "============================================================================"
-echo Add-Line " Additional Drive Information (WMI)"
+echo Add-Line " Additional Drive Information ^(WMI^)"
 echo Add-Line "============================================================================"
 echo Add-Line ""
 echo/

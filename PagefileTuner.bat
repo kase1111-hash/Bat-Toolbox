@@ -94,7 +94,7 @@ echo/
 echo Write-Host "  PHYSICAL MEMORY" -ForegroundColor White
 echo Write-Host "  ---------------"
 echo Write-Host "  Total RAM:         $totalRAM GB"
-echo Write-Host "  Used RAM:          $usedRAM GB ($usedPct%%)"
+echo Write-Host "  Used RAM:          $usedRAM GB ^($usedPct%%^)"
 echo Write-Host "  Free RAM:          $freeRAM GB"
 echo Write-Host ""
 echo/
@@ -112,10 +112,10 @@ echo         $sizeGB = [math]::Round^($sizeMB / 1024, 2^)
 echo         $usedGB = [math]::Round^($usedMB / 1024, 2^)
 echo         $peakGB = [math]::Round^($peakMB / 1024, 2^)
 echo         $usePct = if ^($sizeMB -gt 0^) { [math]::Round^(^($usedMB / $sizeMB^) * 100, 1^) } else { 0 }
-echo         Write-Host "  Location:          $($pf.Name)"
-echo         Write-Host "  Allocated Size:    $sizeGB GB ($sizeMB MB)"
-echo         Write-Host "  Current Usage:     $usedGB GB ($usedMB MB) ($usePct%%)"
-echo         Write-Host "  Peak Usage:        $peakGB GB ($peakMB MB)"
+echo         Write-Host "  Location:          $^($pf.Name^)"
+echo         Write-Host "  Allocated Size:    $sizeGB GB ^($sizeMB MB^)"
+echo         Write-Host "  Current Usage:     $usedGB GB ^($usedMB MB^) ^($usePct%%^)"
+echo         Write-Host "  Peak Usage:        $peakGB GB ^($peakMB MB^)"
 echo     }
 echo } else {
 echo     Write-Host "  No pagefile detected^^!" -ForegroundColor Red
@@ -132,22 +132,22 @@ echo     foreach ^($pfs in $pfSettings^) {
 echo         $initMB = $pfs.InitialSize
 echo         $maxMB = $pfs.MaximumSize
 echo         if ^($initMB -eq 0 -and $maxMB -eq 0^) {
-echo             Write-Host "  $($pfs.Name): System Managed (automatic)" -ForegroundColor Yellow
+echo             Write-Host "  $^($pfs.Name^): System Managed ^(automatic^)" -ForegroundColor Yellow
 echo         } else {
-echo             Write-Host "  $($pfs.Name): Fixed - Initial: $initMB MB, Maximum: $maxMB MB"
+echo             Write-Host "  $^($pfs.Name^): Fixed - Initial: $initMB MB, Maximum: $maxMB MB"
 echo         }
 echo     }
 echo } else {
-echo     Write-Host "  System Managed (automatic)" -ForegroundColor Yellow
+echo     Write-Host "  System Managed ^(automatic^)" -ForegroundColor Yellow
 echo }
 echo Write-Host ""
 echo/
 echo # Check if system managed
 echo $autoManaged = ^(Get-CimInstance Win32_ComputerSystem^).AutomaticManagedPagefile
 echo if ^($autoManaged^) {
-echo     Write-Host "  Management:        Automatic (Windows controlled)" -ForegroundColor Yellow
+echo     Write-Host "  Management:        Automatic ^(Windows controlled^)" -ForegroundColor Yellow
 echo } else {
-echo     Write-Host "  Management:        Manual (user configured)"
+echo     Write-Host "  Management:        Manual ^(user configured^)"
 echo }
 echo Write-Host ""
 echo/
@@ -195,35 +195,35 @@ echo     $recMax = $recMin
 echo     Write-Host "  With $totalRAMint GB RAM, pagefile usage is typically minimal."
 echo     Write-Host "  You could even disable it if you never exceed RAM capacity."
 echo     Write-Host ""
-echo     Write-Host "  Recommended: Fixed $([math]::Round($recMin / 1024, 1)) GB" -ForegroundColor Green
-echo     Write-Host "  (Keeps crash dump support and prevents edge-case OOM)"
+echo     Write-Host "  Recommended: Fixed $^([math]::Round^($recMin / 1024, 1^)^) GB" -ForegroundColor Green
+echo     Write-Host "  ^(Keeps crash dump support and prevents edge-case OOM^)"
 echo } elseif ^($totalRAMint -ge 32^) {
 echo     $recMin = [int]^($totalRAMint * 1024 * 0.5^)
 echo     $recMax = $recMin
 echo     Write-Host "  With $totalRAMint GB RAM, a moderate fixed pagefile is recommended."
 echo     Write-Host ""
-echo     Write-Host "  Recommended: Fixed $([math]::Round($recMin / 1024, 1)) GB" -ForegroundColor Green
+echo     Write-Host "  Recommended: Fixed $^([math]::Round^($recMin / 1024, 1^)^) GB" -ForegroundColor Green
 echo } elseif ^($totalRAMint -ge 16^) {
 echo     $recMin = [int]^($totalRAMint * 1024 * 1.0^)
 echo     $recMax = [int]^($totalRAMint * 1024 * 1.5^)
 echo     Write-Host "  With $totalRAMint GB RAM, a standard pagefile is important."
 echo     Write-Host ""
-echo     Write-Host "  Recommended: Fixed $([math]::Round($recMin / 1024, 1)) GB" -ForegroundColor Green
-echo     Write-Host "  (Or $([math]::Round($recMin / 1024, 1)) - $([math]::Round($recMax / 1024, 1)) GB if you multitask heavily)"
+echo     Write-Host "  Recommended: Fixed $^([math]::Round^($recMin / 1024, 1^)^) GB" -ForegroundColor Green
+echo     Write-Host "  ^(Or $^([math]::Round^($recMin / 1024, 1^)^) - $^([math]::Round^($recMax / 1024, 1^)^) GB if you multitask heavily^)"
 echo } else {
 echo     $recMin = [int]^($totalRAMint * 1024 * 1.5^)
 echo     $recMax = [int]^($totalRAMint * 1024 * 3.0^)
 echo     Write-Host "  With $totalRAMint GB RAM, a large pagefile is essential." -ForegroundColor Yellow
 echo     Write-Host "  Running out of pagefile can cause crashes."
 echo     Write-Host ""
-echo     Write-Host "  Recommended: $([math]::Round($recMin / 1024, 1)) - $([math]::Round($recMax / 1024, 1)) GB" -ForegroundColor Green
+echo     Write-Host "  Recommended: $^([math]::Round^($recMin / 1024, 1^)^) - $^([math]::Round^($recMax / 1024, 1^)^) GB" -ForegroundColor Green
 echo     Write-Host "  Consider upgrading RAM if possible."
 echo }
 echo/
 echo Write-Host ""
 echo Write-Host "  General guidelines:" -ForegroundColor Yellow
-echo Write-Host "   - Fixed size prevents fragmentation (set min = max)"
-echo Write-Host "   - Place pagefile on the fastest drive (NVMe > SSD > HDD)"
+echo Write-Host "   - Fixed size prevents fragmentation ^(set min = max^)"
+echo Write-Host "   - Place pagefile on the fastest drive ^(NVMe ^> SSD ^> HDD^)"
 echo Write-Host "   - If on HDD, a larger pagefile on SSD is much better"
 echo Write-Host "   - Leave at least 10%% free space on the pagefile drive"
 echo Write-Host "   - For crash dumps, pagefile must be >= RAM size on C:"
@@ -284,7 +284,7 @@ echo     $sizeMB = [int]^($totalRAM * 1024 * 1.5^)
 echo }
 echo/
 echo Write-Host "Total RAM: $totalRAM GB"
-echo Write-Host "Recommended pagefile: $([math]::Round($sizeMB / 1024, 1)) GB ($sizeMB MB)"
+echo Write-Host "Recommended pagefile: $^([math]::Round^($sizeMB / 1024, 1^)^) GB ^($sizeMB MB^)"
 echo Write-Host ""
 echo "$sizeMB" ^| Out-File -FilePath "$env:TEMP\pf_size.txt" -Encoding ascii
 echo "$totalRAM" ^| Out-File -FilePath "$env:TEMP\pf_ram.txt" -Encoding ascii

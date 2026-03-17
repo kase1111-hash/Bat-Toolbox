@@ -52,7 +52,7 @@ set "PSSCRIPT=%TEMP%\scan_processes.ps1"
 echo # Process Scanner - Categorizes running processes
 echo/
 echo # Define process categories
-echo $essentialProcesses = @(
+echo $essentialProcesses = @^(
 echo     # Windows Core
 echo     'System', 'smss', 'csrss', 'wininit', 'services', 'lsass', 'svchost',
 echo     'dwm', 'explorer', 'sihost', 'taskhostw', 'RuntimeBroker', 'ShellExperienceHost',

@@ -192,8 +192,8 @@ echo     $_.ClassName -match 'MEDIA^|AudioEndpoint^|Sound'
 echo }
 echo/
 echo if ^($audioDrivers^) {
-echo     Write-Host ("{0,-20} {1,-30} {2,-15} {3}" -f "Class", "Provider", "Version", "Date"^) -ForegroundColor White
-echo     Write-Host ("{0,-20} {1,-30} {2,-15} {3}" -f ("-"*19^), ("-"*29^), ("-"*14^), ("-"*12^)^)
+echo     Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f "Class", "Provider", "Version", "Date"^) -ForegroundColor White
+echo     Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f ^("-"*19^), ^("-"*29^), ^("-"*14^), ^("-"*12^)^)
 echo/
 echo     foreach ^($drv in $audioDrivers ^| Sort-Object ClassName, ProviderName^) {
 echo         $class = $drv.ClassName
@@ -209,7 +209,7 @@ echo         $color = 'White'
 echo         if ^($drv.Date -and $drv.Date -lt ^(Get-Date^).AddYears^(-2^)^) { $color = 'Yellow' }
 echo         if ^($drv.Date -and $drv.Date -lt ^(Get-Date^).AddYears^(-5^)^) { $color = 'Red' }
 echo/
-echo         Write-Host ("{0,-20} {1,-30} {2,-15} {3}" -f $class, $provider, $version, $date^) -ForegroundColor $color
+echo         Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f $class, $provider, $version, $date^) -ForegroundColor $color
 echo     }
 echo } else {
 echo     Write-Host "  Could not enumerate audio drivers." -ForegroundColor Yellow
@@ -233,7 +233,7 @@ echo             'Running' { 'Green' }
 echo             'Stopped' { 'Red' }
 echo             default { 'Yellow' }
 echo         }
-echo         Write-Host ("  {0,-30} {1,-10} {2}" -f $svc.DisplayName, $svc.Status, $svc.StartType^) -ForegroundColor $statusColor
+echo         Write-Host ^("  {0,-30} {1,-10} {2}" -f $svc.DisplayName, $svc.Status, $svc.StartType^) -ForegroundColor $statusColor
 echo     }
 echo }
 echo/
@@ -326,7 +326,7 @@ echo             $warnings += "Sound device '$^($bd.Name^)' status: $^($bd.Statu
 echo         }
 echo     } else {
 echo         $devCount = $soundDevs.Count
-echo         Write-Host " - OK ($devCount device^(s^)^)" -ForegroundColor Green
+echo         Write-Host " - OK ^($devCount device^(s^)^)" -ForegroundColor Green
 echo         $ok += "$devCount sound device^(s^) with OK status"
 echo     }
 echo } else {
@@ -409,10 +409,10 @@ echo try {
 echo     $dpc = ^(Get-Counter '\Processor^(_Total^)\%% DPC Time' -ErrorAction Stop^).CounterSamples[0].CookedValue
 echo     $dpcRound = [math]::Round^($dpc, 1^)
 echo     if ^($dpc -gt 5^) {
-echo         Write-Host " - HIGH ($dpcRound%%^)" -ForegroundColor Yellow
-echo         $warnings += "High DPC time ($dpcRound%%^) - may cause audio stuttering"
+echo         Write-Host " - HIGH ^($dpcRound%%^)" -ForegroundColor Yellow
+echo         $warnings += "High DPC time ^($dpcRound%%^) - may cause audio stuttering"
 echo     } else {
-echo         Write-Host " - OK ($dpcRound%%^)" -ForegroundColor Green
+echo         Write-Host " - OK ^($dpcRound%%^)" -ForegroundColor Green
 echo     }
 echo } catch {
 echo     Write-Host " - Could not measure" -ForegroundColor Yellow
@@ -531,7 +531,7 @@ if "!isAdmin!"=="1" (
     echo     if ^($svc^) {
     echo         $startType = $svc.StartType
     echo         $color = if ^($startType -eq 'Automatic'^) { 'Green' } else { 'Yellow' }
-    echo         Write-Host ("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
+    echo         Write-Host ^("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
     echo         if ^($startType -ne 'Automatic'^) {
     echo             Write-Host "    ^ Should be Automatic!" -ForegroundColor Red
     echo         }

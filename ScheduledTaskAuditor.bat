@@ -52,7 +52,7 @@ echo/
 echo $ErrorActionPreference = 'SilentlyContinue'
 echo/
 echo # Known task categories
-echo $telemetryTasks = @(
+echo $telemetryTasks = @^(
 echo     '*Consolidator*', '*UsbCeip*', '*DmClient*', '*DmClientOnScenario*',
 echo     '*FamilySafetyMonitor*', '*FamilySafetyRefresh*', '*KernelCeipTask*',
 echo     '*Microsoft Compatibility Appraiser*', '*ProgramDataUpdater*',
@@ -63,7 +63,7 @@ echo     '*AitAgent*', '*CEIP*', '*Customer Experience*',
 echo     '*OfficeTelemetry*', '*Telemetry*'
 echo ^)
 echo/
-echo $bloatwareTasks = @(
+echo $bloatwareTasks = @^(
 echo     '*Adobe*Update*', '*Adobe*ARM*', '*AdobeGC*',
 echo     '*GoogleUpdate*', '*Google*Reporting*', '*Google*Crash*',
 echo     '*CCleaner*', '*IObit*', '*Driver Booster*', '*Auslogics*',
@@ -79,7 +79,7 @@ echo     '*HP*Telemetry*', '*Dell*SupportAssist*Telemetry*',
 echo     '*LenovoVantage*Telemetry*', '*ASUS*Update*'
 echo ^)
 echo/
-echo $essentialTasks = @(
+echo $essentialTasks = @^(
 echo     '*Windows Defender*', '*MpIdleTask*', '*ExploitGuard*',
 echo     '*ScanForUpdates*', '*Schedule Scan*',
 echo     '*Defrag*', '*SilentCleanup*', '*Sysprep*',
@@ -91,7 +91,7 @@ echo     '*CreateObjectTask*', '*BthSQM*',
 echo     '*AnalyzeSystem*', '*WdiServiceHost*'
 echo ^)
 echo/
-echo $optionalTasks = @(
+echo $optionalTasks = @^(
 echo     '*XblGameSave*', '*Xbox*', '*Xbl*',
 echo     '*OneDrive*', '*Edge*Update*', '*MicrosoftEdge*',
 echo     '*Office*Background*', '*Office*ClickToRun*',
@@ -162,7 +162,7 @@ echo             }
 echo         }
 echo     }
 echo/
-echo     # Skip Microsoft\Windows system tasks from unknown (they're usually fine)
+echo     # Skip Microsoft\Windows system tasks from unknown ^(they're usually fine^)
 echo     if ^($category -eq 'UNKNOWN' -and $task.TaskPath -match '\\Microsoft\\Windows\\'^) {
 echo         $category = 'WINDOWS'
 echo     }
@@ -199,12 +199,12 @@ echo/
 echo # Telemetry
 echo $activeTelemetry = @^($telemetryList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeTelemetry.Count -gt 0^) {
-echo     Write-Host "[TELEMETRY] - Data collection tasks (can be disabled for privacy):" -ForegroundColor Magenta
+echo     Write-Host "[TELEMETRY] - Data collection tasks ^(can be disabled for privacy^):" -ForegroundColor Magenta
 echo     $report += "[TELEMETRY] - Data collection tasks:"
 echo     foreach ^($t in $activeTelemetry^) {
-echo         Write-Host "  [-] $^($t.Name^)  ($^($t.State^))" -ForegroundColor Magenta
+echo         Write-Host "  [-] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Magenta
 echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [-] $^($t.Name^)  ($^($t.State^)^)  -  $^($t.FullName^)"
+echo         $report += "  [-] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
@@ -213,12 +213,12 @@ echo/
 echo # Bloatware
 echo $activeBloatware = @^($bloatwareList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeBloatware.Count -gt 0^) {
-echo     Write-Host "[BLOATWARE] - Third-party junk tasks (recommended to disable):" -ForegroundColor Red
+echo     Write-Host "[BLOATWARE] - Third-party junk tasks ^(recommended to disable^):" -ForegroundColor Red
 echo     $report += "[BLOATWARE] - Third-party junk tasks:"
 echo     foreach ^($t in $activeBloatware^) {
-echo         Write-Host "  [-] $^($t.Name^)  ($^($t.State^))" -ForegroundColor Red
+echo         Write-Host "  [-] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Red
 echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [-] $^($t.Name^)  ($^($t.State^)^)  -  $^($t.FullName^)"
+echo         $report += "  [-] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
@@ -230,18 +230,18 @@ echo if ^($activeOptional.Count -gt 0^) {
 echo     Write-Host "[OPTIONAL] - Can be disabled if not using these features:" -ForegroundColor Yellow
 echo     $report += "[OPTIONAL] - Can be disabled if not needed:"
 echo     foreach ^($t in $activeOptional^) {
-echo         Write-Host "  [?] $^($t.Name^)  ($^($t.State^))" -ForegroundColor Yellow
+echo         Write-Host "  [?] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Yellow
 echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [?] $^($t.Name^)  ($^($t.State^)^)  -  $^($t.FullName^)"
+echo         $report += "  [?] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
 echo }
 echo/
-echo # Essential (brief)
+echo # Essential ^(brief^)
 echo $activeEssential = @^($essentialList ^| Where-Object { $_.State -ne 'Disabled' }^)
-echo Write-Host "[ESSENTIAL] - $^($activeEssential.Count^) core tasks (will not be touched)" -ForegroundColor Green
-echo $report += "[ESSENTIAL] - $^($activeEssential.Count^) core tasks (not touched)"
+echo Write-Host "[ESSENTIAL] - $^($activeEssential.Count^) core tasks ^(will not be touched^)" -ForegroundColor Green
+echo $report += "[ESSENTIAL] - $^($activeEssential.Count^) core tasks ^(not touched^)"
 echo Write-Host ""
 echo $report += ""
 echo/
@@ -260,10 +260,10 @@ echo Write-Host " SUMMARY" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
 echo Write-Host "  Total scheduled tasks:  $^($allTasks.Count^)"
-echo Write-Host "  Telemetry (active):     $^($activeTelemetry.Count^)" -ForegroundColor Magenta
-echo Write-Host "  Bloatware (active):     $^($activeBloatware.Count^)" -ForegroundColor Red
-echo Write-Host "  Optional (active):      $^($activeOptional.Count^)" -ForegroundColor Yellow
-echo Write-Host "  Essential (active):     $^($activeEssential.Count^)" -ForegroundColor Green
+echo Write-Host "  Telemetry ^(active^):     $^($activeTelemetry.Count^)" -ForegroundColor Magenta
+echo Write-Host "  Bloatware ^(active^):     $^($activeBloatware.Count^)" -ForegroundColor Red
+echo Write-Host "  Optional ^(active^):      $^($activeOptional.Count^)" -ForegroundColor Yellow
+echo Write-Host "  Essential ^(active^):     $^($activeEssential.Count^)" -ForegroundColor Green
 echo Write-Host "  Already disabled:       $disabledCount" -ForegroundColor DarkGray
 echo Write-Host ""
 echo $report += ""

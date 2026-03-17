@@ -183,7 +183,7 @@ echo [3/8] Removing ASUS AppX packages...
 set "PSSCRIPT=%TEMP%\remove-asus.ps1"
 
 (
-echo $packages = @(
+echo $packages = @^(
 echo     '*ASUS*',
 echo     '*Armoury*',
 echo     '*MyASUS*',
@@ -199,12 +199,12 @@ echo ^)
 echo/
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
-echo         Write-Host "       - Removing: $($_.Name)"
+echo         Write-Host "       - Removing: $^($_.Name^)"
 echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
 echo     }
 echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
 echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
-echo         Write-Host "       - Deprovisioning: $($_.DisplayName)"
+echo         Write-Host "       - Deprovisioning: $^($_.DisplayName^)"
 echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
 echo     }
 echo }
@@ -370,7 +370,7 @@ echo     $_.TaskName -match 'AsusSoftwareManager' -or
 echo     $_.TaskName -match 'ROGLive' -or
 echo     $_.TaskPath -match '\\ASUS\\'
 echo } ^| ForEach-Object {
-echo     Write-Host "       - Removing task: $($_.TaskPath)$($_.TaskName)"
+echo     Write-Host "       - Removing task: $^($_.TaskPath^)$^($_.TaskName^)"
 echo     Unregister-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -Confirm:$false -ErrorAction SilentlyContinue
 echo }
 ) > "%PSTASKS%"

@@ -145,7 +145,7 @@ echo [3/7] Removing Nahimic and A-Volute AppX packages...
 set "PSSCRIPT=%TEMP%\remove-realtek-bloat.ps1"
 
 (
-echo $packages = @(
+echo $packages = @^(
 echo     '*Nahimic*',
 echo     '*A-Volute*',
 echo     '*RealtekAudioConsole*',
@@ -159,12 +159,12 @@ echo ^)
 echo/
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
-echo         Write-Host "       - Removing: $($_.Name)"
+echo         Write-Host "       - Removing: $^($_.Name^)"
 echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
 echo     }
 echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
 echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
-echo         Write-Host "       - Deprovisioning: $($_.DisplayName)"
+echo         Write-Host "       - Deprovisioning: $^($_.DisplayName^)"
 echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
 echo     }
 echo }
@@ -245,7 +245,7 @@ echo     $_.TaskName -match 'MaxxAudio' -or
 echo     $_.TaskPath -match '\\A-Volute\\' -or
 echo     $_.TaskPath -match '\\Realtek\\'
 echo } ^| ForEach-Object {
-echo     Write-Host "       - Removing task: $($_.TaskPath)$($_.TaskName)"
+echo     Write-Host "       - Removing task: $^($_.TaskPath^)$^($_.TaskName^)"
 echo     Unregister-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -Confirm:$false -ErrorAction SilentlyContinue
 echo }
 ) > "%PSTASKS%"
@@ -281,7 +281,7 @@ echo       - Disabling Nahimic audio processing objects...
 set "PSAPO=%TEMP%\disable-nahimic-apo.ps1"
 (
 echo # Find and disable Nahimic/A-Volute APO entries in the audio endpoint registry
-echo $fxPaths = @(
+echo $fxPaths = @^(
 echo     'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render',
 echo     'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Capture'
 echo ^)

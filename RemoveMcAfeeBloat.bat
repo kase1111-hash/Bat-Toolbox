@@ -192,7 +192,7 @@ echo [4/8] Removing McAfee AppX packages...
 set "PSSCRIPT=%TEMP%\remove-mcafee.ps1"
 
 (
-echo $packages = @(
+echo $packages = @^(
 echo     '*McAfee*',
 echo     '*mcafee*',
 echo     '*TrueKey*'
@@ -200,12 +200,12 @@ echo ^)
 echo/
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
-echo         Write-Host "       - Removing: $($_.Name)"
+echo         Write-Host "       - Removing: $^($_.Name^)"
 echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
 echo     }
 echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
 echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
-echo         Write-Host "       - Deprovisioning: $($_.DisplayName)"
+echo         Write-Host "       - Deprovisioning: $^($_.DisplayName^)"
 echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
 echo     }
 echo }
@@ -325,7 +325,7 @@ echo     $_.TaskName -match 'mcafee' -or
 echo     $_.TaskName -match 'TrueKey' -or
 echo     $_.TaskPath -match '\\McAfee\\'
 echo } ^| ForEach-Object {
-echo     Write-Host "       - Removing task: $($_.TaskPath)$($_.TaskName)"
+echo     Write-Host "       - Removing task: $^($_.TaskPath^)$^($_.TaskName^)"
 echo     Unregister-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -Confirm:$false -ErrorAction SilentlyContinue
 echo }
 ) > "%PSTASKS%"

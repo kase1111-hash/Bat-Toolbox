@@ -456,7 +456,7 @@ echo $plan = powercfg /getactivescheme
 echo Write-Host $plan -ForegroundColor Cyan
 echo Write-Host ""
 echo/
-echo $settings = @(
+echo $settings = @^(
 echo     @{ Name='CPU Min State'; Sub='SUB_PROCESSOR'; Setting='PROCTHROTTLEMIN' },
 echo     @{ Name='CPU Max State'; Sub='SUB_PROCESSOR'; Setting='PROCTHROTTLEMAX' },
 echo     @{ Name='CPU Cooling Policy'; Sub='SUB_PROCESSOR'; Setting='SYSCOOLPOL' },
@@ -486,7 +486,7 @@ echo if ^($cpAC^) {
 echo     $val = ^($cpAC -split ': '^)[1].Trim^(^)
 echo     Write-Host "  Min cores unparked:     $val"
 echo } else {
-echo     Write-Host "  Core parking data not available (may be hidden)"
+echo     Write-Host "  Core parking data not available ^(may be hidden^)"
 echo }
 echo/
 echo # USB selective suspend
@@ -496,7 +496,7 @@ echo $usbAC = $usbOut ^| Select-String 'Current AC Power Setting Index'
 echo if ^($usbAC^) {
 echo     $val = ^($usbAC -split ': '^)[1].Trim^(^)
 echo     $status = if ^($val -eq '0x00000000'^) { 'Disabled' } else { 'Enabled' }
-echo     Write-Host "  USB Selective Suspend:   $status ($val)"
+echo     Write-Host "  USB Selective Suspend:   $status ^($val^)"
 echo }
 ) > "!PSPLAN!"
 

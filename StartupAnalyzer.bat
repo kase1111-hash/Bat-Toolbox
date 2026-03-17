@@ -111,7 +111,7 @@ echo Categorizing programs...
 set "PSSCRIPT=%TEMP%\categorize_startup.ps1"
 
 (
-echo $keepPatterns = @(
+echo $keepPatterns = @^(
 echo     'SecurityHealth', 'Windows Defender', 'Windows Security', 'MsMpEng',
 echo     'Realtek', 'RtkNGUI', 'RtkAudioService', 'RTHDVCpl',
 echo     'NVIDIA', 'NvBackend', 'NvTmMon',
@@ -125,7 +125,7 @@ echo     'ctfmon', 'SecurityHealth',
 echo     'WindowsDefender', 'Logitech'
 echo ^)
 echo/
-echo $removePatterns = @(
+echo $removePatterns = @^(
 echo     # Bloatware and trials
 echo     'iTunesHelper', 'QuickTime', 'Adobe ARM', 'AcroTray', 'Acrobat Assistant',
 echo     'Java Update', 'jusched', 'CCleaner', 'Avast', 'AVG',
@@ -158,7 +158,7 @@ echo     'Segurazo', 'ByteFence', 'SpyHunter', 'Reimage', 'PC Accelerate',
 echo     'MyPC Backup', 'RegClean', 'WinTonic', 'OneSafe', 'TotalAV'
 echo ^)
 echo/
-echo $optionalPatterns = @(
+echo $optionalPatterns = @^(
 echo     # These are legitimate but not essential at startup
 echo     'Microsoft Office', 'Office Click-to-Run', 'OfficeBackgroundTask',
 echo     'Printer', 'Scanner', 'Epson', 'Canon', 'Brother', 'HP Smart',
