@@ -28,7 +28,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer, PowerPlanOptimizer, PagefileTuner, RAMDiskCreator | Microstutter, I/O latency, driver heuristics, power plans, memory |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck, StorageReliabilityCounter, MemoryDiagnostic, AudioDeviceAnalyzer | Find what's slowing you down |
-| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot | Port auditing, password policy, intrusion detection |
+| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot, DisableNetBIOS | Port auditing, password policy, intrusion detection, NetBIOS hardening |
 | **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit, DriverBackupRestore | Fix issues, repair system, backup drivers |
@@ -309,6 +309,32 @@ Before:                    After:
 ```
 
 **Admin required:** No
+
+---
+
+### DisableNetBIOS.bat
+
+**Purpose:** Disables NetBIOS over TCP/IP on all network adapters to close ports 137, 138, and 139.
+
+**What it does:**
+| Step | Action |
+|------|--------|
+| 1. Adapter config | Sets TcpipNetbiosOptions to Disabled on every IP-enabled adapter |
+| 2. NetBT driver | Stops and disables the NetBIOS over TCP/IP transport driver |
+| 3. lmhosts service | Stops and disables the TCP/IP NetBIOS Helper service |
+| 4. Firewall rules | Adds inbound block rules for UDP 137, UDP 138, and TCP 139 |
+
+**When to use:**
+- Port scan shows 137/138/139 open and you don't use legacy file sharing
+- Hardening a workstation that doesn't need NetBIOS name resolution
+- Compliance with CIS or STIG security baselines
+
+**When NOT to use:**
+- You access shared folders by hostname (e.g., `\\OLDSERVER`)
+- You rely on WINS-based printer discovery
+- Very old applications depend on NetBIOS name resolution
+
+**Admin required:** Yes
 
 ---
 
@@ -1247,6 +1273,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
 | ContextMenuCleaner.bat | Yes |
 | DiskHealthCheck.bat | Yes |
+| DisableNetBIOS.bat | Yes |
 | DisableWindowsUpdate.bat | Yes |
 | DriverBackupRestore.bat | Yes |
 | ExportInstalledPrograms.bat | No |
