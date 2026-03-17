@@ -346,7 +346,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo.
-echo %GREEN%Removal process complete!%RESET%
+echo %GREEN%Removal process complete^!%RESET%
 echo Successful operations: %success%
 echo.
 echo What was removed:

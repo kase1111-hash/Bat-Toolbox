@@ -168,7 +168,7 @@ echo.
 echo if ^($isMatched^) {
 echo     Write-Host "  Stick Matching:       All sticks matched (same speed and capacity)" -ForegroundColor Green
 echo } else {
-echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected!" -ForegroundColor Red
+echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected^^!" -ForegroundColor Red
 echo     if ^($speeds.Count -gt 1^) {
 echo         Write-Host "    - Different speeds: $($speeds -join ', ') MHz" -ForegroundColor Yellow
 echo         Write-Host "      All sticks will run at the slowest speed." -ForegroundColor Yellow
@@ -195,7 +195,7 @@ echo.
 echo # Single channel warning
 echo if ^($channelMode -eq 'Single-Channel'^) {
 echo     Write-Host ""
-echo     Write-Host "  WARNING: Single-channel mode detected!" -ForegroundColor Red
+echo     Write-Host "  WARNING: Single-channel mode detected^^!" -ForegroundColor Red
 echo     Write-Host "    - Dual-channel doubles memory bandwidth" -ForegroundColor Yellow
 echo     Write-Host "    - Add a matching stick for significant performance gain" -ForegroundColor Yellow
 echo     Write-Host "    - Especially impacts gaming and integrated graphics" -ForegroundColor Yellow

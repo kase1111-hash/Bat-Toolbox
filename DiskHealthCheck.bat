@@ -112,7 +112,7 @@ echo             Add-ColorLine "  Health Status:  [WARN] Warning - Monitor close
 echo             $warningCount++
 echo         }
 echo         'Unhealthy' {
-echo             Add-ColorLine "  Health Status:  [CRITICAL] Unhealthy - Backup immediately!" "Red"
+echo             Add-ColorLine "  Health Status:  [CRITICAL] Unhealthy - Backup immediately^^!" "Red"
 echo             $criticalCount++
 echo         }
 echo         default {
@@ -134,7 +134,7 @@ echo         if ^($reliability.Temperature^) {
 echo             $tempC = $reliability.Temperature
 echo             $tempColor = "Green"
 echo             $tempNote = ""
-echo             if ^($tempC -ge 55^) { $tempColor = "Red"; $tempNote = " [HOT!]"; $warningCount++ }
+echo             if ^($tempC -ge 55^) { $tempColor = "Red"; $tempNote = " [HOT^^!]"; $warningCount++ }
 echo             elseif ^($tempC -ge 45^) { $tempColor = "Yellow"; $tempNote = " [Warm]" }
 echo             Add-ColorLine "  Temperature:    ${tempC}C${tempNote}" $tempColor
 echo         }
@@ -156,7 +156,7 @@ echo         if ^($reliability.Wear -ne $null^) {
 echo             $wear = $reliability.Wear
 echo             $wearColor = "Green"
 echo             $wearNote = ""
-echo             if ^($wear -ge 90^) { $wearColor = "Red"; $wearNote = " [REPLACE SOON!]"; $criticalCount++ }
+echo             if ^($wear -ge 90^) { $wearColor = "Red"; $wearNote = " [REPLACE SOON^^!]"; $criticalCount++ }
 echo             elseif ^($wear -ge 70^) { $wearColor = "Yellow"; $wearNote = " [Monitor]"; $warningCount++ }
 echo             elseif ^($wear -ge 50^) { $wearColor = "Yellow"; $wearNote = " [Moderate]" }
 echo             Add-ColorLine "  Wear Level:     ${wear}%%${wearNote}" $wearColor
@@ -166,7 +166,7 @@ echo         # Read/Write errors
 echo         if ^($reliability.ReadErrorsTotal -ne $null^) {
 echo             $readErrors = $reliability.ReadErrorsTotal
 echo             if ^($readErrors -gt 0^) {
-echo                 Add-ColorLine "  Read Errors:    $readErrors [Check drive!]" "Red"
+echo                 Add-ColorLine "  Read Errors:    $readErrors [Check drive^^!]" "Red"
 echo                 $warningCount++
 echo             } else {
 echo                 Add-Line "  Read Errors:    0"
@@ -175,7 +175,7 @@ echo         }
 echo         if ^($reliability.WriteErrorsTotal -ne $null^) {
 echo             $writeErrors = $reliability.WriteErrorsTotal
 echo             if ^($writeErrors -gt 0^) {
-echo                 Add-ColorLine "  Write Errors:   $writeErrors [Check drive!]" "Red"
+echo                 Add-ColorLine "  Write Errors:   $writeErrors [Check drive^^!]" "Red"
 echo                 $warningCount++
 echo             } else {
 echo                 Add-Line "  Write Errors:   0"
@@ -214,7 +214,7 @@ echo                 $freeGB = [math]::Round^($vol.SizeRemaining / 1GB, 1^)
 echo                 $usedPct = if ^($vol.Size -gt 0^) { [math]::Round^(^($vol.Size - $vol.SizeRemaining^) / $vol.Size * 100, 0^) } else { 0 }
 echo                 $spaceColor = "Green"
 echo                 $spaceNote = ""
-echo                 if ^($usedPct -ge 95^) { $spaceColor = "Red"; $spaceNote = " [CRITICAL - Nearly full!]"; $warningCount++ }
+echo                 if ^($usedPct -ge 95^) { $spaceColor = "Red"; $spaceNote = " [CRITICAL - Nearly full^^!]"; $warningCount++ }
 echo                 elseif ^($usedPct -ge 90^) { $spaceColor = "Yellow"; $spaceNote = " [Low space]" }
 echo                 Add-ColorLine "  $^($vol.DriveLetter^): $^($vol.FileSystemLabel^) - ${freeGB}GB free / ${totalGB}GB (${usedPct}%% used)${spaceNote}" $spaceColor
 echo             }
@@ -235,7 +235,7 @@ echo     $sizeGB = [math]::Round^($d.Size / 1GB, 1^)
 echo     Add-Line "  $^($d.Model^)"
 echo     Add-Line "    Interface: $^($d.InterfaceType^)  |  Status: $^($d.Status^)  |  Size: ${sizeGB}GB"
 echo     if ^($d.Status -ne 'OK'^) {
-echo         Add-ColorLine "    [WARNING] Drive status is '$^($d.Status^)' - not OK!" "Red"
+echo         Add-ColorLine "    [WARNING] Drive status is '$^($d.Status^)' - not OK^^!" "Red"
 echo         $warningCount++
 echo     }
 echo     Add-Line ""
@@ -249,7 +249,7 @@ echo Add-Line ""
 echo Add-Line "  Disks scanned:  $diskIndex"
 echo.
 echo if ^($criticalCount -gt 0^) {
-echo     Add-ColorLine "  CRITICAL:       $criticalCount issues found - BACKUP NOW!" "Red"
+echo     Add-ColorLine "  CRITICAL:       $criticalCount issues found - BACKUP NOW^^!" "Red"
 echo     Add-Line ""
 echo     Add-ColorLine "  RECOMMENDED ACTIONS:" "Red"
 echo     Add-ColorLine "    1. Back up all important data immediately" "Red"

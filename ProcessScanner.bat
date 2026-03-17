@@ -76,21 +76,21 @@ echo     'ASC.exe' = 'Advanced SystemCare - unnecessary optimizer'
 echo     'Auslogics' = 'Auslogics - unnecessary optimization software'
 echo     'GlaryUtilities' = 'Glary Utilities - unnecessary optimizer'
 echo     'WiseCare' = 'Wise Care - unnecessary optimizer'
-echo     'Segurazo' = 'SEGURAZO MALWARE - Remove immediately!'
-echo     'ByteFence' = 'ByteFence PUP - Remove immediately!'
-echo     'Reimage' = 'Reimage Scareware - Remove immediately!'
-echo     'PCAccelerator' = 'PC Accelerator Scareware - Remove!'
-echo     'SpyHunter' = 'SpyHunter - Scareware, remove!'
+echo     'Segurazo' = 'SEGURAZO MALWARE - Remove immediately^^!'
+echo     'ByteFence' = 'ByteFence PUP - Remove immediately^^!'
+echo     'Reimage' = 'Reimage Scareware - Remove immediately^^!'
+echo     'PCAccelerator' = 'PC Accelerator Scareware - Remove^^!'
+echo     'SpyHunter' = 'SpyHunter - Scareware, remove^^!'
 echo     'RegClean' = 'Registry Cleaner - unnecessary and potentially harmful'
 echo     'WinTonic' = 'WinTonic - PUP/Scareware'
 echo     'OneSafe' = 'OneSafe PC Cleaner - PUP'
 echo     'TotalAV' = 'TotalAV - aggressive upselling'
-echo     'Conduit' = 'Conduit - Browser hijacker!'
-echo     'Ask Toolbar' = 'Ask Toolbar - Browser hijacker!'
-echo     'Babylon' = 'Babylon - Browser hijacker!'
-echo     'MyWebSearch' = 'MyWebSearch - Adware!'
+echo     'Conduit' = 'Conduit - Browser hijacker^^!'
+echo     'Ask Toolbar' = 'Ask Toolbar - Browser hijacker^^!'
+echo     'Babylon' = 'Babylon - Browser hijacker^^!'
+echo     'MyWebSearch' = 'MyWebSearch - Adware^^!'
 echo     'WebCompanion' = 'Web Companion - PUP'
-echo     'SearchProtect' = 'Search Protect - Browser hijacker!'
+echo     'SearchProtect' = 'Search Protect - Browser hijacker^^!'
 echo     # Updaters ^(unnecessary background processes^)
 echo     'jusched' = 'Java Updater - can update manually when needed'
 echo     'jucheck' = 'Java Update Checker - unnecessary'
@@ -280,7 +280,7 @@ echo     # Save bloatware PIDs for potential termination
 echo     $bloatware ^| ForEach-Object { "$^($_.Id^);$^($_.Name^)" } ^| Out-File -FilePath "$env:TEMP\bloatware_pids.txt" -Encoding ASCII
 echo } else {
 echo     Write-Host '============================================================================' -ForegroundColor Green
-echo     Write-Host ' [BLOATWARE] None Detected!' -ForegroundColor Green
+echo     Write-Host ' [BLOATWARE] None Detected^^!' -ForegroundColor Green
 echo     Write-Host '============================================================================' -ForegroundColor Green
 echo     Write-Host ''
 echo     Write-Host '  Your system is clean of known bloatware processes.' -ForegroundColor Green
@@ -345,7 +345,7 @@ if exist "%TEMP%\bloatware_pids.txt" (
                 )
             )
             echo.
-            echo Done! Bloatware processes terminated.
+            echo Done^^! Bloatware processes terminated.
             echo NOTE: They may restart. Use StartupAnalyzer.bat to disable them permanently.
         )
     )
