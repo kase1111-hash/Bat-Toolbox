@@ -24,13 +24,13 @@ Every script tells you what it's about to do. Every script asks before making ch
 
 | Category | Scripts | What They Fix |
 |----------|---------|---------------|
-| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
-| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck, BrightnessDiagnostic | Find what's slowing you down |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck | Find what's slowing you down |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
-| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
-| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
+| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit | Fix common issues, repair system files, customize Windows |
+| **Utilities** | ExportInstalledPrograms, WifiPasswordExporter, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
 
 ---
 
@@ -160,6 +160,52 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 - Full restore option reverses all changes
 
 **Warning:** With updates disabled, your system will not receive security patches. Consider periodically re-enabling updates for critical patches.
+
+**Admin required:** Yes
+
+---
+
+### ContextMenuCleaner.bat
+
+**Purpose:** Scans the registry for right-click context menu entries, categorizes them as bloatware, optional, or essential, and lets you selectively disable unwanted entries.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| BLOATWARE | WinZip, Paint 3D, antivirus scan entries, CRC SHA - recommended to remove |
+| OPTIONAL | 7-Zip, cloud storage, Git, text editors, GPU panels - your choice |
+| KEEP | Open with, Send to, Terminal, Defender scan - never touched |
+| DISABLED | Already hidden entries |
+
+**Features:**
+- Scans 12+ registry locations for context menu entries
+- Uses `LegacyDisable` (non-destructive, easily reversible)
+- Batch disable bloatware or review optional entries one by one
+- On Windows 11, offers to restore the classic full context menu
+
+**Admin required:** Yes
+
+---
+
+### DiskHealthCheck.bat
+
+**Purpose:** Reads S.M.A.R.T. data, drive temperatures, wear levels, power-on hours, and error counts for all connected drives. Flags drives approaching failure.
+
+**What it checks:**
+| Metric | Thresholds |
+|--------|-----------|
+| Temperature | Green <45C, Yellow 45-54C, Red 55C+ |
+| SSD Wear Level | Green <50%, Yellow 50-89%, Red 90%+ |
+| Power-On Hours | Reports age estimate in years |
+| Read/Write Errors | Any non-zero count flagged |
+| Disk Space | Yellow >90% used, Red >95% used |
+
+**Features:**
+- Reads Windows Storage Reliability Counters (S.M.A.R.T. equivalent)
+- Shows partition usage and free space
+- WMI fallback for additional drive details
+- Saves full report to Desktop
+- Clear action recommendations based on severity
 
 **Admin required:** Yes
 
@@ -645,6 +691,35 @@ DIRECT LINKS
 
 ---
 
+### ScheduledTaskAuditor.bat
+
+**Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| TELEMETRY | Microsoft data collection tasks (Compatibility Appraiser, CEIP, DiagTrack) |
+| BLOATWARE | Third-party junk tasks (Adobe updaters, Chrome update, antivirus, vendor telemetry) |
+| OPTIONAL | Legitimate but potentially unwanted (Xbox, OneDrive, Edge, Cortana, Office background) |
+| ESSENTIAL | Core Windows tasks (Defender, defrag, maintenance) - never touched |
+
+**Features:**
+- Scans all scheduled tasks system-wide
+- Batch disable telemetry or bloatware categories
+- Review optional tasks one by one
+- Saves full audit report to Desktop
+- Shows re-enable command for each disabled task
+
+**When to use:**
+- After a fresh Windows install
+- After installing new software
+- To reduce background CPU/disk activity
+- Pairs with ServiceAnalyzer.bat and StartupAnalyzer.bat for full background audit
+
+**Admin required:** Yes
+
+---
+
 ### RestoreRecycleBin.bat
 
 **Purpose:** Restores the Recycle Bin icon to the Windows desktop if it was accidentally hidden or removed.
@@ -706,6 +781,63 @@ DIRECT LINKS
 **Companion file:** Requires `ScreenSleepGuard.ps1` in the same directory.
 
 **Admin required:** No
+
+---
+
+### WifiPasswordExporter.bat
+
+**Purpose:** Exports all saved Wi-Fi network names and passwords to a plain text file for backup before reinstalling Windows or setting up a new device.
+
+**What it captures:**
+| Field | Description |
+|-------|-------------|
+| Network Name | SSID of the saved network |
+| Password | Plain text password (key content) |
+| Security | Authentication type (WPA2-Personal, WPA3, etc.) |
+| Cipher | Encryption cipher (CCMP, TKIP) |
+| Auto-connect | Whether the network connects automatically |
+
+**Output:** Creates `WifiPasswords_COMPUTERNAME_DATE.txt` on Desktop
+
+**Features:**
+- Exports all saved Wi-Fi profiles in one go
+- Shows open networks separately
+- Summary with profile and password counts
+- Works without admin (but admin recommended for full access)
+
+**Security note:** Output contains plain text passwords. Delete after use.
+
+**Admin required:** No (recommended for full access)
+
+---
+
+### WindowsRepairKit.bat
+
+**Purpose:** Runs SFC, DISM, and CHKDSK in the correct sequence with progress reporting and result parsing. A one-stop system integrity checker.
+
+**What it runs (in order):**
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1 | SFC /scannow | Scan and repair Windows system files |
+| 2 | DISM /RestoreHealth | Repair the Windows component store |
+| 3 | CHKDSK | Check disk for filesystem errors |
+
+**Smart features:**
+- Parses results to show actual status (PASS, FIXED, ISSUE, BLOCKED)
+- If SFC fails but DISM succeeds, offers to re-run SFC (often fixes it)
+- Extracts CBS log corruption entries
+- Offers to schedule CHKDSK /F /R if errors found
+- Saves timestamped log to Desktop
+
+**Output:** Creates `RepairKit_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:**
+- Random crashes or blue screens
+- Programs behaving strangely
+- Windows Update errors
+- After malware removal or forced shutdown
+
+**Admin required:** Yes
 
 ---
 
@@ -785,6 +917,8 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 |--------|----------------|
 | BatteryChargeLimit.bat | Yes |
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
+| ContextMenuCleaner.bat | Yes |
+| DiskHealthCheck.bat | Yes |
 | DisableWindowsUpdate.bat | Yes |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
@@ -798,10 +932,13 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | RemoveEOSNotification.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
+| ScheduledTaskAuditor.bat | Yes |
 | ScreenSleepGuard.bat | No |
 | ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
 | StorageLatencyTuning.bat | Yes |
+| WifiPasswordExporter.bat | No (recommended) |
+| WindowsRepairKit.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
