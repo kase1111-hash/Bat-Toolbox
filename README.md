@@ -24,7 +24,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 
 | Category | Scripts | What They Fix |
 |----------|---------|---------------|
-| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveRealtekBloat, RemoveMcAfeeBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck | Find what's slowing you down |
@@ -691,6 +691,78 @@ DIRECT LINKS
 
 ---
 
+### RemoveRealtekBloat.bat
+
+**Purpose:** Removes Realtek Audio Console, Nahimic, A-Volute, and other audio bloatware bundled with Realtek HD Audio drivers. Keeps the core audio driver intact.
+
+**What it removes:**
+| Component | Description |
+|-----------|-------------|
+| Realtek Audio Console | UWP settings/equalizer app |
+| Nahimic / A-Volute | Audio effects engine (causes crackling/conflicts) |
+| Sonic Studio / Sonic Radar | Spatial audio processing bloat |
+| Waves MaxxAudio / DTS | Bundled audio processing (Dell/HP) |
+| Audio Processing Objects | APO hooks in the driver chain |
+| Services & Tasks | Background audio bloatware services |
+
+**What it keeps:**
+- Realtek HD Audio driver (core audio functionality)
+- Windows Audio Service
+- All audio devices and endpoints
+
+**What it does:**
+1. Stops all audio bloatware processes and services
+2. Removes Nahimic/A-Volute AppX packages
+3. Uninstalls desktop applications via WMIC
+4. Removes scheduled tasks
+5. Cleans APO entries from audio endpoint registry
+6. Deletes leftover folders
+
+**When to use:** If you experience audio crackling, latency, or conflicts with pro audio software (DAWs, ASIO drivers). Also useful after Realtek driver updates reinstall Nahimic.
+
+**Admin required:** Yes
+
+---
+
+### RemoveMcAfeeBloat.bat
+
+**Purpose:** Removes all McAfee products (Security, WebAdvisor, LiveSafe, True Key) that ship preinstalled on Dell, HP, and Lenovo machines. Performs deep cleanup that survives normal uninstall.
+
+**What it removes:**
+| Component | Description |
+|-----------|-------------|
+| McAfee LiveSafe / Total Protection | Main antivirus suite |
+| McAfee WebAdvisor / SiteAdvisor | Browser security plugin |
+| McAfee True Key | Password manager |
+| Kernel Filter Drivers | mfeavfk, mfefirek, mfehidk, etc. |
+| Services & Tasks | All McAfee background services |
+| Browser Policies | Force-installed extension policies |
+| Context Menu Handlers | Right-click scan entries |
+| Registry Keys | McAfee reinstall protection keys |
+
+**What it keeps:**
+- Windows Defender (re-enabled automatically)
+- Windows Firewall
+- All other security software
+
+**What it does:**
+1. Stops all McAfee processes and services
+2. Runs WMIC uninstall for all McAfee products
+3. Removes UWP/Store versions
+4. Disables and deletes kernel filter drivers
+5. Removes scheduled tasks
+6. Cleans registry (startup, Security Center, browser policies, context menus)
+7. Deletes leftover files and folders
+8. Re-enables Windows Defender
+
+**When to use:** On any OEM PC (Dell, HP, Lenovo) that shipped with McAfee preinstalled. Also useful when McAfee survives a normal Programs & Features uninstall.
+
+**Important:** Export True Key passwords before running if you use them.
+
+**Admin required:** Yes
+
+---
+
 ### ScheduledTaskAuditor.bat
 
 **Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
@@ -930,7 +1002,9 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
+| RemoveMcAfeeBloat.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
+| RemoveRealtekBloat.bat | Yes |
 | RestoreRecycleBin.bat | No |
 | ScheduledTaskAuditor.bat | Yes |
 | ScreenSleepGuard.bat | No |
