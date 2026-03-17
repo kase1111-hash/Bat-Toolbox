@@ -24,13 +24,15 @@ Every script tells you what it's about to do. Every script asks before making ch
 
 | Category | Scripts | What They Fix |
 |----------|---------|---------------|
-| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveEOSNotification, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk |
+| **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveRealtekBloat, RemoveMcAfeeBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
-| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
-| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, FirmwareCheck, BrightnessDiagnostic | Find what's slowing you down |
+| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer, PowerPlanOptimizer, PagefileTuner, RAMDiskCreator | Microstutter, I/O latency, driver heuristics, power plans, memory |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck, StorageReliabilityCounter, MemoryDiagnostic, AudioDeviceAnalyzer | Find what's slowing you down |
+| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot | Port auditing, password policy, intrusion detection |
+| **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
-| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks | Fix common issues, customize Windows |
-| **Utilities** | ExportInstalledPrograms, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
+| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit, DriverBackupRestore | Fix issues, repair system, backup drivers |
+| **Utilities** | ExportInstalledPrograms, WifiPasswordExporter, FileSorter, ScreenSleepGuard | Backup, organize, utilities |
 
 ---
 
@@ -91,6 +93,25 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 ---
 
 ## Main Scripts
+
+### AudioDeviceAnalyzer.bat
+
+**Purpose:** Lists all audio endpoints, shows loaded drivers, detects common issues (wrong default device, enhancements causing crackling, exclusive mode conflicts, problematic software like Nahimic/Waves), and provides one-click fixes.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| List devices | All audio endpoints with state (active/disabled/unplugged) |
+| Driver info | Audio drivers with age, related services, processing software |
+| Detect issues | 10 automated checks for common audio problems |
+| Service check | Core audio service status and startup type |
+| Apply fixes | Restart services, disable enhancements, re-register components |
+
+**Common issues detected:** Audio service stopped, enhancements causing crackling, problematic software (Nahimic, Waves MaxxAudio), high DPC latency, multiple driver conflicts, Event Log errors.
+
+**Admin required:** Partial (analysis no, fixes yes)
+
+---
 
 ### BatteryChargeLimit.bat
 
@@ -160,6 +181,74 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 - Full restore option reverses all changes
 
 **Warning:** With updates disabled, your system will not receive security patches. Consider periodically re-enabling updates for critical patches.
+
+**Admin required:** Yes
+
+---
+
+### ContextMenuCleaner.bat
+
+**Purpose:** Scans the registry for right-click context menu entries, categorizes them as bloatware, optional, or essential, and lets you selectively disable unwanted entries.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| BLOATWARE | WinZip, Paint 3D, antivirus scan entries, CRC SHA - recommended to remove |
+| OPTIONAL | 7-Zip, cloud storage, Git, text editors, GPU panels - your choice |
+| KEEP | Open with, Send to, Terminal, Defender scan - never touched |
+| DISABLED | Already hidden entries |
+
+**Features:**
+- Scans 12+ registry locations for context menu entries
+- Uses `LegacyDisable` (non-destructive, easily reversible)
+- Batch disable bloatware or review optional entries one by one
+- On Windows 11, offers to restore the classic full context menu
+
+**Admin required:** Yes
+
+---
+
+### DriverBackupRestore.bat
+
+**Purpose:** Exports all third-party (non-inbox) drivers to a folder using DISM and pnputil. Creates a portable backup with an optional self-contained restore script. Invaluable before a clean Windows install.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Backup all drivers | Exports all non-Microsoft drivers via DISM /export-driver |
+| List installed drivers | Shows third-party drivers with class, provider, version |
+| Restore from backup | Bulk or selective install from a backup folder |
+| Backup with restore script | Creates a self-contained RestoreAllDrivers.bat |
+
+**What it backs up:** GPU, audio, network, chipset, storage, USB, printer, and all other third-party drivers.
+
+**Output:** Creates `DriverBackup_COMPUTERNAME_DATE/` folder with driver packages, inventory, and optional restore script.
+
+**When to use:** Before a clean Windows install, before major driver changes, or for disaster recovery preparation.
+
+**Admin required:** Yes
+
+---
+
+### DiskHealthCheck.bat
+
+**Purpose:** Reads S.M.A.R.T. data, drive temperatures, wear levels, power-on hours, and error counts for all connected drives. Flags drives approaching failure.
+
+**What it checks:**
+| Metric | Thresholds |
+|--------|-----------|
+| Temperature | Green <45C, Yellow 45-54C, Red 55C+ |
+| SSD Wear Level | Green <50%, Yellow 50-89%, Red 90%+ |
+| Power-On Hours | Reports age estimate in years |
+| Read/Write Errors | Any non-zero count flagged |
+| Disk Space | Yellow >90% used, Red >95% used |
+
+**Features:**
+- Reads Windows Storage Reliability Counters (S.M.A.R.T. equivalent)
+- Shows partition usage and free space
+- WMI fallback for additional drive details
+- Saves full report to Desktop
+- Clear action recommendations based on severity
 
 **Admin required:** Yes
 
@@ -433,6 +522,24 @@ DIRECT LINKS
 
 ---
 
+### MemoryDiagnostic.bat
+
+**Purpose:** Shows installed RAM details (speed, slots used, single/dual channel), checks for mismatched sticks, detects XMP/DOCP status, reports current memory usage breakdown by process, and offers to schedule Windows Memory Diagnostic (mdsched.exe).
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Hardware info | RAM sticks, speed, slots, channel mode, XMP/DOCP status |
+| Usage breakdown | Top 25 processes by RAM, category summary (browsers, system, etc.) |
+| Configuration analysis | Scored health check (A-F grade) with recommendations |
+| Memory diagnostic | Schedule mdsched.exe for hardware RAM testing on reboot |
+
+**Issues detected:** Single-channel mode, mismatched sticks, XMP/DOCP not enabled, high memory usage, missing pagefile, expansion availability.
+
+**Admin required:** Partial (hardware info and analysis no, scheduling diagnostic yes)
+
+---
+
 ### NetworkReset.bat
 
 **Purpose:** Performs a complete network stack reset to fix connectivity issues.
@@ -454,6 +561,123 @@ DIRECT LINKS
 - After removing malware
 - VPN connection issues
 - "No Internet" despite being connected
+
+**Admin required:** Yes
+
+---
+
+### OpenPortScanner.bat
+
+**Purpose:** Scans all listening TCP and UDP ports, resolves PIDs to process names, flags known-suspicious ports, and highlights unexpected services listening on 0.0.0.0. A lightweight local audit without installing Nmap.
+
+**What it scans:**
+| Phase | Description |
+|-------|-------------|
+| Listening Ports | All TCP/UDP ports with process names, suspicious port detection |
+| Firewall Status | Domain, Private, and Public profile status |
+| Remote Access | RDP, SSH, WinRM, Telnet service status |
+| Established Connections | Active outbound TCP connections with process names |
+
+**Port status flags:**
+| Status | Meaning |
+|--------|---------|
+| OK | Normal, expected port |
+| SUSPICIOUS | Port commonly associated with malware or insecure services |
+| HIGH RISK | Port strongly associated with known trojans/backdoors |
+| WILDCARD | Service listening on all network interfaces (0.0.0.0) |
+
+**Known suspicious ports flagged:** 4444 (Metasploit), 6666/6667 (IRC), 12345 (NetBus), 31337 (Back Orifice), 1337, 5555, 23 (Telnet), exposed databases (1433, 3306, 5432, 27017, 6379), and more.
+
+**Output:** Creates `PortScan_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:** Periodically for security hygiene, after installing new software, or if you suspect unauthorized network activity.
+
+**Admin required:** Yes (recommended; works without admin but some process names may show as "Unknown")
+
+---
+
+### PagefileTuner.bat
+
+**Purpose:** Analyzes RAM usage patterns, recommends pagefile size, offers to move it to a faster drive, or lock it to a fixed size to avoid fragmentation.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Analyze | Shows RAM usage, current pagefile config, drive types, recommendations |
+| Apply recommended | Sets optimized fixed pagefile based on your RAM amount |
+| Custom size | Set your own initial/maximum pagefile size |
+| Move to drive | Relocate pagefile to a faster NVMe/SSD drive |
+| Disable | Remove pagefile entirely (64+ GB RAM only) |
+| Restore automatic | Return to Windows automatic management |
+
+**Size recommendations:**
+| RAM | Recommended | Rationale |
+|-----|-------------|-----------|
+| 8 GB | 12-24 GB | Essential — RAM runs out fast |
+| 16 GB | 16 GB fixed | Standard safety net |
+| 32 GB | 16 GB fixed | Moderate — rarely used heavily |
+| 64+ GB | 16 GB fixed | Crash dump support |
+
+**When to use:** After a clean install, if you experience out-of-memory issues, or to optimize I/O by moving the pagefile off an HDD.
+
+**Admin required:** Yes
+
+---
+
+### PasswordPolicyAudit.bat
+
+**Purpose:** Audits local password policy, account lockout settings, user accounts, audit policy, and general security configuration. Reports security posture with a letter grade (A-F).
+
+**What it checks:**
+| Phase | Details |
+|-------|---------|
+| Password Policy | Min length, max/min age, history, lockout threshold/duration |
+| Complexity | Complexity requirements, reversible encryption |
+| User Accounts | Guest/Administrator status, accounts without passwords, admin group members |
+| Audit Policy | Logon, lockout, account management, policy change auditing |
+| Additional | UAC status/level, auto-logon, screen lock timeout, Defender status |
+
+**Scoring:**
+| Grade | Score | Meaning |
+|-------|-------|---------|
+| A | 90-100% | Excellent security posture |
+| B | 75-89% | Good, minor improvements possible |
+| C | 60-74% | Acceptable but improvements needed |
+| D | 40-59% | Weak, action needed |
+| F | 0-39% | Critical issues, fix immediately |
+
+**Output:** Creates `PasswordAudit_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:** On shared machines, family computers, small office PCs, or for compliance documentation.
+
+**Admin required:** Yes
+
+---
+
+### PowerPlanOptimizer.bat
+
+**Purpose:** Goes beyond the basic "High Performance" plan. Creates custom power plans with hidden settings like CPU parking, core frequency scaling, PCI Express link state, USB selective suspend, and timer resolution.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Maximum Performance | All power saving disabled — desktop/gaming |
+| Balanced Performance | Optimized for laptops — respects thermals/battery |
+| View current plan | Shows active plan with all key settings |
+| Unhide all settings | Makes hidden power settings visible in Control Panel |
+| Restore defaults | Removes custom plans, restores Windows defaults |
+
+**Key settings configured:**
+| Setting | Maximum Perf | Balanced (AC) |
+|---------|-------------|---------------|
+| CPU min state | 100% | 10% |
+| Core parking | Disabled | 50% min |
+| PCI Express ASPM | Off | Off |
+| USB selective suspend | Disabled | Disabled |
+| Hard disk spin-down | Never | Never |
+| Timer resolution | Maximum | Default |
+
+**When to use:** After a clean install for gaming/workstation PCs, or to squeeze maximum responsiveness from your hardware.
 
 **Admin required:** Yes
 
@@ -566,6 +790,25 @@ DIRECT LINKS
 
 ---
 
+### StorageReliabilityCounter.bat
+
+**Purpose:** Reports temperature, power-on hours, wear level, read/write error counters, and S.M.A.R.T. failure prediction for all SSDs and HDDs. Flags drives approaching failure with color-coded health assessments and remaining life estimates.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Quick overview | All drives with health status and reliability counters |
+| Detailed report | Per-drive identification, errors, partitions, assessment |
+| Export report | Save full report to Desktop as text file |
+
+**Key metrics:** Temperature (with threshold alerts), power-on hours (with usage estimates), SSD wear level (with remaining life calculation), read/write errors (corrected and uncorrected), S.M.A.R.T. failure prediction.
+
+**Differences from DiskHealthCheck.bat:** Focuses on key reliability metrics with color-coded thresholds. Partially works without admin. Simpler and more actionable output.
+
+**Admin required:** Partial (basic info no, full reliability counters yes)
+
+---
+
 ### RemoveAsusBloat.bat
 
 **Purpose:** Removes ASUS pre-installed bloatware while keeping essential hardware drivers.
@@ -645,6 +888,165 @@ DIRECT LINKS
 
 ---
 
+### RemoveRealtekBloat.bat
+
+**Purpose:** Removes Realtek Audio Console, Nahimic, A-Volute, and other audio bloatware bundled with Realtek HD Audio drivers. Keeps the core audio driver intact.
+
+**What it removes:**
+| Component | Description |
+|-----------|-------------|
+| Realtek Audio Console | UWP settings/equalizer app |
+| Nahimic / A-Volute | Audio effects engine (causes crackling/conflicts) |
+| Sonic Studio / Sonic Radar | Spatial audio processing bloat |
+| Waves MaxxAudio / DTS | Bundled audio processing (Dell/HP) |
+| Audio Processing Objects | APO hooks in the driver chain |
+| Services & Tasks | Background audio bloatware services |
+
+**What it keeps:**
+- Realtek HD Audio driver (core audio functionality)
+- Windows Audio Service
+- All audio devices and endpoints
+
+**What it does:**
+1. Stops all audio bloatware processes and services
+2. Removes Nahimic/A-Volute AppX packages
+3. Uninstalls desktop applications via WMIC
+4. Removes scheduled tasks
+5. Cleans APO entries from audio endpoint registry
+6. Deletes leftover folders
+
+**When to use:** If you experience audio crackling, latency, or conflicts with pro audio software (DAWs, ASIO drivers). Also useful after Realtek driver updates reinstall Nahimic.
+
+**Admin required:** Yes
+
+---
+
+### RemoveMcAfeeBloat.bat
+
+**Purpose:** Removes all McAfee products (Security, WebAdvisor, LiveSafe, True Key) that ship preinstalled on Dell, HP, and Lenovo machines. Performs deep cleanup that survives normal uninstall.
+
+**What it removes:**
+| Component | Description |
+|-----------|-------------|
+| McAfee LiveSafe / Total Protection | Main antivirus suite |
+| McAfee WebAdvisor / SiteAdvisor | Browser security plugin |
+| McAfee True Key | Password manager |
+| Kernel Filter Drivers | mfeavfk, mfefirek, mfehidk, etc. |
+| Services & Tasks | All McAfee background services |
+| Browser Policies | Force-installed extension policies |
+| Context Menu Handlers | Right-click scan entries |
+| Registry Keys | McAfee reinstall protection keys |
+
+**What it keeps:**
+- Windows Defender (re-enabled automatically)
+- Windows Firewall
+- All other security software
+
+**What it does:**
+1. Stops all McAfee processes and services
+2. Runs WMIC uninstall for all McAfee products
+3. Removes UWP/Store versions
+4. Disables and deletes kernel filter drivers
+5. Removes scheduled tasks
+6. Cleans registry (startup, Security Center, browser policies, context menus)
+7. Deletes leftover files and folders
+8. Re-enables Windows Defender
+
+**When to use:** On any OEM PC (Dell, HP, Lenovo) that shipped with McAfee preinstalled. Also useful when McAfee survives a normal Programs & Features uninstall.
+
+**Important:** Export True Key passwords before running if you use them.
+
+**Admin required:** Yes
+
+---
+
+### RecentActivityCleaner.bat
+
+**Purpose:** Clears recent files lists, jump lists, Explorer address bar history, Run dialog history, Windows Search history, and other activity traces. A privacy-focused cleanup that goes beyond just temp files.
+
+**What it clears:**
+| Category | Items |
+|----------|-------|
+| Recent Files | Quick Access history, Recent Items folder |
+| Jump Lists | Taskbar right-click history per application |
+| Explorer History | Address bar paths, search queries, Open/Save dialog history |
+| Command History | Run dialog (Win+R), PowerShell history, doskey |
+| Search History | Windows Search, Cortana local database |
+| Cache | Thumbnail cache, icon cache |
+| App History | Office, Paint, WordPad, Notepad, Media Player recent files |
+| Activity | Windows Activity Timeline, clipboard history |
+| Traces | Prefetch data, temp files, notification history |
+
+**What it does NOT clear:**
+- Browser history (use browser settings)
+- Installed programs and settings
+- Saved files and documents
+- Pinned Quick Access items
+
+**When to use:** Before handing a shared computer to another user, before screen sharing or presentations, or for general privacy hygiene.
+
+**Admin required:** Partial (most items work without admin; Prefetch and system temp require admin)
+
+---
+
+### RAMDiskCreator.bat
+
+**Purpose:** Creates a RAM disk for temp files, browser caches, or game shader caches. Redirects %TEMP% to it for a solid performance boost on machines with 32GB+ RAM.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Create RAM disk | Choose size and drive letter, formatted as NTFS |
+| Redirect %TEMP% | Point TEMP/TMP to the RAM disk (session or permanent) |
+| View status | Check current RAM disk and TEMP configuration |
+| Remove RAM disk | Destroy the disk and restore TEMP to default |
+| Size guide | Recommended sizes and redirection targets |
+
+**Methods:** Uses ImDisk (recommended, install separately) or built-in VHD fallback.
+
+**Size recommendations:**
+| RAM | Suggested Size | Use Case |
+|-----|---------------|----------|
+| 16 GB | 1-2 GB | TEMP files only |
+| 32 GB | 2-4 GB | TEMP + browser cache |
+| 64 GB | 4-8 GB | TEMP + cache + shader cache |
+| 128 GB | 8-16 GB | Everything |
+
+**Important:** RAM disk contents are LOST on every reboot or shutdown. Only use for temporary/cache data.
+
+**Admin required:** Yes
+
+---
+
+### ScheduledTaskAuditor.bat
+
+**Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
+
+**Categories:**
+| Category | Description |
+|----------|-------------|
+| TELEMETRY | Microsoft data collection tasks (Compatibility Appraiser, CEIP, DiagTrack) |
+| BLOATWARE | Third-party junk tasks (Adobe updaters, Chrome update, antivirus, vendor telemetry) |
+| OPTIONAL | Legitimate but potentially unwanted (Xbox, OneDrive, Edge, Cortana, Office background) |
+| ESSENTIAL | Core Windows tasks (Defender, defrag, maintenance) - never touched |
+
+**Features:**
+- Scans all scheduled tasks system-wide
+- Batch disable telemetry or bloatware categories
+- Review optional tasks one by one
+- Saves full audit report to Desktop
+- Shows re-enable command for each disabled task
+
+**When to use:**
+- After a fresh Windows install
+- After installing new software
+- To reduce background CPU/disk activity
+- Pairs with ServiceAnalyzer.bat and StartupAnalyzer.bat for full background audit
+
+**Admin required:** Yes
+
+---
+
 ### RestoreRecycleBin.bat
 
 **Purpose:** Restores the Recycle Bin icon to the Windows desktop if it was accidentally hidden or removed.
@@ -706,6 +1108,63 @@ DIRECT LINKS
 **Companion file:** Requires `ScreenSleepGuard.ps1` in the same directory.
 
 **Admin required:** No
+
+---
+
+### WifiPasswordExporter.bat
+
+**Purpose:** Exports all saved Wi-Fi network names and passwords to a plain text file for backup before reinstalling Windows or setting up a new device.
+
+**What it captures:**
+| Field | Description |
+|-------|-------------|
+| Network Name | SSID of the saved network |
+| Password | Plain text password (key content) |
+| Security | Authentication type (WPA2-Personal, WPA3, etc.) |
+| Cipher | Encryption cipher (CCMP, TKIP) |
+| Auto-connect | Whether the network connects automatically |
+
+**Output:** Creates `WifiPasswords_COMPUTERNAME_DATE.txt` on Desktop
+
+**Features:**
+- Exports all saved Wi-Fi profiles in one go
+- Shows open networks separately
+- Summary with profile and password counts
+- Works without admin (but admin recommended for full access)
+
+**Security note:** Output contains plain text passwords. Delete after use.
+
+**Admin required:** No (recommended for full access)
+
+---
+
+### WindowsRepairKit.bat
+
+**Purpose:** Runs SFC, DISM, and CHKDSK in the correct sequence with progress reporting and result parsing. A one-stop system integrity checker.
+
+**What it runs (in order):**
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1 | SFC /scannow | Scan and repair Windows system files |
+| 2 | DISM /RestoreHealth | Repair the Windows component store |
+| 3 | CHKDSK | Check disk for filesystem errors |
+
+**Smart features:**
+- Parses results to show actual status (PASS, FIXED, ISSUE, BLOCKED)
+- If SFC fails but DISM succeeds, offers to re-run SFC (often fixes it)
+- Extracts CBS log corruption entries
+- Offers to schedule CHKDSK /F /R if errors found
+- Saves timestamped log to Desktop
+
+**Output:** Creates `RepairKit_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:**
+- Random crashes or blue screens
+- Programs behaving strangely
+- Windows Update errors
+- After malware removal or forced shutdown
+
+**Admin required:** Yes
 
 ---
 
@@ -783,25 +1242,42 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 
 | Script | Admin Required |
 |--------|----------------|
+| AudioDeviceAnalyzer.bat | Partial (analysis no, fixes yes) |
 | BatteryChargeLimit.bat | Yes |
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
+| ContextMenuCleaner.bat | Yes |
+| DiskHealthCheck.bat | Yes |
 | DisableWindowsUpdate.bat | Yes |
+| DriverBackupRestore.bat | Yes |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
 | GPUDriverOptimizer.bat | Yes |
 | Honeypot.bat | No |
 | InterruptLatencyTuning.bat | Yes |
+| MemoryDiagnostic.bat | Partial (analysis no, scheduling diagnostic yes) |
 | NetworkReset.bat | Yes |
+| OpenPortScanner.bat | Yes (recommended) |
+| PagefileTuner.bat | Yes |
+| PasswordPolicyAudit.bat | Yes |
+| PowerPlanOptimizer.bat | Yes |
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
+| RemoveMcAfeeBloat.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
+| RemoveRealtekBloat.bat | Yes |
+| RAMDiskCreator.bat | Yes |
+| RecentActivityCleaner.bat | Partial (most no, prefetch yes) |
 | RestoreRecycleBin.bat | No |
+| ScheduledTaskAuditor.bat | Yes |
 | ScreenSleepGuard.bat | No |
 | ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
 | StorageLatencyTuning.bat | Yes |
+| StorageReliabilityCounter.bat | Partial (basic info no, full counters yes) |
+| WifiPasswordExporter.bat | No (recommended) |
+| WindowsRepairKit.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
 
