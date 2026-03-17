@@ -28,7 +28,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer, PowerPlanOptimizer, PagefileTuner, RAMDiskCreator | Microstutter, I/O latency, driver heuristics, power plans, memory |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck, StorageReliabilityCounter, MemoryDiagnostic, AudioDeviceAnalyzer | Find what's slowing you down |
-| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot, DisableNetBIOS | Port auditing, password policy, intrusion detection, NetBIOS hardening |
+| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot, DisableNetBIOS, DisableLLMNR, HardenPrintSpooler, HardenSMB, DisableUPnP | Port auditing, password policy, intrusion detection, protocol hardening |
 | **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit, DriverBackupRestore | Fix issues, repair system, backup drivers |
@@ -338,6 +338,57 @@ Before:                    After:
 
 ---
 
+### DisableLLMNR.bat
+
+**Purpose:** Disables LLMNR, mDNS, and WPAD to prevent name-resolution poisoning attacks.
+
+**What it disables:**
+| Protocol | Port | Attack Vector |
+|----------|------|---------------|
+| LLMNR | UDP 5355 | Broadcast name queries can be spoofed to capture NTLMv2 hashes (Responder) |
+| mDNS | UDP 5353 | Same spoofing risk as LLMNR via multicast DNS |
+| WPAD | N/A | Proxy auto-discovery can be hijacked to intercept all HTTP traffic |
+
+**What it does:**
+| Step | Action |
+|------|--------|
+| 1. LLMNR | Registry: EnableMulticast = 0 via Group Policy key |
+| 2. mDNS | Registry: EnableMDNS = 0 in DNS Client parameters |
+| 3. WPAD | Registry: WpadOverride, DisableWpad, AutoDetect + disables WinHTTP Auto-Proxy service |
+| 4. Firewall | Blocks inbound and outbound UDP 5353 and 5355 |
+
+**When NOT to use:**
+- You use Bonjour (iTunes, AirPlay) or Chromecast device discovery
+- Your organization uses WPAD for proxy auto-configuration
+
+**Admin required:** Yes
+
+---
+
+### DisableUPnP.bat
+
+**Purpose:** Disables UPnP and SSDP Discovery to prevent applications from silently opening firewall ports.
+
+**What it disables:**
+| Service | Purpose |
+|---------|---------|
+| SSDP Discovery (SSDPSRV) | Broadcasts on UDP 1900 to find UPnP devices |
+| UPnP Device Host (upnphost) | Processes port-forwarding requests from applications |
+| Function Discovery Provider Host (fdPHost) | Network device discovery |
+| Function Discovery Resource Publication (FDResPub) | Publishes this computer for discovery |
+
+**When to use:**
+- Hardening a workstation to prevent silent port exposure
+- You control router port forwarding manually
+- Reducing attack surface on untrusted networks
+
+**When NOT to use:**
+- Games or apps that need automatic NAT traversal (can use manual port forwarding instead)
+
+**Admin required:** Yes
+
+---
+
 ### ExportInstalledPrograms.bat
 
 **Purpose:** Scans and exports a list of all installed programs for clean install recovery.
@@ -470,6 +521,46 @@ DIRECT LINKS
 - CapFrameX for latency analysis
 
 **Note:** Many settings require manual configuration in GPU control panel - the script provides guidance.
+
+**Admin required:** Yes
+
+---
+
+### HardenPrintSpooler.bat
+
+**Purpose:** Disables or hardens the Windows Print Spooler to mitigate PrintNightmare (CVE-2021-1675 / CVE-2021-34527).
+
+**Options:**
+| Option | Best For | What It Does |
+|--------|----------|--------------|
+| 1. Disable completely | Machines that never print | Stops and disables Spooler service + registry hardening |
+| 2. Harden only | Workstations that print | Sets to Manual start + restricts dangerous features |
+
+**Registry hardening (both options):**
+- Point and Print: require UAC elevation for driver install
+- Restrict driver installation to administrators only
+- Disable web-based PnP driver download and HTTP printing
+- Enable RPC authentication privacy
+
+**Admin required:** Yes
+
+---
+
+### HardenSMB.bat
+
+**Purpose:** Hardens SMB 2.0/3.0 by enforcing packet signing, encryption, and restricting guest/null-session access.
+
+**What it configures:**
+| Category | Settings |
+|----------|----------|
+| SMB Server | Require signing, enable encryption, reject unencrypted, disable compression (SMBGhost) |
+| SMB Client | Require signing, disable insecure guest logons |
+| Registry | Block anonymous SAM/share enumeration, clear null session pipes/shares, NTLMv2 only |
+
+**Compatibility notes:**
+- Windows-to-Windows file sharing: fully compatible
+- NAS devices: most modern firmware supports signing (check admin panel)
+- Samba: 4.2+ supports signing, 4.11+ supports encryption
 
 **Admin required:** Yes
 
@@ -1273,13 +1364,17 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
 | ContextMenuCleaner.bat | Yes |
 | DiskHealthCheck.bat | Yes |
+| DisableLLMNR.bat | Yes |
 | DisableNetBIOS.bat | Yes |
+| DisableUPnP.bat | Yes |
 | DisableWindowsUpdate.bat | Yes |
 | DriverBackupRestore.bat | Yes |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
 | GPUDriverOptimizer.bat | Yes |
+| HardenPrintSpooler.bat | Yes |
+| HardenSMB.bat | Yes |
 | Honeypot.bat | No |
 | InterruptLatencyTuning.bat | Yes |
 | MemoryDiagnostic.bat | Partial (analysis no, scheduling diagnostic yes) |
