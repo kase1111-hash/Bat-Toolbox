@@ -142,7 +142,7 @@ echo $totalPorts = 0
 echo $suspiciousCount = 0
 echo $wildcardCount = 0
 echo $highRiskCount = 0
-echo $results = @(^)
+echo $results = @^(^)
 echo/
 echo foreach ^($conn in $listeners^) {
 echo     $totalPorts++
@@ -165,7 +165,7 @@ echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
 echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
 echo         $color = 'Red'
 echo         $suspiciousCount++
-echo         if ^($port -in @(4444,4445,6666,6667,1337,31337,12345,27374,3127^)^) {
+echo         if ^($port -in @^(4444,4445,6666,6667,1337,31337,12345,27374,3127^)^) {
 echo             $highRiskCount++
 echo             $status = "HIGH RISK - $^($suspiciousPorts[$port]^)"
 echo         }
@@ -235,7 +235,7 @@ echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
 echo         $color = 'Red'
 echo         $suspiciousCount++
 echo     }
-echo     elseif ^($isWildcard -and $port -lt 49152 -and $port -notin @(123,137,138,500,3702,4500,5050,5353,5355^)^) {
+echo     elseif ^($isWildcard -and $port -lt 49152 -and $port -notin @^(123,137,138,500,3702,4500,5050,5353,5355^)^) {
 echo         $status = 'WILDCARD - exposed on all interfaces'
 echo         $color = 'Yellow'
 echo         $wildcardCount++

@@ -94,7 +94,7 @@ echo     'Bitdefender' = 'BLOATWARE'
 echo }
 echo/
 echo # Registry locations to scan
-echo $contextMenuPaths = @(
+echo $contextMenuPaths = @^(
 echo     'HKCR:\*\shell'
 echo     'HKCR:\*\shellex\ContextMenuHandlers'
 echo     'HKCR:\Directory\shell'
@@ -111,7 +111,7 @@ echo     'HKCU:\SOFTWARE\Classes\Directory\shell'
 echo ^)
 echo/
 echo # Map HKEY_CLASSES_ROOT
-echo if (-not ^(Test-Path 'HKCR:'^)^) {
+echo if ^(-not ^(Test-Path 'HKCR:'^)^) {
 echo     New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT ^| Out-Null
 echo }
 echo/
@@ -210,7 +210,7 @@ echo/
 echo # Show essential
 echo $keep = $uniqueEntries ^| Where-Object { $_.Category -eq 'KEEP' -and $_.Status -eq 'Active' }
 echo if ^($keep^) {
-echo     Write-Host "[KEEP] - Essential entries (will not be touched):" -ForegroundColor Green
+echo     Write-Host "[KEEP] - Essential entries ^(will not be touched^):" -ForegroundColor Green
 echo     foreach ^($e in $keep^) {
 echo         Write-Host "  [+] $^($e.DisplayName^)" -ForegroundColor Green
 echo     }

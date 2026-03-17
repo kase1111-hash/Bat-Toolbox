@@ -161,11 +161,11 @@ set "PSINVENTORY=%TEMP%\driver_inventory.ps1"
 echo $drivers = Get-WindowsDriver -Online -ErrorAction SilentlyContinue ^| Where-Object { $_.Driver -ne $null }
 echo $thirdParty = $drivers ^| Where-Object { $_.ProviderName -ne 'Microsoft' }
 echo/
-echo Write-Output "THIRD-PARTY DRIVERS ($($thirdParty.Count) total)"
+echo Write-Output "THIRD-PARTY DRIVERS ^($^($thirdParty.Count^) total^)"
 echo Write-Output "============================================================================"
 echo Write-Output ""
-echo Write-Output ("{0,-40} {1,-30} {2,-15} {3}" -f "Driver Name", "Provider", "Version", "Class")
-echo Write-Output ("{0,-40} {1,-30} {2,-15} {3}" -f ("-" * 39), ("-" * 29), ("-" * 14), ("-" * 20))
+echo Write-Output ^("{0,-40} {1,-30} {2,-15} {3}" -f "Driver Name", "Provider", "Version", "Class"^)
+echo Write-Output ^("{0,-40} {1,-30} {2,-15} {3}" -f ^("-" * 39^), ^("-" * 29^), ^("-" * 14^), ^("-" * 20^)^)
 echo/
 echo foreach ^($drv in $thirdParty ^| Sort-Object ClassName, ProviderName^) {
 echo     $name = if ^($drv.OriginalFileName^) { [System.IO.Path]::GetFileNameWithoutExtension^($drv.OriginalFileName^) } else { $drv.Driver }
@@ -183,13 +183,13 @@ echo Write-Output "DRIVER CLASSES SUMMARY"
 echo Write-Output "============================================================================"
 echo Write-Output ""
 echo $thirdParty ^| Group-Object ClassName ^| Sort-Object Count -Descending ^| ForEach-Object {
-echo     Write-Output ("  {0,-35} {1} drivers" -f $_.Name, $_.Count)
+echo     Write-Output ^("  {0,-35} {1} drivers" -f $_.Name, $_.Count^)
 echo }
 echo/
 echo Write-Output ""
-echo Write-Output "MICROSOFT (INBOX) DRIVERS: $($drivers.Count - $thirdParty.Count)"
-echo Write-Output "THIRD-PARTY DRIVERS:       $($thirdParty.Count)"
-echo Write-Output "TOTAL DRIVERS:             $($drivers.Count)"
+echo Write-Output "MICROSOFT ^(INBOX^) DRIVERS: $^($drivers.Count - $thirdParty.Count^)"
+echo Write-Output "THIRD-PARTY DRIVERS:       $^($thirdParty.Count^)"
+echo Write-Output "TOTAL DRIVERS:             $^($drivers.Count^)"
 ) > "!PSINVENTORY!"
 
 powershell -ExecutionPolicy Bypass -File "!PSINVENTORY!" >> "!INVENTORY!" 2>nul
@@ -243,8 +243,8 @@ echo $drivers = Get-WindowsDriver -Online -ErrorAction SilentlyContinue
 echo $thirdParty = $drivers ^| Where-Object { $_.ProviderName -ne 'Microsoft' } ^| Sort-Object ClassName, ProviderName
 echo/
 echo Write-Host ""
-echo Write-Host ("{0,-15} {1,-35} {2,-25} {3}" -f "Class", "Published Name", "Provider", "Version")
-echo Write-Host ("{0,-15} {1,-35} {2,-25} {3}" -f ("-" * 14), ("-" * 34), ("-" * 24), ("-" * 15))
+echo Write-Host ^("{0,-15} {1,-35} {2,-25} {3}" -f "Class", "Published Name", "Provider", "Version"^)
+echo Write-Host ^("{0,-15} {1,-35} {2,-25} {3}" -f ^("-" * 14^), ^("-" * 34^), ^("-" * 24^), ^("-" * 15^)^)
 echo/
 echo foreach ^($drv in $thirdParty^) {
 echo     $class = if ^($drv.ClassName.Length -gt 14^) { $drv.ClassName.Substring^(0,11^) + '...' } else { $drv.ClassName }
@@ -257,8 +257,8 @@ echo     Write-Host ^("{0,-15} {1,-35} {2,-25} {3}" -f $class, $name, $provider,
 echo }
 echo/
 echo Write-Host ""
-echo Write-Host "Total third-party drivers: $($thirdParty.Count)" -ForegroundColor Green
-echo Write-Host "Total inbox (Microsoft) drivers: $($drivers.Count - $thirdParty.Count)"
+echo Write-Host "Total third-party drivers: $^($thirdParty.Count^)" -ForegroundColor Green
+echo Write-Host "Total inbox ^(Microsoft^) drivers: $^($drivers.Count - $thirdParty.Count^)"
 echo Write-Host ""
 ) > "!PSLIST!"
 
