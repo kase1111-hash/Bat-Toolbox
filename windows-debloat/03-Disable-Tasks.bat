@@ -10,14 +10,14 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Disable Scheduled Tasks
 echo ============================================================================
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
@@ -29,11 +29,11 @@ echo  - Disk diagnostics data collection
 echo  - Feedback collection
 echo  - Cloud sync features
 echo  - Family safety monitoring
-echo(
+echo/
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
-echo(
+echo/
 echo ============================================================================
 echo  Disabling Telemetry Tasks...
 echo ============================================================================
@@ -56,7 +56,7 @@ schtasks /Change /TN "\Microsoft\Windows\Customer Experience Improvement Program
 echo Disabling Disk Diagnostic Data Collector...
 schtasks /Change /TN "\Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector" /Disable >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Disabling Feedback Tasks...
 echo ============================================================================
@@ -67,7 +67,7 @@ schtasks /Change /TN "\Microsoft\Windows\Feedback\Siuf\DmClient" /Disable >nul 2
 echo Disabling DmClientOnScenarioDownload...
 schtasks /Change /TN "\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload" /Disable >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Disabling Cloud/Sync Tasks...
 echo ============================================================================
@@ -81,7 +81,7 @@ schtasks /Change /TN "\Microsoft\Windows\Maps\MapsToastTask" /Disable >nul 2>&1
 echo Disabling Maps Update Task...
 schtasks /Change /TN "\Microsoft\Windows\Maps\MapsUpdateTask" /Disable >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Disabling Maintenance/Optional Tasks...
 echo ============================================================================
@@ -98,13 +98,13 @@ schtasks /Change /TN "\Microsoft\Windows\Shell\FamilySafetyMonitor" /Disable >nu
 echo Disabling Family Safety Refresh...
 schtasks /Change /TN "\Microsoft\Windows\Shell\FamilySafetyRefreshTask" /Disable >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Scheduled tasks disabled successfully!
 echo ============================================================================
-echo(
+echo/
 echo NOTE: To re-enable a task, use:
 echo schtasks /Change /TN "TaskPath" /Enable
-echo(
+echo/
 
 pause

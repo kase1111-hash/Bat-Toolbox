@@ -23,26 +23,26 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Password Policy Audit%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 echo This script audits your local security policy and account settings.
-echo(
+echo/
 echo %YELLOW%This is a read-only audit. No changes will be made.%RESET%
-echo(
+echo/
 
 set /p "confirm=Start the audit? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo(
+    echo/
     echo Operation cancelled.
     pause
     exit /b 0
@@ -66,16 +66,16 @@ echo  Date: %dt:~0,4%-%dt:~4,2%-%dt:~6,2% %dt:~8,2%:%dt:~10,2%:%dt:~12,2%
 echo ============================================================================
 ) > "%REPORT%"
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Password Policy (net accounts)%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [1/6] Checking password policy...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  PASSWORD POLICY) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -214,16 +214,16 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Password Complexity (secpol)%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [2/6] Checking password complexity requirements...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  PASSWORD COMPLEXITY) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -266,16 +266,16 @@ if exist "%SECPOL_EXPORT%" (
     (echo [SKIP] Could not export security policy) >> "%REPORT%"
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: User Account Analysis%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [3/6] Checking user accounts...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  USER ACCOUNTS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -309,9 +309,9 @@ if not errorlevel 1 (
 )
 
 :: List all user accounts
-echo(
+echo/
 echo   %WHITE%User accounts on this system:%RESET%
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo User accounts:) >> "%REPORT%"
 
 set "PSUSERS=%TEMP%\audit_users.ps1"
@@ -333,7 +333,7 @@ powershell -ExecutionPolicy Bypass -File "%PSUSERS%" 2>nul >> "%REPORT%"
 del "%PSUSERS%" 2>nul
 
 :: Check for accounts with no password required
-echo(
+echo/
 echo   %WHITE%Checking for accounts without password requirement...%RESET%
 
 set "PSNOPWD=%TEMP%\audit_nopwd.ps1"
@@ -357,9 +357,9 @@ powershell -ExecutionPolicy Bypass -File "%PSNOPWD%" 2>nul >> "%REPORT%"
 del "%PSNOPWD%" 2>nul
 
 :: Check for admin group members
-echo(
+echo/
 echo   %WHITE%Local Administrators group members:%RESET%
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo Administrators group members:) >> "%REPORT%"
 
 net localgroup Administrators 2>nul | findstr /v /c:"--" /c:"The command" /c:"Comment" /c:"Members" /c:"Alias" >nul 2>&1
@@ -373,16 +373,16 @@ for /f "skip=6 tokens=*" %%a in ('net localgroup Administrators 2^>nul') do (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Audit Policy%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [4/6] Checking audit policy settings...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  AUDIT POLICY) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -395,7 +395,7 @@ for /f "tokens=1,* delims=," %%a in ('auditpol /get /category:* /r 2^>nul ^| fin
 
 :: Check key audit categories
 echo   %WHITE%Key audit categories:%RESET%
-echo(
+echo/
 
 set "PSAUDIT=%TEMP%\audit_policy.ps1"
 (
@@ -411,7 +411,7 @@ echo     'Authentication Policy Change',
 echo     'Process Creation',
 echo     'Removable Storage'
 echo ^)
-echo(
+echo/
 echo foreach ^($cat in $categories^) {
 echo     $result = auditpol /get /subcategory:"$cat" 2^>$null
 echo     $line = $result ^| Where-Object { $_ -match $cat }
@@ -432,16 +432,16 @@ echo }
 powershell -ExecutionPolicy Bypass -File "%PSAUDIT%" 2>nul >> "%REPORT%"
 del "%PSAUDIT%" 2>nul
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 5: Additional Security Checks%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [5/6] Running additional security checks...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  ADDITIONAL SECURITY CHECKS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -553,16 +553,16 @@ if not errorlevel 1 (
     set /a warnings+=1
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 6: Security Score%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [6/6] Calculating security score...
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 (echo  SECURITY SCORE) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
@@ -578,13 +578,13 @@ echo   Checks passed:  !passScore! / !totalChecks!
 echo   Issues found:   !issues!
 echo   Warnings:       !warnings!
 echo   Score:          !scorePercent!%%
-echo(
+echo/
 
 (echo Checks passed:  !passScore! / !totalChecks!) >> "%REPORT%"
 (echo Issues found:   !issues!) >> "%REPORT%"
 (echo Warnings:       !warnings!) >> "%REPORT%"
 (echo Score:          !scorePercent!%%) >> "%REPORT%"
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 
 :: Grade
 if !scorePercent! GEQ 90 (
@@ -605,15 +605,15 @@ if !scorePercent! GEQ 90 (
 )
 
 :: Recommendations
-echo(
+echo/
 echo %YELLOW%RECOMMENDATIONS:%RESET%
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo RECOMMENDATIONS:) >> "%REPORT%"
 
 if !issues! GTR 0 (
-    echo(
+    echo/
     echo   %WHITE%Critical fixes:%RESET%
-    (echo() >> "%REPORT%"
+    (echo/) >> "%REPORT%"
     (echo Critical fixes:) >> "%REPORT%"
 
     net user Guest 2>nul | find /i "Account active" | find /i "Yes" >nul 2>&1
@@ -644,7 +644,7 @@ if !issues! GTR 0 (
     )
 )
 
-echo(
+echo/
 echo   %WHITE%General recommendations:%RESET%
 echo    - Use passwords of 12+ characters with complexity
 echo    - Enable account lockout after 5-10 failed attempts
@@ -652,9 +652,9 @@ echo    - Disable the Guest and built-in Administrator accounts
 echo    - Enable audit logging for logon events
 echo    - Set screen lock timeout to 5-15 minutes
 echo    - Keep UAC enabled at default or higher
-echo(
+echo/
 
-(echo() >> "%REPORT%"
+(echo/) >> "%REPORT%"
 (echo General recommendations:) >> "%REPORT%"
 (echo  - Use passwords of 12+ characters with complexity) >> "%REPORT%"
 (echo  - Enable account lockout after 5-10 failed attempts) >> "%REPORT%"
@@ -664,7 +664,7 @@ echo(
 (echo  - Keep UAC enabled at default or higher) >> "%REPORT%"
 
 echo Report saved to: %REPORT%
-echo(
+echo/
 
 pause
 exit /b 0

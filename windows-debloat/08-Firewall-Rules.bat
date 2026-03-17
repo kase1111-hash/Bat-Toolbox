@@ -10,14 +10,14 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Add Firewall Rules
 echo ============================================================================
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
@@ -30,18 +30,18 @@ echo  - CompatTelRunner.exe (Compatibility Telemetry)
 echo  - DeviceCensus.exe (Device Census)
 echo  - smartscreen.exe (SmartScreen - blocks some functionality)
 echo  - wsqmcons.exe (Windows SQM Consolidator)
-echo(
+echo/
 echo NOTE: Blocking smartscreen.exe may reduce security protection.
 echo       Only proceed if you understand the implications.
-echo(
+echo/
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
-echo(
+echo/
 echo ============================================================================
 echo  Creating Firewall Rules...
 echo ============================================================================
-echo(
+echo/
 
 :: Create temporary PowerShell script
 set "PSSCRIPT=%TEMP%\firewall-rules.ps1"
@@ -53,7 +53,7 @@ echo     @{Path="$env:SystemRoot\System32\DeviceCensus.exe"; Name='Block DeviceC
 echo     @{Path="$env:SystemRoot\System32\smartscreen.exe"; Name='Block SmartScreen ^(Telemetry^)'},
 echo     @{Path="$env:SystemRoot\System32\wsqmcons.exe"; Name='Block wsqmcons ^(Telemetry^)'}
 echo ^)
-echo(
+echo/
 echo foreach ^($app in $telemetryApps^) {
 echo     $expandedPath = [Environment]::ExpandEnvironmentVariables^($app.Path^)
 echo     if ^(Test-Path $expandedPath^) {
@@ -78,16 +78,16 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 :: Clean up
 del "%PSSCRIPT%" 2>nul
 
-echo(
+echo/
 echo ============================================================================
 echo  Firewall rules created successfully!
 echo ============================================================================
-echo(
+echo/
 echo To view these rules, open Windows Defender Firewall with Advanced Security
 echo and check Outbound Rules.
-echo(
+echo/
 echo To remove a rule:
 echo   netsh advfirewall firewall delete rule name="Rule Name"
-echo(
+echo/
 
 pause

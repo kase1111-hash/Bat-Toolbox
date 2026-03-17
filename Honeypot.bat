@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+chcp 65001 >nul 2>nul
 
 :: Get script directory for logs
 set "logdir=%~dp0"
@@ -21,17 +22,17 @@ echo Username: %USERNAME% >> "%logfile%"
 echo Computer: %COMPUTERNAME% >> "%logfile%"
 echo Domain: %USERDOMAIN% >> "%logfile%"
 echo User Profile: %USERPROFILE% >> "%logfile%"
-echo( >> "%logfile%"
+echo/ >> "%logfile%"
 
 :: Network info
 echo --- NETWORK INFO --- >> "%logfile%"
 ipconfig | findstr /i "IPv4 Default" >> "%logfile%"
-echo( >> "%logfile%"
+echo/ >> "%logfile%"
 
 :: Running processes (what were they up to?)
 echo --- RUNNING PROCESSES --- >> "%logfile%"
 tasklist /fi "sessionname eq console" >> "%logfile%"
-echo( >> "%logfile%"
+echo/ >> "%logfile%"
 
 :: Try to take webcam photo (if available)
 :: This requires PowerShell and may not work on all systems
@@ -58,7 +59,7 @@ mode con: cols=60 lines=20
 color 4F
 cls
 
-echo(
+echo/
 echo  ╔══════════════════════════════════════════════════╗
 echo  ║                                                  ║
 echo  ║     ██╗    ██╗ █████╗ ██████╗ ███╗   ██╗        ║
@@ -69,7 +70,7 @@ echo  ║     ╚███╔███╔╝██║  ██║██║  █�
 echo  ║      ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝        ║
 echo  ║                                                  ║
 echo  ╚══════════════════════════════════════════════════╝
-echo(
+echo/
 timeout /t 2 /nobreak >nul
 
 :: Text-to-speech announcement
@@ -78,7 +79,7 @@ powershell -command "Add-Type -AssemblyName System.Speech; (New-Object System.Sp
 :: Fake "scanning" effect
 cls
 color 0C
-echo(
+echo/
 echo   ╔════════════════════════════════════════════════════╗
 echo   ║         UNAUTHORIZED ACCESS DETECTED               ║
 echo   ╠════════════════════════════════════════════════════╣
@@ -89,7 +90,7 @@ echo   ║                                                    ║
 echo   ║   STATUS: EVIDENCE COLLECTION IN PROGRESS...      ║
 echo   ║                                                    ║
 echo   ╚════════════════════════════════════════════════════╝
-echo(
+echo/
 echo      [                                        ]   0%%
 timeout /t 1 /nobreak >nul
 
@@ -98,7 +99,7 @@ timeout /t 1 /nobreak >nul
 :: %%~m strips the surrounding quotes when displaying
 for %%m in ("Logging intrusion data" "Capturing network info" "Recording process list" "Saving screenshots" "Notifying administrator" "Uploading evidence" "Preparing countermeasures" "Initiating lockdown") do (
     cls
-    echo(
+    echo/
     echo   ╔════════════════════════════════════════════════════╗
     echo   ║         UNAUTHORIZED ACCESS DETECTED               ║
     echo   ╠════════════════════════════════════════════════════╣
@@ -109,7 +110,7 @@ for %%m in ("Logging intrusion data" "Capturing network info" "Recording process
     echo   ║   STATUS: %%~m...
     echo   ║                                                    ║
     echo   ╚════════════════════════════════════════════════════╝
-    echo(
+    echo/
     timeout /t 1 /nobreak >nul
 )
 
@@ -126,8 +127,8 @@ for /l %%i in (1,1,3) do (
 :: Final message
 cls
 color CF
-echo(
-echo(
+echo/
+echo/
 echo   ╔════════════════════════════════════════════════════╗
 echo   ║                                                    ║
 echo   ║              EVIDENCE SECURED                      ║
@@ -138,13 +139,13 @@ echo   ║                                                    ║
 echo   ║              SYSTEM SHUTDOWN IN:                   ║
 echo   ║                                                    ║
 echo   ╚════════════════════════════════════════════════════╝
-echo(
+echo/
 
 :: Dramatic countdown
 for /l %%i in (5,-1,1) do (
     cls
-    echo(
-    echo(
+    echo/
+    echo/
     echo   ╔════════════════════════════════════════════════════╗
     echo   ║                                                    ║
     echo   ║              EVIDENCE SECURED                      ║
@@ -168,7 +169,7 @@ powershell -command "Add-Type -AssemblyName System.Speech; (New-Object System.Sp
 :: Log completion
 echo SHUTDOWN EXECUTED >> "%logfile%"
 echo ============================================ >> "%logfile%"
-echo( >> "%logfile%"
+echo/ >> "%logfile%"
 
 :: SHUTDOWN
 shutdown /s /t 0 /f

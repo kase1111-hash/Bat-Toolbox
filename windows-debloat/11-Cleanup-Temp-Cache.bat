@@ -18,20 +18,20 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Temporary Files and Cache Cleanup
 echo ============================================================================
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 echo This script will clean the following:
-echo(
+echo/
 echo  - User temp folder (%%TEMP%%)
 echo  - Windows temp folder (%%SystemRoot%%\Temp)
 echo  - Windows Update cache
@@ -44,15 +44,15 @@ echo  - Font cache
 echo  - Icon cache
 echo  - Recent documents list
 echo  - Windows Error Reports
-echo(
+echo/
 echo WARNING: Close all browsers before running this script!
-echo(
+echo/
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
 set "BYTES_FREED=0"
 
-echo(
+echo/
 echo ============================================================================
 echo  [1/12] Cleaning User Temp Folder...
 echo ============================================================================
@@ -61,7 +61,7 @@ del /q /f /s "%TEMP%\*" 2>nul
 for /d %%i in ("%TEMP%\*") do rd /s /q "%%i" 2>nul
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [2/12] Cleaning Windows Temp Folder...
 echo ============================================================================
@@ -70,7 +70,7 @@ del /q /f /s "%SystemRoot%\Temp\*" 2>nul
 for /d %%i in ("%SystemRoot%\Temp\*") do rd /s /q "%%i" 2>nul
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [3/12] Cleaning Windows Update Cache...
 echo ============================================================================
@@ -85,7 +85,7 @@ net start wuauserv >nul 2>&1
 net start bits >nul 2>&1
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [4/12] Cleaning Prefetch Files...
 echo ============================================================================
@@ -93,7 +93,7 @@ echo Location: %SystemRoot%\Prefetch
 del /q /f /s "%SystemRoot%\Prefetch\*" 2>nul
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [5/12] Cleaning Thumbnail Cache...
 echo ============================================================================
@@ -102,7 +102,7 @@ del /q /f "%LocalAppData%\Microsoft\Windows\Explorer\thumbcache_*.db" 2>nul
 del /q /f "%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*.db" 2>nul
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [6/12] Cleaning Microsoft Edge Cache...
 echo ============================================================================
@@ -116,7 +116,7 @@ if exist "%LocalAppData%\Microsoft\Edge\User Data\Default\GPUCache" (
 )
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [7/12] Cleaning Google Chrome Cache...
 echo ============================================================================
@@ -130,7 +130,7 @@ if exist "%LocalAppData%\Google\Chrome\User Data\Default\GPUCache" (
 )
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [8/12] Cleaning Mozilla Firefox Cache...
 echo ============================================================================
@@ -143,14 +143,14 @@ if exist "%LocalAppData%\Mozilla\Firefox\Profiles" (
 )
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [9/12] Flushing DNS Resolver Cache...
 echo ============================================================================
 ipconfig /flushdns
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [10/12] Cleaning Windows Installer Cache...
 echo ============================================================================
@@ -160,7 +160,7 @@ if exist "%SystemRoot%\Installer\$PatchCache$" (
 )
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [11/12] Cleaning Windows Error Reports...
 echo ============================================================================
@@ -175,7 +175,7 @@ if exist "%ProgramData%\Microsoft\Windows\WER" (
 )
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  [12/12] Cleaning Recent Documents List...
 echo ============================================================================
@@ -185,7 +185,7 @@ del /q /f "%AppData%\Microsoft\Windows\Recent\AutomaticDestinations\*" 2>nul
 del /q /f "%AppData%\Microsoft\Windows\Recent\CustomDestinations\*" 2>nul
 echo Done.
 
-echo(
+echo/
 echo ============================================================================
 echo  Running Windows Disk Cleanup (cleanmgr)...
 echo ============================================================================
@@ -212,13 +212,13 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Wi
 echo Running Disk Cleanup (this may take a few minutes)...
 cleanmgr /sagerun:100
 
-echo(
+echo/
 echo ============================================================================
 echo  Cleanup Complete!
 echo ============================================================================
-echo(
+echo/
 echo The following locations have been cleaned:
-echo(
+echo/
 echo  [X] User temp folder
 echo  [X] Windows temp folder
 echo  [X] Windows Update cache
@@ -232,14 +232,14 @@ echo  [X] Windows Installer patch cache
 echo  [X] Windows Error Reports
 echo  [X] Recent documents list
 echo  [X] Windows Disk Cleanup
-echo(
+echo/
 echo TIP: For best results, restart your computer after cleanup.
-echo(
+echo/
 echo Additional cleanup you can do manually:
 echo  - Empty Recycle Bin
 echo  - Run "Disk Cleanup" for system files (cleanmgr /d C:)
 echo  - Clear browser history and cookies manually
 echo  - Uninstall unused programs
-echo(
+echo/
 
 pause

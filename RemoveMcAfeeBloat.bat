@@ -22,20 +22,20 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% McAfee Bloatware Remover%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 echo This script removes all McAfee products that ship preinstalled on OEM PCs.
-echo(
+echo/
 echo %YELLOW%What will be REMOVED:%RESET%
 echo  - McAfee LiveSafe / Total Protection / AntiVirus
 echo  - McAfee WebAdvisor / SiteAdvisor
@@ -43,20 +43,20 @@ echo  - McAfee True Key (password manager)
 echo  - McAfee Personal Security / Privacy
 echo  - McAfee services, scheduled tasks, and startup entries
 echo  - McAfee browser extensions and remnants
-echo(
+echo/
 echo %GREEN%What will be KEPT:%RESET%
 echo  - Windows Defender / Windows Security (will auto-activate)
 echo  - Windows Firewall
 echo  - All other security software
-echo(
+echo/
 echo %YELLOW%NOTE: Windows Defender will automatically enable itself after McAfee%RESET%
 echo %YELLOW%      is removed. Your system will remain protected.%RESET%
-echo(
+echo/
 
 :: Confirm before proceeding
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo(
+    echo/
     echo Operation cancelled.
     pause
     exit /b 0
@@ -64,11 +64,11 @@ if /i not "%confirm%"=="Y" (
 
 set "success=0"
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Stopping McAfee Processes and Services%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [1/8] Terminating McAfee processes...
 
@@ -117,7 +117,7 @@ for %%P in (
 echo       %GREEN%- Process termination complete%RESET%
 set /a success+=1
 
-echo(
+echo/
 echo [2/8] Stopping and disabling McAfee services...
 
 for %%S in (
@@ -161,11 +161,11 @@ for %%S in (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Running McAfee Uninstallers%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [3/8] Running McAfee built-in uninstallers...
 
@@ -185,7 +185,7 @@ wmic product where "name like '%%TrueKey%%'" call uninstall /nointeractive >nul 
 echo       %GREEN%- WMIC uninstall pass complete%RESET%
 set /a success+=1
 
-echo(
+echo/
 echo [4/8] Removing McAfee AppX packages...
 
 :: Remove UWP/Store versions
@@ -197,7 +197,7 @@ echo     '*McAfee*',
 echo     '*mcafee*',
 echo     '*TrueKey*'
 echo ^)
-echo(
+echo/
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
 echo         Write-Host "       - Removing: $($_.Name)"
@@ -215,11 +215,11 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
 del "%PSSCRIPT%" 2>nul
 set /a success+=1
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: Deep Service and Driver Cleanup%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [5/8] Removing McAfee kernel drivers and stubborn services...
 
@@ -249,7 +249,7 @@ for %%D in (
 )
 
 :: Delete the services entirely (they serve no purpose without McAfee)
-echo(
+echo/
 echo       - Deleting orphaned McAfee services...
 for %%D in (
     "mfeavfk"
@@ -291,11 +291,11 @@ for %%D in (
     )
 )
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Removing Scheduled Tasks%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [6/8] Removing McAfee scheduled tasks...
 
@@ -335,11 +335,11 @@ del "%PSTASKS%" 2>nul
 
 echo       %GREEN%- Task cleanup complete%RESET%
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 5: Registry Cleanup%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [7/8] Cleaning McAfee registry entries...
 
@@ -385,11 +385,11 @@ reg delete "HKCR\Drive\shellex\ContextMenuHandlers\McAfee" /f >nul 2>&1
 echo       %GREEN%- Registry cleanup complete%RESET%
 set /a success+=1
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 6: Removing Leftover Files%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo [8/8] Removing McAfee files and folders...
 
@@ -427,11 +427,11 @@ call :CleanFolder "%ProgramData%\McAfee\WebAdvisor"
 
 echo       %GREEN%- File cleanup complete%RESET%
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 7: Re-enable Windows Defender%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 
 echo       - Ensuring Windows Defender is enabled...
 
@@ -449,14 +449,14 @@ sc start WdNisSvc >nul 2>&1
 echo       %GREEN%- Windows Defender re-enabled%RESET%
 set /a success+=1
 
-echo(
+echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo(
+echo/
 echo %GREEN%Removal process complete!%RESET%
 echo Successful operations: %success%
-echo(
+echo/
 echo What was removed:
 echo  - McAfee LiveSafe / Total Protection / AntiVirus
 echo  - McAfee WebAdvisor / SiteAdvisor
@@ -466,28 +466,28 @@ echo  - McAfee services, scheduled tasks, and startup entries
 echo  - McAfee browser extension policies
 echo  - McAfee context menu handlers
 echo  - McAfee registry entries and leftover files
-echo(
+echo/
 echo What was restored:
 echo  - Windows Defender (re-enabled automatically)
 echo  - Windows Firewall
-echo(
+echo/
 echo %YELLOW%NOTE: Windows Defender is now your active antivirus protection.%RESET%
 echo %YELLOW%      Open Windows Security to verify it is running properly.%RESET%
-echo(
+echo/
 echo %YELLOW%NOTE: Some OEM recovery partitions may reinstall McAfee after a%RESET%
 echo %YELLOW%      Windows reset. This script can be run again if needed.%RESET%
-echo(
+echo/
 echo A reboot is recommended to complete the removal process.
-echo(
+echo/
 
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
-    echo(
+    echo/
     echo Restarting in 10 seconds...
     shutdown /r /t 10 /c "McAfee Bloatware Removal - Restart"
 )
 
-echo(
+echo/
 pause
 exit /b 0
 

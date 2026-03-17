@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 title Windows Service Analyzer
 color 0B
+chcp 65001 >nul 2>nul
 
 :: ============================================================================
 :: Windows Service Analyzer
@@ -26,26 +27,26 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
 
 cls
-echo(
+echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
 echo   %CYAN%║%RESET%  %BOLD%%WHITE%Windows Service Analyzer%RESET%                                                %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%Find unnecessary services, telemetry, and bloatware%RESET%                 %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
-echo(
+echo/
 title [1/2] Service Analyzer - Scanning...
 <nul set /p "=  %CYAN%[%RESET%%WHITE%*%RESET%%CYAN%]%RESET% Analyzing Windows services"
 for /l %%i in (1,1,3) do (
     <nul set /p "=."
     timeout /t 0 /nobreak >nul
 )
-echo(
-echo(
+echo/
+echo/
 
 :: Create PowerShell script for service analysis
 set "PSSCRIPT=%TEMP%\analyze_services.ps1"
@@ -53,7 +54,7 @@ set "PSSCRIPT=%TEMP%\analyze_services.ps1"
 (
 echo # Windows Service Analyzer
 echo # Categorizes services and identifies unnecessary automatic services
-echo(
+echo/
 echo # Essential services - NEVER disable these
 echo $essentialServices = @(
 echo     # Core Windows
@@ -82,7 +83,7 @@ echo     'InstallService', 'LicenseManager', 'lfsvc', 'NgcSvc', 'NgcCtnrSvc',
 echo     'OneSyncSvc', 'sppsvc', 'TabletInputService', 'TextInputManagementService',
 echo     'TieringEngineService', 'UmRdpService', 'WpnService', 'WpnUserService'
 echo ^)
-echo(
+echo/
 echo # Services that can be set to Manual ^(start when needed^)
 echo $manualServices = @{
 echo     # Print ^(if you rarely print^)
@@ -137,7 +138,7 @@ echo     'WalletService' = 'Wallet Service - Manual if not using Windows Wallet'
 echo     # Network sharing
 echo     'NetTcpPortSharing' = 'Net.Tcp Port Sharing - Manual for most users'
 echo }
-echo(
+echo/
 echo # Telemetry and data collection services - recommend disabling
 echo $telemetryServices = @{
 echo     'DiagTrack' = 'Connected User Experiences and Telemetry - Microsoft data collection'
@@ -149,7 +150,7 @@ echo     'Wecsvc' = 'Windows Event Collector - Often not needed'
 echo     'PcaSvc' = 'Program Compatibility Assistant - Can be disabled'
 echo     'BITS' = 'Background Intelligent Transfer - Used by Windows Update ^(careful^)'
 echo }
-echo(
+echo/
 echo # Bloatware/Third-party services that often auto-start unnecessarily
 echo $bloatwareServices = @{
 echo     # Adobe
@@ -214,7 +215,7 @@ echo     'LiveUpdate' = 'IObit LiveUpdate - PUP'
 echo     'AdvancedSystemCareService' = 'ASC Service - PUP'
 echo     'AusLogicsBoostSpeed' = 'Auslogics Service - PUP'
 echo }
-echo(
+echo/
 echo # Xbox services - can disable if not Xbox gaming on PC
 echo $xboxServices = @{
 echo     'XblAuthManager' = 'Xbox Live Auth Manager'
@@ -222,42 +223,42 @@ echo     'XblGameSave' = 'Xbox Live Game Save'
 echo     'XboxGipSvc' = 'Xbox Accessory Management'
 echo     'XboxNetApiSvc' = 'Xbox Live Networking'
 echo }
-echo(
+echo/
 echo # Get all services
 echo $services = Get-Service ^| Select-Object Name, DisplayName, Status, StartType
 echo $autoServices = $services ^| Where-Object { $_.StartType -eq 'Automatic' }
-echo(
+echo/
 echo $essential = @^(^)
 echo $canBeManual = @^(^)
 echo $telemetry = @^(^)
 echo $bloatware = @^(^)
 echo $xbox = @^(^)
 echo $unknown = @^(^)
-echo(
+echo/
 echo foreach ^($svc in $autoServices^) {
 echo     $name = $svc.Name
 echo     $found = $false
-echo(
+echo/
 echo     # Check essential
 echo     if ^($essentialServices -contains $name^) {
 echo         $essential += $svc
 echo         continue
 echo     }
-echo(
+echo/
 echo     # Check can be manual
 echo     if ^($manualServices.ContainsKey^($name^)^) {
 echo         $svc ^| Add-Member -NotePropertyName 'Reason' -NotePropertyValue $manualServices[$name] -Force
 echo         $canBeManual += $svc
 echo         continue
 echo     }
-echo(
+echo/
 echo     # Check telemetry
 echo     if ^($telemetryServices.ContainsKey^($name^)^) {
 echo         $svc ^| Add-Member -NotePropertyName 'Reason' -NotePropertyValue $telemetryServices[$name] -Force
 echo         $telemetry += $svc
 echo         continue
 echo     }
-echo(
+echo/
 echo     # Check bloatware
 echo     foreach ^($key in $bloatwareServices.Keys^) {
 echo         if ^($name -like "*$key*" -or $svc.DisplayName -like "*$key*"^) {
@@ -268,25 +269,25 @@ echo             break
 echo         }
 echo     }
 echo     if ^($found^) { continue }
-echo(
+echo/
 echo     # Check Xbox
 echo     if ^($xboxServices.ContainsKey^($name^)^) {
 echo         $svc ^| Add-Member -NotePropertyName 'Reason' -NotePropertyValue $xboxServices[$name] -Force
 echo         $xbox += $svc
 echo         continue
 echo     }
-echo(
+echo/
 echo     # Check for common patterns
 echo     if ^($name -like "*Update*" -or $name -like "*Updater*"^) {
 echo         $svc ^| Add-Member -NotePropertyName 'Reason' -NotePropertyValue 'Update service - may be unnecessary' -Force
 echo         $canBeManual += $svc
 echo         continue
 echo     }
-echo(
+echo/
 echo     # Unknown automatic service
 echo     $unknown += $svc
 echo }
-echo(
+echo/
 echo # Display results
 echo ''
 echo '============================================================================'
@@ -297,7 +298,7 @@ echo "Total Automatic Services: $^($autoServices.Count^)"
 echo "Essential: $^($essential.Count^) | Can be Manual: $^($canBeManual.Count^) | Telemetry: $^($telemetry.Count^)"
 echo "Bloatware: $^($bloatware.Count^) | Xbox: $^($xbox.Count^) | Unknown: $^($unknown.Count^)"
 echo ''
-echo(
+echo/
 echo if ^($bloatware.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Red
 echo     Write-Host ' [BLOATWARE] Third-Party Services Running Automatically' -ForegroundColor Red
@@ -312,7 +313,7 @@ echo     }
 echo     Write-Host ''
 echo     $bloatware ^| ForEach-Object { $_.Name } ^| Out-File -FilePath "$env:TEMP\bloatware_services.txt" -Encoding ASCII
 echo }
-echo(
+echo/
 echo if ^($telemetry.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Magenta
 echo     Write-Host ' [TELEMETRY] Data Collection Services' -ForegroundColor Magenta
@@ -327,7 +328,7 @@ echo     }
 echo     Write-Host ''
 echo     $telemetry ^| ForEach-Object { $_.Name } ^| Out-File -FilePath "$env:TEMP\telemetry_services.txt" -Encoding ASCII
 echo }
-echo(
+echo/
 echo if ^($canBeManual.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Yellow
 echo     Write-Host ' [OPTIONAL] Services That Can Be Set to Manual' -ForegroundColor Yellow
@@ -341,7 +342,7 @@ echo     }
 echo     Write-Host ''
 echo     $canBeManual ^| ForEach-Object { $_.Name } ^| Out-File -FilePath "$env:TEMP\manual_services.txt" -Encoding ASCII
 echo }
-echo(
+echo/
 echo if ^($xbox.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Green
 echo     Write-Host ' [XBOX] Xbox Services ^(Disable if not Xbox gaming on PC^)' -ForegroundColor Green
@@ -354,7 +355,7 @@ echo     }
 echo     Write-Host ''
 echo     $xbox ^| ForEach-Object { $_.Name } ^| Out-File -FilePath "$env:TEMP\xbox_services.txt" -Encoding ASCII
 echo }
-echo(
+echo/
 echo Write-Host '============================================================================' -ForegroundColor Cyan
 echo Write-Host ' [INFO] Unknown Automatic Services' -ForegroundColor Cyan
 echo Write-Host '============================================================================' -ForegroundColor Cyan
@@ -362,7 +363,7 @@ echo Write-Host ''
 echo Write-Host "  $^($unknown.Count^) services not categorized ^(likely Windows or legitimate software^)" -ForegroundColor Cyan
 echo Write-Host '  Use services.msc to review if interested' -ForegroundColor DarkGray
 echo Write-Host ''
-echo(
+echo/
 echo Write-Host '============================================================================' -ForegroundColor White
 echo Write-Host ' Summary' -ForegroundColor White
 echo Write-Host '============================================================================' -ForegroundColor White
@@ -371,7 +372,7 @@ echo Write-Host '===============================================================
 :: Run the PowerShell script
 powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 
-echo(
+echo/
 
 :: Ask about disabling bloatware services
 if exist "%TEMP%\bloatware_services.txt" (
@@ -379,10 +380,10 @@ if exist "%TEMP%\bloatware_services.txt" (
     for /f %%a in ('type "%TEMP%\bloatware_services.txt" 2^>nul ^| find /c /v ""') do set "bloat_count=%%a"
 
     if !bloat_count! gtr 0 (
-        echo(
+        echo/
         set /p "disablebloat=Disable BLOATWARE services? [Y/N]: "
         if /i "!disablebloat!"=="Y" (
-            echo(
+            echo/
             echo Disabling bloatware services...
             for /f "tokens=*" %%s in ('type "%TEMP%\bloatware_services.txt"') do (
                 sc stop "%%s" >nul 2>&1
@@ -404,10 +405,10 @@ if exist "%TEMP%\telemetry_services.txt" (
     for /f %%a in ('type "%TEMP%\telemetry_services.txt" 2^>nul ^| find /c /v ""') do set "tele_count=%%a"
 
     if !tele_count! gtr 0 (
-        echo(
+        echo/
         set /p "disabletele=Disable TELEMETRY services? [Y/N]: "
         if /i "!disabletele!"=="Y" (
-            echo(
+            echo/
             echo Disabling telemetry services...
             for /f "tokens=*" %%s in ('type "%TEMP%\telemetry_services.txt"') do (
                 sc stop "%%s" >nul 2>&1
@@ -429,10 +430,10 @@ if exist "%TEMP%\xbox_services.txt" (
     for /f %%a in ('type "%TEMP%\xbox_services.txt" 2^>nul ^| find /c /v ""') do set "xbox_count=%%a"
 
     if !xbox_count! gtr 0 (
-        echo(
+        echo/
         set /p "disablexbox=Disable XBOX services? [Y/N]: "
         if /i "!disablexbox!"=="Y" (
-            echo(
+            echo/
             echo Disabling Xbox services...
             for /f "tokens=*" %%s in ('type "%TEMP%\xbox_services.txt"') do (
                 sc stop "%%s" >nul 2>&1
@@ -453,7 +454,7 @@ del "%PSSCRIPT%" 2>nul
 del "%TEMP%\manual_services.txt" 2>nul
 
 title [2/2] Service Analyzer - Complete
-echo(
+echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
 echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
@@ -466,7 +467,7 @@ echo   %CYAN%║%RESET%  To re-enable a service:                                
 echo   %CYAN%║%RESET%    %DIM%sc config "ServiceName" start= auto%RESET%                                %CYAN%║%RESET%
 echo   %CYAN%║%RESET%    %DIM%sc start "ServiceName"%RESET%                                              %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
-echo(
+echo/
 
 pause
 exit /b 0

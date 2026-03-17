@@ -13,7 +13,7 @@ color 0B
 echo ============================================================================
 echo  Windows Power User Tweaks
 echo ============================================================================
-echo(
+echo/
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -21,7 +21,7 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo(
+    echo/
     pause
     exit /b 1
 )
@@ -31,9 +31,9 @@ cls
 echo ============================================================================
 echo  Windows Power User Tweaks - Main Menu
 echo ============================================================================
-echo(
+echo/
 echo  [1] Apply ALL Tweaks [Recommended]
-echo(
+echo/
 echo  Individual Categories:
 echo  [2] Performance Tweaks
 echo  [3] Gaming Tweaks
@@ -42,10 +42,10 @@ echo  [5] Privacy Tweaks
 echo  [6] Explorer Tweaks
 echo  [7] Network Tweaks
 echo  [8] Input Tweaks
-echo(
+echo/
 echo  [9] Restore Defaults
 echo  [0] Exit
-echo(
+echo/
 echo ============================================================================
 set /p "choice=Select an option [0-9]: "
 
@@ -69,10 +69,10 @@ cls
 echo ============================================================================
 echo  Applying All Tweaks
 echo ============================================================================
-echo(
+echo/
 echo This will apply all performance, gaming, UI, privacy, explorer, network,
 echo and input tweaks. Some changes require a restart to take effect.
-echo(
+echo/
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
@@ -84,7 +84,7 @@ call :DO_EXPLORER
 call :DO_NETWORK
 call :DO_INPUT
 
-echo(
+echo/
 echo ============================================================================
 echo  All tweaks applied! Restart recommended.
 echo ============================================================================
@@ -99,14 +99,14 @@ cls
 echo ============================================================================
 echo  Performance Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_PERFORMANCE
 pause
 goto MENU
 
 :DO_PERFORMANCE
 echo [PERFORMANCE] Applying performance tweaks...
-echo(
+echo/
 
 :: Disable SysMain/Superfetch (better for SSDs)
 echo   - Disabling SysMain/Superfetch [improves SSD lifespan]...
@@ -161,9 +161,9 @@ fsutil behavior set disable8dot3 1 >nul 2>&1
 echo   - Optimizing memory management for programs...
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "LargeSystemCache" /t REG_DWORD /d 0 /f >nul 2>&1
 
-echo(
+echo/
 echo [PERFORMANCE] Performance tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -174,14 +174,14 @@ cls
 echo ============================================================================
 echo  Gaming Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_GAMING
 pause
 goto MENU
 
 :DO_GAMING
 echo [GAMING] Applying gaming tweaks...
-echo(
+echo/
 
 :: Disable Game DVR and Game Bar background recording
 echo   - Disabling Game DVR background recording [frees resources]...
@@ -230,9 +230,9 @@ echo   - Setting system responsiveness for gaming...
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "SystemResponsiveness" /t REG_DWORD /d 0 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v "NetworkThrottlingIndex" /t REG_DWORD /d 0xffffffff /f >nul 2>&1
 
-echo(
+echo/
 echo [GAMING] Gaming tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -243,14 +243,14 @@ cls
 echo ============================================================================
 echo  UI / Visual Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_UI_VISUAL
 pause
 goto MENU
 
 :DO_UI_VISUAL
 echo [UI] Applying visual tweaks...
-echo(
+echo/
 
 :: Disable transparency
 echo   - Disabling transparency effects [improves performance]...
@@ -303,9 +303,9 @@ echo   - Disabling lock screen tips...
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "RotatingLockScreenOverlayEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-338387Enabled" /t REG_DWORD /d 0 /f >nul 2>&1
 
-echo(
+echo/
 echo [UI] Visual tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -316,14 +316,14 @@ cls
 echo ============================================================================
 echo  Privacy Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_PRIVACY
 pause
 goto MENU
 
 :DO_PRIVACY
 echo [PRIVACY] Applying privacy tweaks...
-echo(
+echo/
 
 :: Disable telemetry
 echo   - Disabling telemetry...
@@ -381,9 +381,9 @@ echo   - Disabling cloud clipboard sync...
 reg add "HKCU\SOFTWARE\Microsoft\Clipboard" /v "EnableClipboardHistory" /t REG_DWORD /d 0 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "AllowCrossDeviceClipboard" /t REG_DWORD /d 0 /f >nul 2>&1
 
-echo(
+echo/
 echo [PRIVACY] Privacy tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -394,14 +394,14 @@ cls
 echo ============================================================================
 echo  Explorer Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_EXPLORER
 pause
 goto MENU
 
 :DO_EXPLORER
 echo [EXPLORER] Applying Explorer tweaks...
-echo(
+echo/
 
 :: Show file extensions
 echo   - Showing file extensions...
@@ -455,9 +455,9 @@ echo   - Removing 3D Objects from This PC...
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{0DB7E03F-FC29-4DC6-9020-FF41B59E513A}" /f >nul 2>&1
 
-echo(
+echo/
 echo [EXPLORER] Explorer tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -468,14 +468,14 @@ cls
 echo ============================================================================
 echo  Network Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_NETWORK
 pause
 goto MENU
 
 :DO_NETWORK
 echo [NETWORK] Applying network tweaks...
-echo(
+echo/
 
 :: Disable Nagle's algorithm (reduces latency)
 echo   - Disabling Nagle's Algorithm [reduces latency]...
@@ -514,9 +514,9 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\ServiceProvider" /v "Netbt
 echo   - Disabling Large Send Offload...
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DisableTaskOffload" /t REG_DWORD /d 1 /f >nul 2>&1
 
-echo(
+echo/
 echo [NETWORK] Network tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -527,14 +527,14 @@ cls
 echo ============================================================================
 echo  Input Tweaks
 echo ============================================================================
-echo(
+echo/
 call :DO_INPUT
 pause
 goto MENU
 
 :DO_INPUT
 echo [INPUT] Applying input tweaks...
-echo(
+echo/
 
 :: Disable mouse acceleration
 echo   - Disabling mouse acceleration [raw input]...
@@ -566,9 +566,9 @@ reg add "HKCU\Control Panel\Keyboard" /v "KeyboardSpeed" /t REG_SZ /d "31" /f >n
 echo   - Disabling touch keyboard auto-popup...
 reg add "HKCU\SOFTWARE\Microsoft\TabletTip\1.7" /v "TipbandDesiredVisibility" /t REG_DWORD /d 0 /f >nul 2>&1
 
-echo(
+echo/
 echo [INPUT] Input tweaks applied.
-echo(
+echo/
 goto :eof
 
 :: ============================================================================
@@ -579,16 +579,16 @@ cls
 echo ============================================================================
 echo  Restore Defaults
 echo ============================================================================
-echo(
+echo/
 echo This will attempt to restore Windows default settings.
 echo Note: Some changes may require a fresh Windows install to fully reverse.
-echo(
+echo/
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
-echo(
+echo/
 echo Restoring defaults...
-echo(
+echo/
 
 :: Re-enable services
 echo   - Re-enabling SysMain...
@@ -642,7 +642,7 @@ reg add "HKCU\Control Panel\Mouse" /v "MouseThreshold2" /t REG_SZ /d "10" /f >nu
 echo   - Restoring network auto-tuning...
 netsh int tcp set global autotuninglevel=normal >nul 2>&1
 
-echo(
+echo/
 echo ============================================================================
 echo  Defaults restored! Restart recommended.
 echo ============================================================================
@@ -653,14 +653,14 @@ goto MENU
 :: EXIT
 :: ============================================================================
 :EXIT
-echo(
+echo/
 echo Refreshing Explorer to apply changes...
 taskkill /f /im explorer.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 start explorer.exe
-echo(
+echo/
 echo Thank you for using Windows Power User Tweaks!
 echo A restart is recommended to apply all changes.
-echo(
+echo/
 pause
 exit /b 0

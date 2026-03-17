@@ -58,6 +58,7 @@ Scripts with partial admin requirements: `BrightnessDiagnostic.bat` (diagnostic 
 setlocal enabledelayedexpansion
 title Script Name
 color 0B
+chcp 65001 >nul 2>nul
 
 :: Script Name: YourScript.bat
 :: Purpose: Brief description
@@ -83,12 +84,12 @@ if %errorlevel% neq 0 (
 
 :: Box-drawing header
 cls
-echo(
+echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
 echo   %CYAN%║%RESET%  %BOLD%%WHITE%Script Name%RESET%                                                            %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%Brief description of what this script does%RESET%                          %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
-echo(
+echo/
 title [1/N] Script Name - Current phase...
 
 :: Main logic here
@@ -145,7 +146,7 @@ for /l %%i in (1,1,3) do (
     <nul set /p "=."
     timeout /t 0 /nobreak >nul
 )
-echo(
+echo/
 ```
 
 **Title bar progress** (shows phase in taskbar):
@@ -157,13 +158,21 @@ title [2/3] Script Name - Processing...
 title [3/3] Script Name - Complete
 ```
 
-**Safe blank lines** - Always use `echo(` not `echo.`:
+**UTF-8 for box-drawing** - Scripts using Unicode box-drawing characters (`╔═╗║╚╝`) must set UTF-8 code page near the top:
 ```batch
-:: CORRECT - safe even if a file named "echo" exists
-echo(
+chcp 65001 >nul 2>nul
+```
+
+**Safe blank lines** - Always use `echo/` not `echo.`:
+```batch
+:: CORRECT - safe everywhere including inside ( ) blocks
+echo/
 
 :: WRONG - can fail if a file named "echo" exists in working directory
 echo.
+
+:: ALSO WRONG - ( breaks paren-counting inside ( ) > file blocks
+echo(
 ```
 
 ### Delayed Expansion and Special Character Escaping
