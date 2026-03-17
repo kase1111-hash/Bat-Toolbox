@@ -26,12 +26,12 @@ Every script tells you what it's about to do. Every script asks before making ch
 |----------|---------|---------------|
 | **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveRealtekBloat, RemoveMcAfeeBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
-| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
+| **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer, PowerPlanOptimizer, PagefileTuner, RAMDiskCreator | Microstutter, I/O latency, driver heuristics, power plans, memory |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck | Find what's slowing you down |
 | **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot | Port auditing, password policy, intrusion detection |
 | **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
-| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit | Fix common issues, repair system files, customize Windows |
+| **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit, DriverBackupRestore | Fix issues, repair system, backup drivers |
 | **Utilities** | ExportInstalledPrograms, WifiPasswordExporter, FileSorter, ScreenSleepGuard | Backup, organize, utilities |
 
 ---
@@ -184,6 +184,28 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 - Uses `LegacyDisable` (non-destructive, easily reversible)
 - Batch disable bloatware or review optional entries one by one
 - On Windows 11, offers to restore the classic full context menu
+
+**Admin required:** Yes
+
+---
+
+### DriverBackupRestore.bat
+
+**Purpose:** Exports all third-party (non-inbox) drivers to a folder using DISM and pnputil. Creates a portable backup with an optional self-contained restore script. Invaluable before a clean Windows install.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Backup all drivers | Exports all non-Microsoft drivers via DISM /export-driver |
+| List installed drivers | Shows third-party drivers with class, provider, version |
+| Restore from backup | Bulk or selective install from a backup folder |
+| Backup with restore script | Creates a self-contained RestoreAllDrivers.bat |
+
+**What it backs up:** GPU, audio, network, chipset, storage, USB, printer, and all other third-party drivers.
+
+**Output:** Creates `DriverBackup_COMPUTERNAME_DATE/` folder with driver packages, inventory, and optional restore script.
+
+**When to use:** Before a clean Windows install, before major driver changes, or for disaster recovery preparation.
 
 **Admin required:** Yes
 
@@ -537,6 +559,34 @@ DIRECT LINKS
 
 ---
 
+### PagefileTuner.bat
+
+**Purpose:** Analyzes RAM usage patterns, recommends pagefile size, offers to move it to a faster drive, or lock it to a fixed size to avoid fragmentation.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Analyze | Shows RAM usage, current pagefile config, drive types, recommendations |
+| Apply recommended | Sets optimized fixed pagefile based on your RAM amount |
+| Custom size | Set your own initial/maximum pagefile size |
+| Move to drive | Relocate pagefile to a faster NVMe/SSD drive |
+| Disable | Remove pagefile entirely (64+ GB RAM only) |
+| Restore automatic | Return to Windows automatic management |
+
+**Size recommendations:**
+| RAM | Recommended | Rationale |
+|-----|-------------|-----------|
+| 8 GB | 12-24 GB | Essential — RAM runs out fast |
+| 16 GB | 16 GB fixed | Standard safety net |
+| 32 GB | 16 GB fixed | Moderate — rarely used heavily |
+| 64+ GB | 16 GB fixed | Crash dump support |
+
+**When to use:** After a clean install, if you experience out-of-memory issues, or to optimize I/O by moving the pagefile off an HDD.
+
+**Admin required:** Yes
+
+---
+
 ### PasswordPolicyAudit.bat
 
 **Purpose:** Audits local password policy, account lockout settings, user accounts, audit policy, and general security configuration. Reports security posture with a letter grade (A-F).
@@ -562,6 +612,35 @@ DIRECT LINKS
 **Output:** Creates `PasswordAudit_COMPUTERNAME_DATE.txt` on Desktop
 
 **When to use:** On shared machines, family computers, small office PCs, or for compliance documentation.
+
+**Admin required:** Yes
+
+---
+
+### PowerPlanOptimizer.bat
+
+**Purpose:** Goes beyond the basic "High Performance" plan. Creates custom power plans with hidden settings like CPU parking, core frequency scaling, PCI Express link state, USB selective suspend, and timer resolution.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Maximum Performance | All power saving disabled — desktop/gaming |
+| Balanced Performance | Optimized for laptops — respects thermals/battery |
+| View current plan | Shows active plan with all key settings |
+| Unhide all settings | Makes hidden power settings visible in Control Panel |
+| Restore defaults | Removes custom plans, restores Windows defaults |
+
+**Key settings configured:**
+| Setting | Maximum Perf | Balanced (AC) |
+|---------|-------------|---------------|
+| CPU min state | 100% | 10% |
+| Core parking | Disabled | 50% min |
+| PCI Express ASPM | Off | Off |
+| USB selective suspend | Disabled | Disabled |
+| Hard disk spin-down | Never | Never |
+| Timer resolution | Maximum | Default |
+
+**When to use:** After a clean install for gaming/workstation PCs, or to squeeze maximum responsiveness from your hardware.
 
 **Admin required:** Yes
 
@@ -854,6 +933,35 @@ DIRECT LINKS
 
 ---
 
+### RAMDiskCreator.bat
+
+**Purpose:** Creates a RAM disk for temp files, browser caches, or game shader caches. Redirects %TEMP% to it for a solid performance boost on machines with 32GB+ RAM.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Create RAM disk | Choose size and drive letter, formatted as NTFS |
+| Redirect %TEMP% | Point TEMP/TMP to the RAM disk (session or permanent) |
+| View status | Check current RAM disk and TEMP configuration |
+| Remove RAM disk | Destroy the disk and restore TEMP to default |
+| Size guide | Recommended sizes and redirection targets |
+
+**Methods:** Uses ImDisk (recommended, install separately) or built-in VHD fallback.
+
+**Size recommendations:**
+| RAM | Suggested Size | Use Case |
+|-----|---------------|----------|
+| 16 GB | 1-2 GB | TEMP files only |
+| 32 GB | 2-4 GB | TEMP + browser cache |
+| 64 GB | 4-8 GB | TEMP + cache + shader cache |
+| 128 GB | 8-16 GB | Everything |
+
+**Important:** RAM disk contents are LOST on every reboot or shutdown. Only use for temporary/cache data.
+
+**Admin required:** Yes
+
+---
+
 ### ScheduledTaskAuditor.bat
 
 **Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
@@ -1083,6 +1191,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ContextMenuCleaner.bat | Yes |
 | DiskHealthCheck.bat | Yes |
 | DisableWindowsUpdate.bat | Yes |
+| DriverBackupRestore.bat | Yes |
 | ExportInstalledPrograms.bat | No |
 | FileSorter.bat | No |
 | FirmwareCheck.bat | No |
@@ -1091,13 +1200,16 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | InterruptLatencyTuning.bat | Yes |
 | NetworkReset.bat | Yes |
 | OpenPortScanner.bat | Yes (recommended) |
+| PagefileTuner.bat | Yes |
 | PasswordPolicyAudit.bat | Yes |
+| PowerPlanOptimizer.bat | Yes |
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveMcAfeeBloat.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RemoveRealtekBloat.bat | Yes |
+| RAMDiskCreator.bat | Yes |
 | RecentActivityCleaner.bat | Partial (most no, prefetch yes) |
 | RestoreRecycleBin.bat | No |
 | ScheduledTaskAuditor.bat | Yes |
