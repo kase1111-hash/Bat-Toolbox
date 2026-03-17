@@ -23,26 +23,26 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Pagefile Tuner%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
 echo %GREEN%[INFO] Administrator privileges confirmed.%RESET%
-echo.
+echo(
 
 :MainMenu
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Main Menu%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   [1] Analyze current pagefile and RAM usage
 echo   [2] Apply recommended pagefile settings
 echo   [3] Set custom fixed pagefile size
@@ -50,7 +50,7 @@ echo   [4] Move pagefile to a different drive
 echo   [5] Disable pagefile (not recommended)
 echo   [6] Restore Windows automatic management
 echo   [0] Exit
-echo.
+echo(
 
 set /p "choice=Select option: "
 
@@ -63,21 +63,21 @@ if "%choice%"=="6" goto RestoreAutomatic
 if "%choice%"=="0" goto Exit
 
 echo %RED%Invalid option.%RESET%
-echo.
+echo(
 goto MainMenu
 
 :: ============================================================================
 :: Option 1: Analyze
 :: ============================================================================
 :Analyze
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% System Memory and Pagefile Analysis%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [1/5] Gathering system information...
-echo.
+echo(
 
 :: Get RAM info
 set "PSANALYZE=%TEMP%\pagefile_analyze.ps1"
@@ -90,18 +90,18 @@ echo $totalRAM = [math]::Round^($cs.TotalPhysicalMemory / 1GB, 2^)
 echo $freeRAM = [math]::Round^($os.FreePhysicalMemory / 1MB, 2^)
 echo $usedRAM = [math]::Round^($totalRAM - $freeRAM, 2^)
 echo $usedPct = [math]::Round^(^($usedRAM / $totalRAM^) * 100, 1^)
-echo.
+echo(
 echo Write-Host "  PHYSICAL MEMORY" -ForegroundColor White
 echo Write-Host "  ---------------"
 echo Write-Host "  Total RAM:         $totalRAM GB"
 echo Write-Host "  Used RAM:          $usedRAM GB ($usedPct%%)"
 echo Write-Host "  Free RAM:          $freeRAM GB"
 echo Write-Host ""
-echo.
+echo(
 echo # Pagefile Info
 echo Write-Host "  CURRENT PAGEFILE" -ForegroundColor White
 echo Write-Host "  ----------------"
-echo.
+echo(
 echo $pagefiles = Get-CimInstance Win32_PageFileUsage -ErrorAction SilentlyContinue
 echo if ^($pagefiles^) {
 echo     foreach ^($pf in $pagefiles^) {
@@ -121,11 +121,11 @@ echo } else {
 echo     Write-Host "  No pagefile detected^^!" -ForegroundColor Red
 echo }
 echo Write-Host ""
-echo.
+echo(
 echo # Pagefile settings from WMI
 echo Write-Host "  PAGEFILE SETTINGS" -ForegroundColor White
 echo Write-Host "  -----------------"
-echo.
+echo(
 echo $pfSettings = Get-CimInstance Win32_PageFileSetting -ErrorAction SilentlyContinue
 echo if ^($pfSettings^) {
 echo     foreach ^($pfs in $pfSettings^) {
@@ -141,7 +141,7 @@ echo } else {
 echo     Write-Host "  System Managed (automatic)" -ForegroundColor Yellow
 echo }
 echo Write-Host ""
-echo.
+echo(
 echo # Check if system managed
 echo $autoManaged = ^(Get-CimInstance Win32_ComputerSystem^).AutomaticManagedPagefile
 echo if ^($autoManaged^) {
@@ -150,17 +150,17 @@ echo } else {
 echo     Write-Host "  Management:        Manual (user configured)"
 echo }
 echo Write-Host ""
-echo.
+echo(
 echo # Drive analysis
 echo Write-Host "  AVAILABLE DRIVES" -ForegroundColor White
 echo Write-Host "  ----------------"
-echo.
+echo(
 echo $drives = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3"
 echo foreach ^($d in $drives^) {
 echo     $totalGB = [math]::Round^($d.Size / 1GB, 1^)
 echo     $freeGB = [math]::Round^($d.FreeSpace / 1GB, 1^)
 echo     $driveLetter = $d.DeviceID
-echo.
+echo(
 echo     # Detect if SSD or HDD
 echo     $diskNum = ^(Get-Partition -DriveLetter $driveLetter[0] -ErrorAction SilentlyContinue^).DiskNumber
 echo     $mediaType = 'Unknown'
@@ -168,7 +168,7 @@ echo     if ^($diskNum -ne $null^) {
 echo         $physDisk = Get-PhysicalDisk ^| Where-Object { $_.DeviceID -eq $diskNum }
 echo         if ^($physDisk^) { $mediaType = $physDisk.MediaType }
 echo     }
-echo.
+echo(
 echo     $typeStr = switch ^($mediaType^) {
 echo         'SSD' { 'SSD' }
 echo         'NVMe' { 'NVMe' }
@@ -176,18 +176,18 @@ echo         'HDD' { 'HDD' }
 echo         'Unspecified' { 'SSD/HDD' }
 echo         default { $mediaType }
 echo     }
-echo.
+echo(
 echo     Write-Host "  $driveLetter  $totalGB GB total, $freeGB GB free [$typeStr]"
 echo }
 echo Write-Host ""
-echo.
+echo(
 echo # Recommendations
 echo Write-Host "  RECOMMENDATIONS" -ForegroundColor White
 echo Write-Host "  ---------------"
 echo Write-Host ""
-echo.
+echo(
 echo $totalRAMint = [int]$totalRAM
-echo.
+echo(
 echo # Calculate recommended sizes
 echo if ^($totalRAMint -ge 64^) {
 echo     $recMin = [math]::Max^(1024, [int]^($totalRAMint * 1024 * 0.25^)^)
@@ -219,7 +219,7 @@ echo     Write-Host ""
 echo     Write-Host "  Recommended: $([math]::Round($recMin / 1024, 1)) - $([math]::Round($recMax / 1024, 1)) GB" -ForegroundColor Green
 echo     Write-Host "  Consider upgrading RAM if possible."
 echo }
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "  General guidelines:" -ForegroundColor Yellow
 echo Write-Host "   - Fixed size prevents fragmentation (set min = max)"
@@ -228,7 +228,7 @@ echo Write-Host "   - If on HDD, a larger pagefile on SSD is much better"
 echo Write-Host "   - Leave at least 10%% free space on the pagefile drive"
 echo Write-Host "   - For crash dumps, pagefile must be >= RAM size on C:"
 echo Write-Host ""
-echo.
+echo(
 echo # Export values for batch script to read
 echo "$recMin" ^| Out-File -FilePath "$env:TEMP\pf_recmin.txt" -Encoding ascii
 echo "$recMax" ^| Out-File -FilePath "$env:TEMP\pf_recmax.txt" -Encoding ascii
@@ -252,7 +252,7 @@ if exist "%TEMP%\pf_totalram.txt" (
     del "%TEMP%\pf_totalram.txt" 2>nul
 )
 
-echo.
+echo(
 pause
 goto MainMenu
 
@@ -260,11 +260,11 @@ goto MainMenu
 :: Option 2: Apply Recommended
 :: ============================================================================
 :ApplyRecommended
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Apply Recommended Pagefile Settings%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Calculate recommendation
 set "PSREC=%TEMP%\pagefile_recommend.ps1"
@@ -272,7 +272,7 @@ set "PSREC=%TEMP%\pagefile_recommend.ps1"
 (
 echo $cs = Get-CimInstance Win32_ComputerSystem
 echo $totalRAM = [math]::Floor^($cs.TotalPhysicalMemory / 1GB^)
-echo.
+echo(
 echo if ^($totalRAM -ge 64^) {
 echo     $sizeMB = [math]::Max^(1024, [int]^($totalRAM * 1024 * 0.25^)^)
 echo } elseif ^($totalRAM -ge 32^) {
@@ -282,7 +282,7 @@ echo     $sizeMB = [int]^($totalRAM * 1024 * 1.0^)
 echo } else {
 echo     $sizeMB = [int]^($totalRAM * 1024 * 1.5^)
 echo }
-echo.
+echo(
 echo Write-Host "Total RAM: $totalRAM GB"
 echo Write-Host "Recommended pagefile: $([math]::Round($sizeMB / 1024, 1)) GB ($sizeMB MB)"
 echo Write-Host ""
@@ -307,14 +307,14 @@ for /f "tokens=*" %%a in ("!recSizeMB!") do set "recSizeMB=%%a"
 
 echo This will set a fixed pagefile of !recSizeMB! MB on C:
 echo (Fixed size = min and max are the same, prevents fragmentation)
-echo.
+echo(
 echo %YELLOW%A reboot is required for pagefile changes to take effect.%RESET%
-echo.
+echo(
 
 set /p "confirm=Apply recommended settings? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 echo Applying settings...
 
 :: Disable automatic management
@@ -335,10 +335,10 @@ if not errorlevel 1 (
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "PagingFiles" /t REG_MULTI_SZ /d "C:\pagefile.sys !recSizeMB! !recSizeMB!" /f >nul 2>&1
 )
 
-echo.
+echo(
 echo %GREEN%[OK] Pagefile configured.%RESET%
 echo %YELLOW%     Reboot required for changes to take effect.%RESET%
-echo.
+echo(
 
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
@@ -352,22 +352,22 @@ goto MainMenu
 :: Option 3: Custom Size
 :: ============================================================================
 :CustomSize
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Set Custom Fixed Pagefile Size%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo Enter the desired pagefile size in MB.
 echo (Set min and max to the same value to prevent fragmentation)
-echo.
+echo(
 echo Common sizes:
 echo   2048 MB  = 2 GB
 echo   4096 MB  = 4 GB
 echo   8192 MB  = 8 GB
 echo   16384 MB = 16 GB
 echo   32768 MB = 32 GB
-echo.
+echo(
 
 set /p "customInit=Initial (minimum) size in MB: "
 set /p "customMax=Maximum size in MB: "
@@ -375,11 +375,11 @@ set /p "customMax=Maximum size in MB: "
 if "!customInit!"=="" goto MainMenu
 if "!customMax!"=="" set "customMax=!customInit!"
 
-echo.
+echo(
 echo Settings: C:\pagefile.sys
 echo   Initial: !customInit! MB
 echo   Maximum: !customMax! MB
-echo.
+echo(
 
 set /p "confirm=Apply? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
@@ -397,7 +397,7 @@ if not errorlevel 1 (
 )
 
 echo %YELLOW%     Reboot required.%RESET%
-echo.
+echo(
 
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
@@ -411,14 +411,14 @@ goto MainMenu
 :: Option 4: Move to Different Drive
 :: ============================================================================
 :MoveDrive
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Move Pagefile to a Different Drive%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo %WHITE%Available drives:%RESET%
-echo.
+echo(
 
 :: List available drives with type
 set "PSDRIVES=%TEMP%\pagefile_drives.ps1"
@@ -429,14 +429,14 @@ echo foreach ^($d in $drives^) {
 echo     $totalGB = [math]::Round^($d.Size / 1GB, 1^)
 echo     $freeGB = [math]::Round^($d.FreeSpace / 1GB, 1^)
 echo     $letter = $d.DeviceID
-echo.
+echo(
 echo     $diskNum = ^(Get-Partition -DriveLetter $letter[0] -ErrorAction SilentlyContinue^).DiskNumber
 echo     $mediaType = 'Unknown'
 echo     if ^($diskNum -ne $null^) {
 echo         $physDisk = Get-PhysicalDisk ^| Where-Object { $_.DeviceID -eq $diskNum }
 echo         if ^($physDisk^) { $mediaType = $physDisk.MediaType }
 echo     }
-echo.
+echo(
 echo     Write-Host "  $letter  $totalGB GB total, $freeGB GB free [$mediaType]"
 echo }
 ) > "!PSDRIVES!"
@@ -444,10 +444,10 @@ echo }
 powershell -ExecutionPolicy Bypass -File "!PSDRIVES!" 2>nul
 del "!PSDRIVES!" 2>nul
 
-echo.
+echo(
 echo %YELLOW%Best practice: Place pagefile on your fastest drive (NVMe ^> SSD ^> HDD).%RESET%
 echo %YELLOW%For crash dumps, a small pagefile must remain on C:.%RESET%
-echo.
+echo(
 
 set /p "targetDrive=Target drive letter (e.g., D): "
 if "!targetDrive!"=="" goto MainMenu
@@ -459,21 +459,21 @@ if not exist "!targetDrive!:\" (
     goto MainMenu
 )
 
-echo.
+echo(
 set /p "moveSizeMB=Pagefile size in MB (e.g., 8192): "
 if "!moveSizeMB!"=="" goto MainMenu
 
-echo.
+echo(
 echo Will create:
 echo   !targetDrive!:\pagefile.sys  (!moveSizeMB! MB fixed)
-echo.
+echo(
 
 set /p "keepOnC=Also keep a small pagefile on C: for crash dumps? [Y/N]: "
 
 set /p "confirm=Apply? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 wmic computersystem set AutomaticManagedPagefile=false >nul 2>&1
 wmic pagefileset delete >nul 2>&1
 
@@ -489,10 +489,10 @@ if /i "%keepOnC%"=="Y" (
     echo       %GREEN%- Created C:\pagefile.sys (800 MB, crash dump support)%RESET%
 )
 
-echo.
+echo(
 echo %GREEN%[OK] Pagefile moved.%RESET%
 echo %YELLOW%     Reboot required.%RESET%
-echo.
+echo(
 
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
@@ -506,21 +506,21 @@ goto MainMenu
 :: Option 5: Disable Pagefile
 :: ============================================================================
 :DisablePagefile
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Disable Pagefile%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo %RED%WARNING: Disabling the pagefile is NOT recommended for most users!%RESET%
-echo.
+echo(
 echo Consequences:
 echo  - Programs may crash with out-of-memory errors
 echo  - Windows cannot create crash dumps for debugging
 echo  - Some programs require a pagefile to function
 echo  - Memory-mapped files may fail
-echo.
+echo(
 echo %YELLOW%Only disable if you have 64+ GB RAM and never exceed RAM capacity.%RESET%
-echo.
+echo(
 
 set /p "confirm=Are you sure you want to disable the pagefile? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
@@ -533,7 +533,7 @@ if not "!confirm2!"=="DISABLE" (
     goto MainMenu
 )
 
-echo.
+echo(
 wmic computersystem set AutomaticManagedPagefile=false >nul 2>&1
 wmic pagefileset delete >nul 2>&1
 
@@ -542,9 +542,9 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
 
 echo       %GREEN%[OK] Pagefile disabled.%RESET%
 echo %YELLOW%     Reboot required. The pagefile.sys file will be deleted on reboot.%RESET%
-echo.
+echo(
 echo %YELLOW%     To re-enable: run this script ^> option [6]%RESET%
-echo.
+echo(
 
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
@@ -558,15 +558,15 @@ goto MainMenu
 :: Option 6: Restore Automatic
 :: ============================================================================
 :RestoreAutomatic
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Restore Windows Automatic Pagefile Management%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo This will let Windows manage the pagefile automatically.
 echo (Windows default behavior)
-echo.
+echo(
 
 set /p "confirm=Restore automatic management? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
@@ -574,10 +574,10 @@ if /i not "%confirm%"=="Y" goto MainMenu
 wmic pagefileset delete >nul 2>&1
 wmic computersystem set AutomaticManagedPagefile=true >nul 2>&1
 
-echo.
+echo(
 echo       %GREEN%[OK] Automatic pagefile management restored.%RESET%
 echo %YELLOW%     Reboot required.%RESET%
-echo.
+echo(
 
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
@@ -588,6 +588,6 @@ pause
 goto MainMenu
 
 :Exit
-echo.
+echo(
 echo Goodbye.
 exit /b 0

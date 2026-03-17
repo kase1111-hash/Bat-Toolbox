@@ -23,14 +23,14 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% RAM Disk Creator%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -49,7 +49,7 @@ for /f %%g in ('powershell -Command "[math]::Floor(%totalBytes% / 1GB)"') do set
 for /f %%g in ('powershell -Command "[math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)"') do set "freeGB=%%g"
 
 echo %WHITE%System RAM:%RESET%  !totalGB! GB total, !freeGB! GB available
-echo.
+echo(
 
 :: Check if ImDisk is installed
 set "hasImDisk=0"
@@ -68,11 +68,11 @@ if "!hasImDisk!"=="1" (
 
 :: RAM recommendation
 if !totalGBint! LSS 16 (
-    echo.
+    echo(
     echo %RED%[WARNING] Your system has less than 16 GB RAM.%RESET%
     echo %RED%          RAM disks are not recommended below 16 GB.%RESET%
     echo %RED%          This may cause out-of-memory issues.%RESET%
-    echo.
+    echo(
     set /p "forceConfirm=Continue anyway? [Y/N]: "
     if /i not "!forceConfirm!"=="Y" (
         echo Operation cancelled.
@@ -81,20 +81,20 @@ if !totalGBint! LSS 16 (
     )
 )
 
-echo.
+echo(
 
 :MainMenu
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Main Menu%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   [1] Create RAM disk
 echo   [2] Redirect %%TEMP%% to RAM disk
 echo   [3] View current RAM disk status
 echo   [4] Remove RAM disk
 echo   [5] Recommended sizes guide
 echo   [0] Exit
-echo.
+echo(
 
 set /p "choice=Select option: "
 
@@ -106,18 +106,18 @@ if "%choice%"=="5" goto SizeGuide
 if "%choice%"=="0" goto Exit
 
 echo %RED%Invalid option.%RESET%
-echo.
+echo(
 goto MainMenu
 
 :: ============================================================================
 :: Option 1: Create RAM Disk
 :: ============================================================================
 :CreateDisk
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Create RAM Disk%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Suggest a size
 if !totalGBint! GEQ 64 (
@@ -132,34 +132,34 @@ if !totalGBint! GEQ 64 (
 
 echo   Available RAM:     !freeGB! GB
 echo   Suggested size:    !suggestSize! GB
-echo.
+echo(
 echo   %YELLOW%RAM disk contents are LOST on reboot or shutdown.%RESET%
 echo   %YELLOW%Do not store important data on the RAM disk.%RESET%
-echo.
+echo(
 
 set /p "diskSize=RAM disk size in GB (default !suggestSize!): "
 if "!diskSize!"=="" set "diskSize=!suggestSize!"
 
 :: Choose drive letter
 set "driveLetter=R"
-echo.
+echo(
 set /p "driveLetter=Drive letter (default R): "
 if "!driveLetter!"=="" set "driveLetter=R"
 set "driveLetter=!driveLetter:~0,1!"
 
 :: Check if drive letter is in use
 if exist "!driveLetter!:\" (
-    echo.
+    echo(
     echo %RED%[ERROR] Drive !driveLetter!: is already in use.%RESET%
     echo Choose a different letter.
-    echo.
+    echo(
     pause
     goto CreateDisk
 )
 
-echo.
+echo(
 echo Creating !diskSize! GB RAM disk on !driveLetter!:
-echo.
+echo(
 
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
@@ -169,7 +169,7 @@ set /a diskSizeMB=diskSize*1024
 
 if "!hasImDisk!"=="1" (
     :: ImDisk method - creates a real block device
-    echo.
+    echo(
     echo [1/3] Creating RAM disk with ImDisk...
 
     imdisk -a -s !diskSizeMB!M -m !driveLetter!: -p "/fs:ntfs /q /y" >nul 2>&1
@@ -202,7 +202,7 @@ if "!hasImDisk!"=="1" (
 
 :BuiltinCreate
 :: Built-in method using a VHD in memory (Windows 10+)
-echo.
+echo(
 echo [1/3] Creating RAM disk using built-in VHD method...
 
 :: Create a PowerShell-based RAM disk
@@ -212,10 +212,10 @@ set "PSRAMDISK=%TEMP%\create_ramdisk.ps1"
 echo # Create a VHD in memory and mount it
 echo $vhdPath = "$env:TEMP\ramdisk.vhdx"
 echo $sizeBytes = !diskSize!GB
-echo.
+echo(
 echo # Remove existing if present
 echo if ^(Test-Path $vhdPath^) { Remove-Item $vhdPath -Force }
-echo.
+echo(
 echo # Create VHD
 echo $diskpartScript = @"
 echo create vdisk file="$vhdPath" maximum=!diskSizeMB! type=expandable
@@ -225,11 +225,11 @@ echo create partition primary
 echo format fs=ntfs quick label="RAMDisk"
 echo assign letter=!driveLetter!
 echo "@
-echo.
+echo(
 echo $diskpartScript ^| Out-File -FilePath "$env:TEMP\ramdisk_setup.txt" -Encoding ascii
 echo diskpart /s "$env:TEMP\ramdisk_setup.txt" ^| Out-Null
 echo Remove-Item "$env:TEMP\ramdisk_setup.txt" -Force -ErrorAction SilentlyContinue
-echo.
+echo(
 echo if ^(Test-Path "!driveLetter!:\"^) {
 echo     Write-Host "[OK] RAM disk created on !driveLetter!:"
 echo } else {
@@ -246,7 +246,7 @@ if exist "!driveLetter!:\" (
 ) else (
     echo       %RED%[ERROR] Could not create RAM disk.%RESET%
     echo       %RED%        Install ImDisk for reliable RAM disk support.%RESET%
-    echo.
+    echo(
     pause
     goto MainMenu
 )
@@ -260,23 +260,23 @@ echo       %GREEN%[OK] Created Temp, Cache, and ShaderCache folders%RESET%
 echo [3/3] Done.
 
 :CreateDone
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% RAM Disk Created Successfully%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   Drive:      !driveLetter!:
 echo   Size:       !diskSize! GB
 echo   Format:     NTFS
 echo   Folders:    !driveLetter!:\Temp, !driveLetter!:\Cache, !driveLetter!:\ShaderCache
-echo.
+echo(
 echo %YELLOW%IMPORTANT: RAM disk contents are LOST on reboot!%RESET%
-echo.
+echo(
 echo %WHITE%Next steps:%RESET%
 echo  - Use option [2] to redirect %%TEMP%% to the RAM disk
 echo  - Set game shader cache to !driveLetter!:\ShaderCache
 echo  - Set browser cache to !driveLetter!:\Cache
-echo.
+echo(
 
 pause
 goto MainMenu
@@ -285,11 +285,11 @@ goto MainMenu
 :: Option 2: Redirect TEMP
 :: ============================================================================
 :RedirectTemp
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Redirect %%TEMP%% to RAM Disk%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 set "driveLetter=R"
 set /p "driveLetter=RAM disk drive letter (default R): "
@@ -298,7 +298,7 @@ set "driveLetter=!driveLetter:~0,1!"
 
 if not exist "!driveLetter!:\" (
     echo %RED%[ERROR] Drive !driveLetter!: does not exist. Create the RAM disk first.%RESET%
-    echo.
+    echo(
     pause
     goto MainMenu
 )
@@ -308,14 +308,14 @@ if not exist "!driveLetter!:\Temp" mkdir "!driveLetter!:\Temp" 2>nul
 echo Current TEMP locations:
 echo   User TEMP:   %TEMP%
 echo   User TMP:    %TMP%
-echo.
+echo(
 echo Will be changed to: !driveLetter!:\Temp
-echo.
+echo(
 echo %YELLOW%Options:%RESET%
 echo   [1] Redirect for current session only (temporary)
 echo   [2] Redirect permanently (survives reboot if RAM disk is recreated)
 echo   [0] Cancel
-echo.
+echo(
 
 set /p "tempChoice=Select option: "
 
@@ -327,7 +327,7 @@ if "%tempChoice%"=="1" (
     set "TMP=!driveLetter!:\Temp"
     setx TEMP "!driveLetter!:\Temp" >nul 2>&1
     setx TMP "!driveLetter!:\Temp" >nul 2>&1
-    echo.
+    echo(
     echo %GREEN%[OK] TEMP/TMP redirected to !driveLetter!:\Temp for new processes%RESET%
     echo %YELLOW%     Note: Already-running programs will use the old path.%RESET%
 )
@@ -336,18 +336,18 @@ if "%tempChoice%"=="2" (
     :: Permanent redirect via registry
     reg add "HKCU\Environment" /v TEMP /t REG_EXPAND_SZ /d "!driveLetter!:\Temp" /f >nul 2>&1
     reg add "HKCU\Environment" /v TMP /t REG_EXPAND_SZ /d "!driveLetter!:\Temp" /f >nul 2>&1
-    echo.
+    echo(
     echo %GREEN%[OK] TEMP/TMP permanently redirected to !driveLetter!:\Temp%RESET%
-    echo.
+    echo(
     echo %YELLOW%IMPORTANT: You must ensure the RAM disk exists on every boot.%RESET%
     echo %YELLOW%If using ImDisk, set it to auto-create at startup.%RESET%
     echo %YELLOW%If the RAM disk is missing, TEMP operations will fail.%RESET%
-    echo.
+    echo(
     echo To revert: run option [4] or manually set TEMP back to:
     echo   %%USERPROFILE%%\AppData\Local\Temp
 )
 
-echo.
+echo(
 pause
 goto MainMenu
 
@@ -355,33 +355,33 @@ goto MainMenu
 :: Option 3: Status
 :: ============================================================================
 :Status
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% RAM Disk Status%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo %WHITE%Current environment variables:%RESET%
 echo   TEMP = %TEMP%
 echo   TMP  = %TMP%
-echo.
+echo(
 
 echo %WHITE%Registry TEMP/TMP values:%RESET%
 for /f "tokens=2,*" %%a in ('reg query "HKCU\Environment" /v TEMP 2^>nul ^| find "TEMP"') do echo   User TEMP = %%b
 for /f "tokens=2,*" %%a in ('reg query "HKCU\Environment" /v TMP 2^>nul ^| find "TMP"') do echo   User TMP  = %%b
-echo.
+echo(
 
 :: Check for ImDisk RAM disks
 if "!hasImDisk!"=="1" (
     echo %WHITE%ImDisk virtual disks:%RESET%
     imdisk -l 2>nul
     if errorlevel 1 echo   No ImDisk virtual disks found.
-    echo.
+    echo(
 )
 
 :: Check for VHD disks
 echo %WHITE%Checking mounted volumes for RAM disks:%RESET%
-echo.
+echo(
 
 set "foundRAM=0"
 for %%d in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
@@ -399,7 +399,7 @@ if "!foundRAM!"=="0" (
     echo   No RAM disks detected.
 )
 
-echo.
+echo(
 pause
 goto MainMenu
 
@@ -407,11 +407,11 @@ goto MainMenu
 :: Option 4: Remove RAM Disk
 :: ============================================================================
 :RemoveDisk
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Remove RAM Disk%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 set "driveLetter=R"
 set /p "driveLetter=Drive letter to remove (default R): "
@@ -420,20 +420,20 @@ set "driveLetter=!driveLetter:~0,1!"
 
 if not exist "!driveLetter!:\" (
     echo %YELLOW%Drive !driveLetter!: does not exist.%RESET%
-    echo.
+    echo(
     pause
     goto MainMenu
 )
 
 echo %YELLOW%This will destroy all data on !driveLetter!: immediately.%RESET%
-echo.
+echo(
 set /p "confirm=Remove RAM disk !driveLetter!:? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
 :: Restore TEMP if it pointed to this drive
 echo %TEMP% | find /i "!driveLetter!:" >nul 2>&1
 if not errorlevel 1 (
-    echo.
+    echo(
     echo Restoring TEMP/TMP to default location...
     reg add "HKCU\Environment" /v TEMP /t REG_EXPAND_SZ /d "%%USERPROFILE%%\AppData\Local\Temp" /f >nul 2>&1
     reg add "HKCU\Environment" /v TMP /t REG_EXPAND_SZ /d "%%USERPROFILE%%\AppData\Local\Temp" /f >nul 2>&1
@@ -445,7 +445,7 @@ if "!hasImDisk!"=="1" (
     imdisk -D -m !driveLetter!: >nul 2>&1
     if not errorlevel 1 (
         echo       %GREEN%[OK] ImDisk RAM disk !driveLetter!: removed%RESET%
-        echo.
+        echo(
         pause
         goto MainMenu
     )
@@ -473,7 +473,7 @@ del "!PSREMOVE!" 2>nul
 subst !driveLetter!: /d >nul 2>&1
 
 echo       %GREEN%[OK] RAM disk removed%RESET%
-echo.
+echo(
 pause
 goto MainMenu
 
@@ -481,20 +481,20 @@ goto MainMenu
 :: Option 5: Size Guide
 :: ============================================================================
 :SizeGuide
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% RAM Disk Size Recommendations%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo %WHITE%  Total RAM    Recommended Disk    Use Case%RESET%
 echo   ---------    ----------------    --------
 echo   16 GB        1-2 GB              TEMP files only
 echo   32 GB        2-4 GB              TEMP + browser cache
 echo   64 GB        4-8 GB              TEMP + cache + shader cache
 echo   128 GB       8-16 GB             Everything + game installs
-echo.
+echo(
 echo %WHITE%  Common redirections and their typical sizes:%RESET%
-echo.
+echo(
 echo   %%TEMP%%/%%TMP%%                     500 MB - 2 GB
 echo   Browser cache (Chrome)         500 MB - 2 GB
 echo   Browser cache (Firefox)        500 MB - 1 GB
@@ -502,35 +502,35 @@ echo   NVIDIA shader cache            200 MB - 1 GB
 echo   AMD shader cache               200 MB - 1 GB
 echo   Photoshop scratch disk         2 - 8 GB
 echo   Game shader compilation cache  1 - 4 GB
-echo.
+echo(
 echo %WHITE%  Browser cache redirection:%RESET%
-echo.
+echo(
 echo   Chrome:
 echo     Create shortcut with --disk-cache-dir=R:\Cache
 echo     Or set LOCALAPPDATA to RAM disk
-echo.
+echo(
 echo   Firefox:
 echo     about:config ^> browser.cache.disk.parent_directory = R:\Cache
-echo.
+echo(
 echo   Edge:
 echo     Create shortcut with --disk-cache-dir=R:\Cache
-echo.
+echo(
 echo %WHITE%  NVIDIA shader cache:%RESET%
 echo     NVIDIA Control Panel ^> Manage 3D Settings ^>
 echo     Shader Cache Size ^> set to R:\ShaderCache
-echo.
+echo(
 echo %WHITE%  AMD shader cache:%RESET%
 echo     AMD Software ^> Performance ^> Tuning ^>
 echo     Set Reset Shader Cache location
-echo.
+echo(
 echo %YELLOW%  REMEMBER: RAM disk data is LOST on every reboot!%RESET%
 echo %YELLOW%  Only use for temporary/cache data that rebuilds automatically.%RESET%
-echo.
+echo(
 
 pause
 goto MainMenu
 
 :Exit
-echo.
+echo(
 echo Goodbye.
 exit /b 0

@@ -62,6 +62,17 @@ color 0B
 :: Script Name: YourScript.bat
 :: Purpose: Brief description
 
+:: Setup colors early (before admin check so errors can be colored)
+for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
+set "RED=%ESC%[91m"
+set "GREEN=%ESC%[92m"
+set "YELLOW=%ESC%[93m"
+set "CYAN=%ESC%[96m"
+set "WHITE=%ESC%[97m"
+set "DIM=%ESC%[90m"
+set "BOLD=%ESC%[1m"
+set "RESET=%ESC%[0m"
+
 :: Admin check (if required)
 net session >nul 2>&1
 if %errorlevel% neq 0 (
@@ -69,6 +80,16 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+
+:: Box-drawing header
+cls
+echo(
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %BOLD%%WHITE%Script Name%RESET%                                                            %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%Brief description of what this script does%RESET%                          %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+echo(
+title [1/N] Script Name - Current phase...
 
 :: Main logic here
 
@@ -82,7 +103,9 @@ pause
   - RED = Errors and warnings
   - GREEN = Success messages
   - YELLOW = Information/prompts
-  - CYAN = Section headers
+  - CYAN = Section headers and box-drawing borders
+  - WHITE+BOLD = Headings and emphasis
+  - DIM (gray) = Secondary text, descriptions, keyboard shortcuts
 - **Comments** for non-obvious logic
 - **Delayed expansion** for complex variables: `setlocal enabledelayedexpansion`
 - **Errorlevel checking:** Use `if %errorlevel% neq 0` syntax (standardized across codebase)
@@ -95,8 +118,71 @@ set "RED=%ESC%[91m"
 set "GREEN=%ESC%[92m"
 set "YELLOW=%ESC%[93m"
 set "CYAN=%ESC%[96m"
+set "WHITE=%ESC%[97m"
+set "DIM=%ESC%[90m"
+set "BOLD=%ESC%[1m"
 set "RESET=%ESC%[0m"
 echo %GREEN%[OK] Success%RESET%
+```
+
+### Console Visual Effects
+
+Scripts should use these visual polish techniques for a professional look:
+
+**Box-drawing headers** (preferred over plain `====` dividers):
+```batch
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %BOLD%%WHITE%Section Title%RESET%                                                          %CYAN%║%RESET%
+echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Bullet point item                                                   %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+```
+
+**Animated progress dots** (for operations that take a moment):
+```batch
+<nul set /p "=  %CYAN%[%RESET%%WHITE%*%RESET%%CYAN%]%RESET% Scanning"
+for /l %%i in (1,1,3) do (
+    <nul set /p "=."
+    timeout /t 0 /nobreak >nul
+)
+echo(
+```
+
+**Title bar progress** (shows phase in taskbar):
+```batch
+title [1/3] Script Name - Scanning...
+:: ... after phase 1 ...
+title [2/3] Script Name - Processing...
+:: ... after phase 2 ...
+title [3/3] Script Name - Complete
+```
+
+**Safe blank lines** - Always use `echo(` not `echo.`:
+```batch
+:: CORRECT - safe even if a file named "echo" exists
+echo(
+
+:: WRONG - can fail if a file named "echo" exists in working directory
+echo.
+```
+
+### Delayed Expansion and Special Character Escaping
+
+When `setlocal enabledelayedexpansion` is active, `!` characters are consumed by CMD:
+
+```batch
+:: Inside ( ) blocks (if/else, for, ( ) > file): use ^^!
+if condition (
+    echo Warning: Something failed^^!
+)
+
+:: On standalone lines: use ^!
+echo Operation complete^!
+
+:: Inside ( ) > file blocks generating scripts: use ^^!
+(
+echo     Write-Host "Error detected^^!" -ForegroundColor Red
+) > "%PSSCRIPT%"
 ```
 
 ### Safety Requirements

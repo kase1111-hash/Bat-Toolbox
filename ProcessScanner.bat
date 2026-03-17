@@ -10,12 +10,35 @@ color 0B
 :: programs, and resource hogs. Categorizes processes and offers cleanup.
 :: ============================================================================
 
-echo ============================================================================
-echo  Running Process Scanner
-echo ============================================================================
-echo.
-echo Scanning running processes...
-echo.
+:: Setup colors
+for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
+set "RED=%ESC%[91m"
+set "GREEN=%ESC%[92m"
+set "YELLOW=%ESC%[93m"
+set "CYAN=%ESC%[96m"
+set "WHITE=%ESC%[97m"
+set "DIM=%ESC%[90m"
+set "RESET=%ESC%[0m"
+set "BOLD=%ESC%[1m"
+
+:: Animated header
+cls
+echo(
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %BOLD%%WHITE%Running Process Scanner%RESET%                                               %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%Identify bloatware, resource hogs, and unnecessary processes%RESET%        %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+echo(
+title [1/2] Process Scanner - Analyzing...
+
+:: Animated scanning message
+<nul set /p "=  %CYAN%[%RESET%%WHITE%*%RESET%%CYAN%]%RESET% Scanning running processes"
+for /l %%i in (1,1,3) do (
+    <nul set /p "=."
+    timeout /t 0 /nobreak >nul
+)
+echo(
+echo(
 
 :: Create temp file for results
 set "PSSCRIPT=%TEMP%\scan_processes.ps1"
@@ -26,7 +49,7 @@ set "PSSCRIPT=%TEMP%\scan_processes.ps1"
 
 (
 echo # Process Scanner - Categorizes running processes
-echo.
+echo(
 echo # Define process categories
 echo $essentialProcesses = @(
 echo     # Windows Core
@@ -51,7 +74,7 @@ echo     'BTAGService', 'btwdins', 'btmshellex',
 echo     # Security ^(legitimate^)
 echo     'MsMpEng', 'NisSrv', 'SecurityHealthService', 'smartscreen'
 echo ^)
-echo.
+echo(
 echo $bloatwareProcesses = @{
 echo     # Antivirus ^(third-party - Windows Defender is sufficient^)
 echo     'avast' = 'Avast Antivirus - Windows Defender is sufficient'
@@ -151,7 +174,7 @@ echo     'WinRAR' = 'WinRAR trial - use free 7-Zip instead'
 echo     'ExpressVPN' = 'ExpressVPN - launch manually when needed'
 echo     'NordVPN' = 'NordVPN - launch manually when needed'
 echo }
-echo.
+echo(
 echo $optionalProcesses = @{
 echo     # Legitimate but resource-heavy
 echo     'ArmouryCrate' = 'ASUS Armoury Crate - RGB/fan control, uses resources'
@@ -180,24 +203,24 @@ echo     'LastPass' = 'LastPass - can use browser extension instead'
 echo     'Bitwarden' = 'Bitwarden - can use browser extension instead'
 echo     'KeePass' = 'KeePass - can close when not needed'
 echo }
-echo.
+echo(
 echo # Get all running processes with details
 echo $processes = Get-Process ^| Select-Object Name, Id, CPU,
 echo     @{Name='MemoryMB';Expression={[math]::Round^($_.WorkingSet64/1MB,1^)}},
 echo     @{Name='Path';Expression={$_.Path}},
 echo     Description ^|
 echo     Sort-Object MemoryMB -Descending
-echo.
+echo(
 echo $essential = @^(^)
 echo $bloatware = @^(^)
 echo $optional = @^(^)
 echo $unknown = @^(^)
 echo $highMemory = @^(^)
-echo.
+echo(
 echo foreach ^($proc in $processes^) {
 echo     $name = $proc.Name
 echo     $found = $false
-echo.
+echo(
 echo     # Check essential
 echo     foreach ^($pattern in $essentialProcesses^) {
 echo         if ^($name -like "*$pattern*"^) {
@@ -207,7 +230,7 @@ echo             break
 echo         }
 echo     }
 echo     if ^($found^) { continue }
-echo.
+echo(
 echo     # Check bloatware
 echo     foreach ^($key in $bloatwareProcesses.Keys^) {
 echo         if ^($name -like "*$key*"^) {
@@ -218,7 +241,7 @@ echo             break
 echo         }
 echo     }
 echo     if ^($found^) { continue }
-echo.
+echo(
 echo     # Check optional
 echo     foreach ^($key in $optionalProcesses.Keys^) {
 echo         if ^($name -like "*$key*"^) {
@@ -229,18 +252,18 @@ echo             break
 echo         }
 echo     }
 echo     if ^($found^) { continue }
-echo.
+echo(
 echo     # Unknown process
 echo     $unknown += $proc
 echo }
-echo.
+echo(
 echo # High memory processes ^(over 500MB^)
 echo $highMemory = $processes ^| Where-Object { $_.MemoryMB -gt 500 }
-echo.
+echo(
 echo # Calculate totals
 echo $totalMemory = ^($processes ^| Measure-Object -Property MemoryMB -Sum^).Sum
 echo $bloatwareMemory = ^($bloatware ^| Measure-Object -Property MemoryMB -Sum^).Sum
-echo.
+echo(
 echo # Display results
 echo ''
 echo '============================================================================'
@@ -251,7 +274,7 @@ echo "Total Processes: $^($processes.Count^)"
 echo "Total Memory Usage: $^([math]::Round^($totalMemory,0^)^) MB"
 echo "Bloatware Memory: $^([math]::Round^($bloatwareMemory,0^)^) MB"
 echo ''
-echo.
+echo(
 echo if ^($highMemory.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor White
 echo     Write-Host ' HIGH MEMORY USAGE ^(Over 500MB^)' -ForegroundColor White
@@ -264,7 +287,7 @@ echo         Write-Host " - $^($proc.MemoryMB^) MB" -ForegroundColor Gray
 echo     }
 echo     Write-Host ''
 echo }
-echo.
+echo(
 echo if ^($bloatware.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Red
 echo     Write-Host ' [BLOATWARE] Recommended to Close/Remove' -ForegroundColor Red
@@ -286,7 +309,7 @@ echo     Write-Host ''
 echo     Write-Host '  Your system is clean of known bloatware processes.' -ForegroundColor Green
 echo     Write-Host ''
 echo }
-echo.
+echo(
 echo if ^($optional.Count -gt 0^) {
 echo     Write-Host '============================================================================' -ForegroundColor Yellow
 echo     Write-Host ' [OPTIONAL] Background Programs ^(Your Choice^)' -ForegroundColor Yellow
@@ -299,7 +322,7 @@ echo         Write-Host "      $^($proc.Reason^)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ''
 echo }
-echo.
+echo(
 echo Write-Host '============================================================================' -ForegroundColor Cyan
 echo Write-Host ' [UNKNOWN] Unrecognized Processes ^(Research if concerned^)' -ForegroundColor Cyan
 echo Write-Host '============================================================================' -ForegroundColor Cyan
@@ -316,7 +339,7 @@ echo if ^($unknown.Count -gt 15^) {
 echo     Write-Host "  ... and $^($unknown.Count - 15^) more small processes" -ForegroundColor DarkGray
 echo }
 echo Write-Host ''
-echo.
+echo(
 echo Write-Host '============================================================================' -ForegroundColor White
 echo Write-Host " Summary: $^($essential.Count^) Essential, $^($bloatware.Count^) Bloatware, $^($optional.Count^) Optional, $^($unknown.Count^) Unknown" -ForegroundColor White
 echo Write-Host '============================================================================' -ForegroundColor White
@@ -324,6 +347,7 @@ echo Write-Host '===============================================================
 
 :: Run the PowerShell script
 powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
+title [2/2] Process Scanner - Complete
 
 :: Check for bloatware and offer to kill
 if exist "%TEMP%\bloatware_pids.txt" (
@@ -331,10 +355,10 @@ if exist "%TEMP%\bloatware_pids.txt" (
     for /f %%a in ('type "%TEMP%\bloatware_pids.txt" 2^>nul ^| find /c ";"') do set "bloat_count=%%a"
 
     if !bloat_count! gtr 0 (
-        echo.
+        echo(
         set /p "killbloat=Would you like to terminate bloatware processes? [Y/N]: "
         if /i "!killbloat!"=="Y" (
-            echo.
+            echo(
             echo Terminating bloatware processes...
             for /f "tokens=1,2 delims=;" %%a in ('type "%TEMP%\bloatware_pids.txt"') do (
                 taskkill /pid %%a /f >nul 2>&1
@@ -344,7 +368,7 @@ if exist "%TEMP%\bloatware_pids.txt" (
                     echo   [FAILED] %%b - may need admin rights or is protected
                 )
             )
-            echo.
+            echo(
             echo Done^^! Bloatware processes terminated.
             echo NOTE: They may restart. Use StartupAnalyzer.bat to disable them permanently.
         )
@@ -355,17 +379,19 @@ if exist "%TEMP%\bloatware_pids.txt" (
 :: Cleanup
 del "%PSSCRIPT%" 2>nul
 
-echo.
-echo ============================================================================
-echo  Tips
-echo ============================================================================
-echo.
-echo  - Use Task Manager [Ctrl+Shift+Esc] to monitor processes
-echo  - Sort by Memory to find resource hogs
-echo  - Right-click a process ^> "Search online" to research unknown ones
-echo  - Use StartupAnalyzer.bat to prevent bloatware from auto-starting
-echo  - Consider uninstalling programs you don't use
-echo.
+echo(
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %BOLD%%WHITE%Tips%RESET%                                                                   %CYAN%║%RESET%
+echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Use Task Manager %DIM%[Ctrl+Shift+Esc]%RESET% to monitor processes              %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Sort by Memory to find resource hogs                              %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Right-click a process ^> "Search online" to research unknowns     %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Use %WHITE%StartupAnalyzer.bat%RESET% to prevent bloatware from auto-starting  %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%-%RESET% Consider uninstalling programs you don't use                      %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+echo(
+echo   %GREEN%Scan complete.%RESET%
+echo(
 
 pause
 exit /b 0

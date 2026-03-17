@@ -31,7 +31,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%     INTERRUPT ^& DPC LATENCY TUNING%RESET%
 echo %WHITE%     Microstutter Elimination Suite%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %YELLOW%This script optimizes:%RESET%
 echo   - ISR (Interrupt Service Routine) handling
 echo   - DPC (Deferred Procedure Call) latency
@@ -39,21 +39,21 @@ echo   - MSI/MSI-X interrupt mode for devices
 echo   - CPU interrupt affinity distribution
 echo   - Timer resolution and scheduling
 echo   - Driver-level interrupt throttling
-echo.
+echo(
 echo %WHITE%Why this matters:%RESET%
 echo   Poor drivers can block the CPU for milliseconds, causing:
 echo   - Frame drops and microstutter in games
 echo   - Audio crackling and pops
 echo   - Input lag spikes
 echo   - General UI jank
-echo.
+echo(
 echo %RED%WARNING:%RESET% These are advanced kernel-level optimizations.
 echo          Create a restore point before proceeding.
-echo.
+echo(
 
 choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
-    echo.
+    echo(
     echo %CYAN%Creating restore point...%RESET%
     powershell -Command "Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
     if !errorlevel! equ 0 (
@@ -63,7 +63,7 @@ if %errorlevel%==1 (
     )
 )
 
-echo.
+echo(
 choice /c YN /m "Continue with interrupt latency optimizations"
 if %errorlevel%==2 (
     echo %YELLOW%Cancelled by user.%RESET%
@@ -71,14 +71,14 @@ if %errorlevel%==2 (
     exit /b 0
 )
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 1: Analyze Current DPC/ISR Latency%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 echo %YELLOW%Checking for high-latency drivers...%RESET%
-echo.
+echo(
 
 :: Create a PowerShell script to analyze DPC latency
 powershell -ExecutionPolicy Bypass -Command ^
@@ -95,21 +95,21 @@ powershell -ExecutionPolicy Bypass -Command ^
     "    }" ^
     "}"
 
-echo.
+echo(
 echo %WHITE%[INFO] For detailed DPC analysis, install LatencyMon (free)%RESET%
 echo        https://www.resplendence.com/latencymon
-echo.
+echo(
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 2: MSI (Message Signaled Interrupts) Mode%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %WHITE%MSI/MSI-X reduces interrupt latency by:%RESET%
 echo   - Eliminating shared interrupt lines
 echo   - Allowing direct CPU core targeting
 echo   - Reducing interrupt routing overhead
-echo.
+echo(
 
 :: Enable MSI mode for GPU
 echo %WHITE%[1/4] Configuring MSI for Graphics Cards...%RESET%
@@ -168,16 +168,16 @@ for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s
 )
 echo %GREEN%   [OK] USB controllers - MSI configured%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 3: Interrupt Affinity Policy%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %WHITE%Distributing interrupts across CPU cores prevents:%RESET%
 echo   - Single-core bottlenecks
 echo   - Interrupt storms on core 0
 echo   - Uneven CPU utilization
-echo.
+echo(
 
 :: Configure interrupt affinity policy
 echo %WHITE%[1/2] Setting interrupt affinity policies...%RESET%
@@ -201,16 +201,16 @@ for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s
 )
 echo %GREEN%   [OK] Network interrupt affinity configured%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 4: System Timer Resolution%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %WHITE%Timer resolution affects:%RESET%
 echo   - Thread scheduling granularity
 echo   - Sleep/wait precision
 echo   - Frame pacing accuracy
-echo.
+echo(
 
 :: Check current timer resolution
 echo %WHITE%[1/3] Checking current timer resolution...%RESET%
@@ -242,11 +242,11 @@ bcdedit /deletevalue useplatformclock >nul 2>&1
 echo %GREEN%   [OK] Platform timer configured%RESET%
 echo %YELLOW%   [INFO] HPET disabled - using TSC for lower latency%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 5: Kernel & Scheduler Optimizations%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Disable kernel DPC watchdog timeout (prevents forced preemption)
 echo %WHITE%[1/6] Configuring DPC watchdog...%RESET%
@@ -289,11 +289,11 @@ powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 >nul 
 powercfg /setactive SCHEME_CURRENT >nul 2>&1
 echo %GREEN%   [OK] Processor locked at maximum performance%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 6: Driver-Specific Latency Fixes%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: NVIDIA specific optimizations
 echo %WHITE%[1/4] Checking NVIDIA driver settings...%RESET%
@@ -348,11 +348,11 @@ for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Clas
 )
 echo %GREEN%   [OK] USB power management disabled%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 7: Additional Latency Optimizations%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Disable Spectre/Meltdown mitigations (optional - security tradeoff)
 echo %WHITE%[1/4] CPU vulnerability mitigations...%RESET%
@@ -393,13 +393,13 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "LargeSystemCache" /t REG_DWORD /d 0 /f >nul 2>&1
 echo %GREEN%   [OK] Memory management optimized%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %GREEN%Interrupt and DPC latency tuning applied successfully!%RESET%
-echo.
+echo(
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] MSI mode enabled for GPU, NIC, Storage, USB
 echo   [+] Interrupt affinity distributed across CPU cores
@@ -411,32 +411,32 @@ echo   [+] Driver-specific latency fixes applied
 echo   [+] MMCSS optimized for gaming/low-latency
 echo   [+] Nagle's algorithm disabled
 echo   [+] Memory paging executive disabled
-echo.
+echo(
 echo %YELLOW%Verification steps:%RESET%
 echo   1. Restart your computer
 echo   2. Download LatencyMon: resplendence.com/latencymon
 echo   3. Run LatencyMon and check DPC/ISR latency
 echo   4. Target: ^<500us average, ^<1000us max under load
-echo.
+echo(
 echo %CYAN%Common high-DPC culprits to investigate:%RESET%
 echo   - Realtek HD Audio     (Update driver or use generic)
 echo   - Network drivers      (Disable interrupt moderation)
 echo   - NVIDIA HD Audio      (Disable if using separate DAC)
 echo   - Wireless drivers     (Update to latest)
 echo   - ACPI.sys             (BIOS update may help)
-echo.
+echo(
 echo %WHITE%Power consumption note:%RESET%
 echo   These settings disable power saving features.
 echo   Expect higher idle power draw and temperatures.
-echo.
+echo(
 
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
-    echo.
+    echo(
     echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
     shutdown /r /t 10 /c "Restarting to apply interrupt latency optimizations"
 )
 
-echo.
+echo(
 pause
 exit /b 0

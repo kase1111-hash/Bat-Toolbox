@@ -23,38 +23,38 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Realtek Audio Bloatware Remover%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
 echo This script removes Realtek audio bloatware while keeping the core driver.
-echo.
+echo(
 echo %YELLOW%What will be REMOVED:%RESET%
 echo  - Realtek Audio Console (UWP app)
 echo  - Nahimic / Nahimic Companion (audio effects engine)
 echo  - A-Volute / Sonic Studio virtual audio (spatial audio bloat)
 echo  - Realtek HD Audio Universal Service (app service, not the driver)
 echo  - Related scheduled tasks and startup entries
-echo.
+echo(
 echo %GREEN%What will be KEPT:%RESET%
 echo  - Realtek HD Audio driver (core audio functionality)
 echo  - Windows audio service (AudioSrv / AudioEndpointBuilder)
 echo  - All audio devices and endpoints
 echo  - Your audio will continue to work normally
-echo.
+echo(
 
 :: Confirm before proceeding
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo.
+    echo(
     echo Operation cancelled.
     pause
     exit /b 0
@@ -62,11 +62,11 @@ if /i not "%confirm%"=="Y" (
 
 set "success=0"
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Stopping Processes and Services%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [1/7] Terminating bloatware processes...
 
@@ -105,7 +105,7 @@ echo       %GREEN%- Process termination complete%RESET%
 set /a success+=1
 
 :: Stop and disable bloatware services
-echo.
+echo(
 echo [2/7] Stopping and disabling audio bloatware services...
 
 for %%S in (
@@ -133,11 +133,11 @@ for %%S in (
     )
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Removing Nahimic / A-Volute Software%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [3/7] Removing Nahimic and A-Volute AppX packages...
 
@@ -156,7 +156,7 @@ echo     '*SonicRadar*',
 echo     '*DolbyAccess*',
 echo     '*DolbyLaboratories*'
 echo ^)
-echo.
+echo(
 echo foreach ^($pattern in $packages^) {
 echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
 echo         Write-Host "       - Removing: $($_.Name)"
@@ -174,7 +174,7 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
 del "%PSSCRIPT%" 2>nul
 set /a success+=1
 
-echo.
+echo(
 echo [4/7] Removing desktop applications via WMIC...
 
 :: Nahimic removal
@@ -207,11 +207,11 @@ wmic product where "name like '%%DTS Sound%%'" call uninstall /nointeractive >nu
 echo       %GREEN%- Application removal complete%RESET%
 set /a success+=1
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: Removing Scheduled Tasks%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [5/7] Removing audio bloatware scheduled tasks...
 
@@ -255,11 +255,11 @@ del "%PSTASKS%" 2>nul
 
 echo       %GREEN%- Task cleanup complete%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Cleaning Registry%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [6/7] Removing registry entries for audio bloatware...
 
@@ -308,11 +308,11 @@ del "%PSAPO%" 2>nul
 echo       %GREEN%- Registry cleanup complete%RESET%
 set /a success+=1
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 5: Cleaning Leftover Files%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [7/7] Removing leftover folders...
 
@@ -341,14 +341,14 @@ call :CleanFolder "%ProgramData%\Waves"
 
 echo       %GREEN%- File cleanup complete%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo %GREEN%Removal process complete^!%RESET%
 echo Successful operations: %success%
-echo.
+echo(
 echo What was removed:
 echo  - Realtek Audio Console (UWP app layer)
 echo  - Nahimic / A-Volute audio effects engine
@@ -356,31 +356,31 @@ echo  - Sonic Studio / Sonic Radar
 echo  - Waves MaxxAudio / DTS Audio Processing (if present)
 echo  - Audio bloatware services and scheduled tasks
 echo  - Startup entries and APO hooks
-echo.
+echo(
 echo What remains intact:
 echo  - Realtek HD Audio driver (core audio)
 echo  - Windows Audio Service
 echo  - All audio devices and endpoints
 echo  - System sounds and volume controls
-echo.
+echo(
 echo %YELLOW%NOTE: If audio sounds "flat" after removal, that is the clean unprocessed%RESET%
 echo %YELLOW%      output. Windows built-in spatial sound or equalizer can be used instead.%RESET%
 echo %YELLOW%      Right-click the speaker icon ^> Sound settings ^> Audio enhancements.%RESET%
-echo.
+echo(
 echo %YELLOW%NOTE: After Realtek driver updates, bloatware may be reinstalled.%RESET%
 echo %YELLOW%      Run this script again if Nahimic or Audio Console reappears.%RESET%
-echo.
+echo(
 echo A reboot is recommended to complete the removal process.
-echo.
+echo(
 
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
-    echo.
+    echo(
     echo Restarting in 10 seconds...
     shutdown /r /t 10 /c "Realtek Audio Bloatware Removal - Restart"
 )
 
-echo.
+echo(
 pause
 exit /b 0
 

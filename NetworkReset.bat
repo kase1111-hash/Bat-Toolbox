@@ -9,10 +9,10 @@ if %errorlevel% neq 0 (
     echo ============================================
     echo   ADMINISTRATOR PRIVILEGES REQUIRED
     echo ============================================
-    echo.
+    echo(
     echo Right-click this script and select
     echo "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -20,7 +20,7 @@ if %errorlevel% neq 0 (
 echo ============================================
 echo   NETWORK RESET UTILITY
 echo ============================================
-echo.
+echo(
 
 :: Get the active adapter name
 :: tokens=4* puts first word in %%a, remaining words in %%b
@@ -31,7 +31,7 @@ for /f "tokens=4*" %%a in ('netsh interface show interface ^| findstr /i "Connec
 )
 
 echo Active adapter detected: %adapter%
-echo.
+echo(
 
 echo [1/8] Releasing IP address...
 ipconfig /release >nul 2>&1
@@ -63,28 +63,28 @@ timeout /t 5 /nobreak >nul
 echo [8/8] Renewing IP address...
 ipconfig /renew >nul 2>&1
 
-echo.
+echo(
 echo ============================================
 echo   RESET COMPLETE
 echo ============================================
-echo.
+echo(
 echo New IP configuration:
-echo.
+echo(
 ipconfig | findstr /i "IPv4 Subnet Default"
-echo.
+echo(
 echo ============================================
-echo.
+echo(
 echo NOTE: Winsock and TCP/IP resets may require
 echo a restart to fully take effect.
-echo.
+echo(
 echo ============================================
 
 :reboot_prompt
-echo.
+echo(
 set /p "reboot=Restart computer now? (Y/N): "
 
 if /i "%reboot%"=="Y" (
-    echo.
+    echo(
     echo Restarting in 10 seconds...
     echo Press Ctrl+C to cancel.
     shutdown /r /t 10 /c "Network Reset Utility - Restarting to complete network stack reset"
@@ -92,10 +92,10 @@ if /i "%reboot%"=="Y" (
 )
 
 if /i "%reboot%"=="N" (
-    echo.
+    echo(
     echo Remember to restart later if you experience
     echo continued network issues.
-    echo.
+    echo(
     pause
     exit /b 0
 )

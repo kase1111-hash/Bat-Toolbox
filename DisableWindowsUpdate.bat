@@ -14,7 +14,7 @@ color 0B
 echo ============================================================================
 echo  Disable Windows Update
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -22,13 +22,13 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
 echo [INFO] Administrator privileges confirmed.
-echo.
+echo(
 
 :: Setup color codes
 for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
@@ -43,14 +43,14 @@ cls
 echo ============================================================================
 echo  Disable Windows Update - Main Menu
 echo ============================================================================
-echo.
+echo(
 echo  %YELLOW%WARNING: Disabling Windows Update stops security patches and feature
 echo  updates. Only do this if you understand the security implications.%RESET%
-echo.
+echo(
 echo  [1] Disable Windows Update (Full)
 echo  [2] Restore Windows Update (Undo All Changes)
 echo  [0] Exit
-echo.
+echo(
 echo ============================================================================
 set /p "choice=Select an option [0-2]: "
 
@@ -67,24 +67,24 @@ cls
 echo ============================================================================
 echo  Disable Windows Update
 echo ============================================================================
-echo.
+echo(
 echo This will:
 echo  - Stop and disable Windows Update services
 echo  - Disable update-related scheduled tasks
 echo  - Block update notifications and restart warnings
 echo  - Disable automatic driver delivery via Windows Update
 echo  - Prevent the Update Orchestrator from restarting services
-echo.
+echo(
 echo %YELLOW%You will no longer receive security updates until you reverse this.%RESET%
-echo.
+echo(
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
-echo.
+echo(
 echo ============================================================================
 echo  Phase 1: Stopping and Disabling Services
 echo ============================================================================
-echo.
+echo(
 
 :: --- Windows Update Service (wuauserv) ---
 echo   - Stopping Windows Update service...
@@ -145,11 +145,11 @@ if %errorlevel% equ 0 (
     echo     %RED%[WARN] Could not disable Delivery Optimization service%RESET%
 )
 
-echo.
+echo(
 echo ============================================================================
 echo  Phase 2: Disabling Scheduled Tasks
 echo ============================================================================
-echo.
+echo(
 
 echo   - Disabling Windows Update scheduled tasks...
 
@@ -177,11 +177,11 @@ for %%T in (
     )
 )
 
-echo.
+echo(
 echo ============================================================================
 echo  Phase 3: Registry - Block Updates and Notifications
 echo ============================================================================
-echo.
+echo(
 
 :: --- Disable automatic updates via Group Policy registry keys ---
 echo   - Setting Windows Update to "Never check for updates"...
@@ -238,11 +238,11 @@ echo   - Silencing system tray update balloons...
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "SetUpdateNotificationLevel" /t REG_DWORD /d 0 /f >nul 2>&1
 echo     %GREEN%[OK] System tray balloons silenced%RESET%
 
-echo.
+echo(
 echo ============================================================================
 echo  Phase 4: Block Update Orchestrator from Re-enabling Services
 echo ============================================================================
-echo.
+echo(
 
 :: The Update Orchestrator can re-enable wuauserv. Remove its permissions.
 echo   - Revoking Update Orchestrator restart permissions...
@@ -257,11 +257,11 @@ echo     %GREEN%[OK] BITS service locked to disabled (Start=4)%RESET%
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\UsoSvc" /v "Start" /t REG_DWORD /d 4 /f >nul 2>&1
 echo     %GREEN%[OK] Update Orchestrator locked to disabled (Start=4)%RESET%
 
-echo.
+echo(
 echo ============================================================================
 echo  Phase 5: Silence Remaining Notifications
 echo ============================================================================
-echo.
+echo(
 
 :: --- Disable "Your device is missing important updates" in Settings ---
 echo   - Disabling update status warnings in Settings...
@@ -296,13 +296,13 @@ echo   - Disabling End of Service notifications...
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "DisableWUfBSafeguards" /t REG_DWORD /d 1 /f >nul 2>&1
 echo     %GREEN%[OK] End of Service safeguard notifications disabled%RESET%
 
-echo.
+echo(
 echo ============================================================================
 echo  Summary
 echo ============================================================================
-echo.
+echo(
 echo %GREEN%Windows Update has been disabled.%RESET%
-echo.
+echo(
 echo What was changed:
 echo  - Windows Update, BITS, Update Orchestrator, and Delivery Optimization
 echo    services stopped and disabled
@@ -312,20 +312,20 @@ echo  - Automatic updates blocked via Group Policy registry keys
 echo  - All update notifications and restart warnings silenced
 echo  - Driver delivery via Windows Update disabled
 echo  - Feature and quality updates deferred by 365 days as fallback
-echo.
+echo(
 echo %YELLOW%IMPORTANT: You will no longer receive security updates.%RESET%
 echo %YELLOW%To reverse these changes, run this script again and choose "Restore".%RESET%
-echo.
+echo(
 echo A reboot is recommended.
-echo.
+echo(
 set /p "reboot=Would you like to restart your computer now? [Y/N]: "
 if /i "%reboot%"=="Y" (
-    echo.
+    echo(
     echo Restarting computer in 10 seconds...
     echo Press Ctrl+C to cancel.
     shutdown /r /t 10 /c "Disable Windows Update - Restart"
 )
-echo.
+echo(
 pause
 goto MENU
 
@@ -337,18 +337,18 @@ cls
 echo ============================================================================
 echo  Restore Windows Update
 echo ============================================================================
-echo.
+echo(
 echo This will re-enable Windows Update and all its services, scheduled tasks,
 echo and notifications.
-echo.
+echo(
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
-echo.
+echo(
 echo ============================================================================
 echo  Restoring Services
 echo ============================================================================
-echo.
+echo(
 
 :: --- Re-enable Windows Update service ---
 echo   - Re-enabling Windows Update service...
@@ -381,11 +381,11 @@ sc config DoSvc start= delayed-auto >nul 2>&1
 sc start DoSvc >nul 2>&1
 echo     %GREEN%[OK] Delivery Optimization service re-enabled%RESET%
 
-echo.
+echo(
 echo ============================================================================
 echo  Restoring Scheduled Tasks
 echo ============================================================================
-echo.
+echo(
 
 echo   - Re-enabling Windows Update scheduled tasks...
 
@@ -416,11 +416,11 @@ for %%T in (
     )
 )
 
-echo.
+echo(
 echo ============================================================================
 echo  Restoring Registry Settings
 echo ============================================================================
-echo.
+echo(
 
 :: --- Remove Group Policy update blocks ---
 echo   - Removing Windows Update policy overrides...
@@ -444,26 +444,26 @@ reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Setting
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.SecurityAndMaintenance" /f >nul 2>&1
 echo     %GREEN%[OK] Update notifications re-enabled%RESET%
 
-echo.
+echo(
 echo ============================================================================
 echo  Restore Complete
 echo ============================================================================
-echo.
+echo(
 echo %GREEN%Windows Update has been re-enabled.%RESET%
-echo.
+echo(
 echo All services, scheduled tasks, and notifications have been restored.
 echo Windows will resume checking for and installing updates.
-echo.
+echo(
 echo A reboot is recommended.
-echo.
+echo(
 set /p "reboot=Would you like to restart your computer now? [Y/N]: "
 if /i "%reboot%"=="Y" (
-    echo.
+    echo(
     echo Restarting computer in 10 seconds...
     echo Press Ctrl+C to cancel.
     shutdown /r /t 10 /c "Restore Windows Update - Restart"
 )
-echo.
+echo(
 pause
 goto MENU
 
@@ -471,8 +471,8 @@ goto MENU
 :: EXIT
 :: ============================================================================
 :EXIT
-echo.
+echo(
 echo Thank you for using Disable Windows Update!
-echo.
+echo(
 pause
 exit /b 0
