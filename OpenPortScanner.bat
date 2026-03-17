@@ -106,18 +106,18 @@ echo     4443 = 'Common C2 alt-HTTPS'
 echo     8443 = 'Alt-HTTPS sometimes suspicious'
 echo     2222 = 'Alt-SSH sometimes suspicious'
 echo     3127 = 'MyDoom worm'
-echo     5900 = 'VNC (check if intentional)'
+echo     5900 = 'VNC ^(check if intentional^)'
 echo     5901 = 'VNC alt'
-echo     3389 = 'RDP (check if intentional)'
-echo     23   = 'Telnet (insecure)'
-echo     21   = 'FTP (insecure if unintended)'
-echo     1433 = 'SQL Server (check exposure)'
-echo     3306 = 'MySQL (check exposure)'
-echo     5432 = 'PostgreSQL (check exposure)'
-echo     27017 = 'MongoDB (check exposure)'
-echo     6379 = 'Redis (check exposure)'
-echo     11211 = 'Memcached (check exposure)'
-echo     9200 = 'Elasticsearch (check exposure)'
+echo     3389 = 'RDP ^(check if intentional^)'
+echo     23   = 'Telnet ^(insecure^)'
+echo     21   = 'FTP ^(insecure if unintended^)'
+echo     1433 = 'SQL Server ^(check exposure^)'
+echo     3306 = 'MySQL ^(check exposure^)'
+echo     5432 = 'PostgreSQL ^(check exposure^)'
+echo     27017 = 'MongoDB ^(check exposure^)'
+echo     6379 = 'Redis ^(check exposure^)'
+echo     11211 = 'Memcached ^(check exposure^)'
+echo     9200 = 'Elasticsearch ^(check exposure^)'
 echo     2375 = 'Docker unencrypted API'
 echo     2376 = 'Docker TLS API'
 echo }
@@ -162,12 +162,12 @@ echo     $isWildcard = ^($addr -eq '0.0.0.0' -or $addr -eq '::'^)
 echo.
 echo     # Check suspicious ports
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
-echo         $status = "SUSPICIOUS - $($suspiciousPorts[$port])"
+echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
 echo         $color = 'Red'
 echo         $suspiciousCount++
 echo         if ^($port -in @(4444,4445,6666,6667,1337,31337,12345,27374,3127^)^) {
 echo             $highRiskCount++
-echo             $status = "HIGH RISK - $($suspiciousPorts[$port])"
+echo             $status = "HIGH RISK - $^($suspiciousPorts[$port]^)"
 echo         }
 echo     }
 echo     # Check wildcard listeners
@@ -178,7 +178,7 @@ echo         $wildcardCount++
 echo     }
 echo.
 echo     if ^($isWildcard^) {
-echo         $addrDisplay = if ^($addr -eq '::''^) { '[::]' } else { $addr }
+echo         $addrDisplay = if ^($addr -eq '::'^) { '[::]' } else { $addr }
 echo     } else {
 echo         $addrDisplay = $addr
 echo     }
@@ -231,7 +231,7 @@ echo     $status = 'OK'
 echo     $color = 'Green'
 echo.
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
-echo         $status = "SUSPICIOUS - $($suspiciousPorts[$port])"
+echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
 echo         $color = 'Red'
 echo         $suspiciousCount++
 echo     }
@@ -276,7 +276,7 @@ echo "$highRiskCount" ^| Out-File -FilePath "$env:TEMP\portscan_highrisk.txt" -E
 echo.
 echo # Write full results to report
 echo $results ^| ForEach-Object {
-echo     $line = "$($_.Proto.PadRight(7))$($_.Address.PadRight(29))$($_.Port.ToString().PadRight(8))$($_.PID.ToString().PadRight(8))$($_.Process.PadRight(21))$($_.Status)"
+echo     $line = "$^($_.Proto.PadRight^(7^)^)$^($_.Address.PadRight^(29^)^)$^($_.Port.ToString^(^).PadRight^(8^)^)$^($_.PID.ToString^(^).PadRight^(8^)^)$^($_.Process.PadRight^(21^)^)$^($_.Status^)"
 echo     $line
 echo } ^| Out-File -FilePath "$env:TEMP\portscan_results.txt" -Encoding ascii
 ) > "%PSSCRIPT%"
@@ -332,10 +332,10 @@ for %%P in (Domain Standard Public) do (
     netsh advfirewall show %%Pprofile state 2>nul | find /i "ON" >nul 2>&1
     if not errorlevel 1 (
         echo   %GREEN%[ON]  %%P Profile firewall is enabled%RESET%
-        (echo [ON]  %%P Profile firewall is enabled) >> "%REPORT%"
+        echo [ON]  %%P Profile firewall is enabled>> "%REPORT%"
     ) else (
         echo   %RED%[OFF] %%P Profile firewall is DISABLED%RESET%
-        (echo [OFF] %%P Profile firewall is DISABLED) >> "%REPORT%"
+        echo [OFF] %%P Profile firewall is DISABLED>> "%REPORT%"
     )
 )
 
@@ -356,12 +356,12 @@ echo.
 :: Check RDP
 reg query "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections 2>nul | find "0x0" >nul 2>&1
 if not errorlevel 1 (
-    echo   %YELLOW%[WARNING] Remote Desktop (RDP) is ENABLED%RESET%
+    echo   %YELLOW%[WARNING] Remote Desktop ^(RDP^) is ENABLED%RESET%
     echo   %YELLOW%          Listening on port 3389. Ensure this is intentional.%RESET%
-    (echo [WARNING] Remote Desktop (RDP) is ENABLED) >> "%REPORT%"
+    echo [WARNING] Remote Desktop ^(RDP^) is ENABLED>> "%REPORT%"
 ) else (
-    echo   %GREEN%[OK] Remote Desktop (RDP) is disabled%RESET%
-    (echo [OK] Remote Desktop (RDP) is disabled) >> "%REPORT%"
+    echo   %GREEN%[OK] Remote Desktop ^(RDP^) is disabled%RESET%
+    echo [OK] Remote Desktop ^(RDP^) is disabled>> "%REPORT%"
 )
 
 :: Check SSH server
@@ -369,32 +369,32 @@ sc query sshd 2>nul | find "RUNNING" >nul 2>&1
 if not errorlevel 1 (
     echo   %YELLOW%[WARNING] OpenSSH Server is RUNNING%RESET%
     echo   %YELLOW%          Listening on port 22. Ensure this is intentional.%RESET%
-    (echo [WARNING] OpenSSH Server is RUNNING) >> "%REPORT%"
+    echo [WARNING] OpenSSH Server is RUNNING>> "%REPORT%"
 ) else (
     echo   %GREEN%[OK] OpenSSH Server is not running%RESET%
-    (echo [OK] OpenSSH Server is not running) >> "%REPORT%"
+    echo [OK] OpenSSH Server is not running>> "%REPORT%"
 )
 
 :: Check WinRM
 sc query WinRM 2>nul | find "RUNNING" >nul 2>&1
 if not errorlevel 1 (
-    echo   %YELLOW%[WARNING] WinRM (Remote Management) is RUNNING%RESET%
+    echo   %YELLOW%[WARNING] WinRM ^(Remote Management^) is RUNNING%RESET%
     echo   %YELLOW%          Allows remote PowerShell. Ensure this is intentional.%RESET%
-    (echo [WARNING] WinRM (Remote Management) is RUNNING) >> "%REPORT%"
+    echo [WARNING] WinRM ^(Remote Management^) is RUNNING>> "%REPORT%"
 ) else (
     echo   %GREEN%[OK] WinRM is not running%RESET%
-    (echo [OK] WinRM is not running) >> "%REPORT%"
+    echo [OK] WinRM is not running>> "%REPORT%"
 )
 
 :: Check Telnet
 sc query TlntSvr 2>nul | find "RUNNING" >nul 2>&1
 if not errorlevel 1 (
-    echo   %RED%[ALERT] Telnet Server is RUNNING (insecure!)%RESET%
+    echo   %RED%[ALERT] Telnet Server is RUNNING ^(insecure!^)%RESET%
     echo   %RED%         Telnet transmits in plaintext. Disable immediately.%RESET%
-    (echo [ALERT] Telnet Server is RUNNING - insecure!) >> "%REPORT%"
+    echo [ALERT] Telnet Server is RUNNING - insecure!>> "%REPORT%"
 ) else (
     echo   %GREEN%[OK] Telnet Server is not running%RESET%
-    (echo [OK] Telnet Server is not running) >> "%REPORT%"
+    echo [OK] Telnet Server is not running>> "%REPORT%"
 )
 
 echo.
@@ -424,11 +424,11 @@ echo     try {
 echo         $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
-echo     $local = "$($conn.LocalAddress):$($conn.LocalPort)"
-echo     $remote = "$($conn.RemoteAddress):$($conn.RemotePort)"
+echo     $local = "$^($conn.LocalAddress^):$^($conn.LocalPort^)"
+echo     $remote = "$^($conn.RemoteAddress^):$^($conn.RemotePort^)"
 echo     $pidStr = $conn.OwningProcess.ToString^(^)
-echo     Write-Host "  $($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
-echo     "$($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
+echo     Write-Host "  $^($local.PadRight^(27^)^) $^($remote.PadRight^(27^)^) $^($pidStr.PadRight^(8^)^) $procName"
+echo     "$^($local.PadRight^(27^)^) $^($remote.PadRight^(27^)^) $^($pidStr.PadRight^(8^)^) $procName"
 echo }
 ) > "%PSESTABLISHED%"
 
@@ -469,29 +469,29 @@ if not "!highRiskPorts!"=="0" (
     echo %RED%[CRITICAL] High-risk ports detected! These are commonly used by malware.%RESET%
     echo %RED%           Investigate the processes immediately.%RESET%
     set "assessment=CRITICAL"
-    (echo.) >> "%REPORT%"
-    (echo ASSESSMENT: CRITICAL - High-risk ports detected) >> "%REPORT%"
+    echo.>> "%REPORT%"
+    echo ASSESSMENT: CRITICAL - High-risk ports detected>> "%REPORT%"
 ) else if not "!suspiciousPorts!"=="0" (
     echo %YELLOW%[WARNING] Suspicious ports detected. Verify these are intentional.%RESET%
     set "assessment=WARNING"
-    (echo.) >> "%REPORT%"
-    (echo ASSESSMENT: WARNING - Suspicious ports found, verify intentional) >> "%REPORT%"
+    echo.>> "%REPORT%"
+    echo ASSESSMENT: WARNING - Suspicious ports found, verify intentional>> "%REPORT%"
 ) else if not "!wildcardPorts!"=="0" (
-    echo %YELLOW%[INFO] Some services are listening on all interfaces (0.0.0.0).%RESET%
+    echo %YELLOW%[INFO] Some services are listening on all interfaces ^(0.0.0.0^).%RESET%
     echo %YELLOW%       This is normal for some services but verify they are expected.%RESET%
     set "assessment=INFO"
-    (echo.) >> "%REPORT%"
-    (echo ASSESSMENT: INFO - Wildcard listeners found, verify expected) >> "%REPORT%"
+    echo.>> "%REPORT%"
+    echo ASSESSMENT: INFO - Wildcard listeners found, verify expected>> "%REPORT%"
 ) else (
     echo %GREEN%[OK] No suspicious ports detected. System looks clean.%RESET%
-    (echo.) >> "%REPORT%"
-    (echo ASSESSMENT: CLEAN - No suspicious ports detected) >> "%REPORT%"
+    echo.>> "%REPORT%"
+    echo ASSESSMENT: CLEAN - No suspicious ports detected>> "%REPORT%"
 )
 
 echo.
 echo %YELLOW%RECOMMENDATIONS:%RESET%
 echo  - Investigate any SUSPICIOUS or HIGH RISK entries
-echo  - Ensure wildcard listeners (0.0.0.0) are intentional
+echo  - Ensure wildcard listeners ^(0.0.0.0^) are intentional
 echo  - Disable RDP/SSH/WinRM if not actively used
 echo  - Keep Windows Firewall enabled on all profiles
 echo  - Run this scan periodically or after installing new software
