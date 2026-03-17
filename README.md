@@ -27,7 +27,7 @@ Every script tells you what it's about to do. Every script asks before making ch
 | **Debloating** | RemoveNvidiaBloat, RemoveAsusBloat, RemoveRealtekBloat, RemoveMcAfeeBloat, RemoveEOSNotification, ContextMenuCleaner, windows-debloat/ | Vendor garbage, telemetry, pre-installed junk, context menu clutter |
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer, PowerPlanOptimizer, PagefileTuner, RAMDiskCreator | Microstutter, I/O latency, driver heuristics, power plans, memory |
-| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck | Find what's slowing you down |
+| **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck, StorageReliabilityCounter, MemoryDiagnostic, AudioDeviceAnalyzer | Find what's slowing you down |
 | **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot | Port auditing, password policy, intrusion detection |
 | **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
@@ -93,6 +93,25 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 ---
 
 ## Main Scripts
+
+### AudioDeviceAnalyzer.bat
+
+**Purpose:** Lists all audio endpoints, shows loaded drivers, detects common issues (wrong default device, enhancements causing crackling, exclusive mode conflicts, problematic software like Nahimic/Waves), and provides one-click fixes.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| List devices | All audio endpoints with state (active/disabled/unplugged) |
+| Driver info | Audio drivers with age, related services, processing software |
+| Detect issues | 10 automated checks for common audio problems |
+| Service check | Core audio service status and startup type |
+| Apply fixes | Restart services, disable enhancements, re-register components |
+
+**Common issues detected:** Audio service stopped, enhancements causing crackling, problematic software (Nahimic, Waves MaxxAudio), high DPC latency, multiple driver conflicts, Event Log errors.
+
+**Admin required:** Partial (analysis no, fixes yes)
+
+---
 
 ### BatteryChargeLimit.bat
 
@@ -503,6 +522,24 @@ DIRECT LINKS
 
 ---
 
+### MemoryDiagnostic.bat
+
+**Purpose:** Shows installed RAM details (speed, slots used, single/dual channel), checks for mismatched sticks, detects XMP/DOCP status, reports current memory usage breakdown by process, and offers to schedule Windows Memory Diagnostic (mdsched.exe).
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Hardware info | RAM sticks, speed, slots, channel mode, XMP/DOCP status |
+| Usage breakdown | Top 25 processes by RAM, category summary (browsers, system, etc.) |
+| Configuration analysis | Scored health check (A-F grade) with recommendations |
+| Memory diagnostic | Schedule mdsched.exe for hardware RAM testing on reboot |
+
+**Issues detected:** Single-channel mode, mismatched sticks, XMP/DOCP not enabled, high memory usage, missing pagefile, expansion availability.
+
+**Admin required:** Partial (hardware info and analysis no, scheduling diagnostic yes)
+
+---
+
 ### NetworkReset.bat
 
 **Purpose:** Performs a complete network stack reset to fix connectivity issues.
@@ -750,6 +787,25 @@ DIRECT LINKS
 - If experiencing random micro-stutters
 
 **Admin required:** Yes
+
+---
+
+### StorageReliabilityCounter.bat
+
+**Purpose:** Reports temperature, power-on hours, wear level, read/write error counters, and S.M.A.R.T. failure prediction for all SSDs and HDDs. Flags drives approaching failure with color-coded health assessments and remaining life estimates.
+
+**Menu options:**
+| Option | Description |
+|--------|-------------|
+| Quick overview | All drives with health status and reliability counters |
+| Detailed report | Per-drive identification, errors, partitions, assessment |
+| Export report | Save full report to Desktop as text file |
+
+**Key metrics:** Temperature (with threshold alerts), power-on hours (with usage estimates), SSD wear level (with remaining life calculation), read/write errors (corrected and uncorrected), S.M.A.R.T. failure prediction.
+
+**Differences from DiskHealthCheck.bat:** Focuses on key reliability metrics with color-coded thresholds. Partially works without admin. Simpler and more actionable output.
+
+**Admin required:** Partial (basic info no, full reliability counters yes)
 
 ---
 
@@ -1186,6 +1242,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 
 | Script | Admin Required |
 |--------|----------------|
+| AudioDeviceAnalyzer.bat | Partial (analysis no, fixes yes) |
 | BatteryChargeLimit.bat | Yes |
 | BrightnessDiagnostic.bat | Partial (diagnostics no, fixes yes) |
 | ContextMenuCleaner.bat | Yes |
@@ -1198,6 +1255,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | GPUDriverOptimizer.bat | Yes |
 | Honeypot.bat | No |
 | InterruptLatencyTuning.bat | Yes |
+| MemoryDiagnostic.bat | Partial (analysis no, scheduling diagnostic yes) |
 | NetworkReset.bat | Yes |
 | OpenPortScanner.bat | Yes (recommended) |
 | PagefileTuner.bat | Yes |
@@ -1217,6 +1275,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | ServiceAnalyzer.bat | Yes |
 | StartupAnalyzer.bat | Yes |
 | StorageLatencyTuning.bat | Yes |
+| StorageReliabilityCounter.bat | Partial (basic info no, full counters yes) |
 | WifiPasswordExporter.bat | No (recommended) |
 | WindowsRepairKit.bat | Yes |
 | WindowsTweaks.bat | Yes |
