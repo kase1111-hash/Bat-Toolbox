@@ -58,19 +58,19 @@ set "PSSCRIPT=%TEMP%\netbios_status.ps1"
 
 (
 echo $adapters = Get-WmiObject Win32_NetworkAdapterConfiguration ^| Where-Object { $_.IPEnabled -eq $true }
-echo if (-not $adapters^) {
+echo if ^(-not $adapters^) {
 echo     Write-Host "  No IP-enabled adapters found." -ForegroundColor Yellow
 echo     exit
 echo }
-echo foreach ($a in $adapters^) {
+echo foreach ^($a in $adapters^) {
 echo     $name = $a.Description
-echo     $ips = ($a.IPAddress -join ', '^)
+echo     $ips = ^($a.IPAddress -join ', '^)
 echo     $tcpSetting = $a.TcpipNetbiosOptions
-echo     switch ($tcpSetting^) {
-echo         0 { $status = 'Default (DHCP-controlled^)'; $color = 'Yellow' }
+echo     switch ^($tcpSetting^) {
+echo         0 { $status = 'Default ^(DHCP-controlled^)'; $color = 'Yellow' }
 echo         1 { $status = 'Enabled'; $color = 'Red' }
 echo         2 { $status = 'Disabled'; $color = 'Green' }
-echo         default { $status = "Unknown ($tcpSetting^)"; $color = 'Yellow' }
+echo         default { $status = "Unknown ^($tcpSetting^)"; $color = 'Yellow' }
 echo     }
 echo     Write-Host "  Adapter: " -NoNewline
 echo     Write-Host "$name" -ForegroundColor Cyan
@@ -124,25 +124,25 @@ set "PSSCRIPT=%TEMP%\netbios_disable.ps1"
 echo $adapters = Get-WmiObject Win32_NetworkAdapterConfiguration ^| Where-Object { $_.IPEnabled -eq $true }
 echo $changed = 0
 echo $failed = 0
-echo foreach ($a in $adapters^) {
+echo foreach ^($a in $adapters^) {
 echo     $name = $a.Description
 echo     Write-Host "  [$name] " -NoNewline
-echo     if ($a.TcpipNetbiosOptions -eq 2^) {
+echo     if ^($a.TcpipNetbiosOptions -eq 2^) {
 echo         Write-Host "Already disabled" -ForegroundColor DarkGray
 echo     } else {
-echo         $result = $a.SetTcpipNetbios(2^)
-echo         if ($result.ReturnValue -eq 0^) {
+echo         $result = $a.SetTcpipNetbios^(2^)
+echo         if ^($result.ReturnValue -eq 0^) {
 echo             Write-Host "Disabled" -ForegroundColor Green
 echo             $changed++
 echo         } else {
-echo             Write-Host "Failed (code $($result.ReturnValue^)^)" -ForegroundColor Red
+echo             Write-Host "Failed ^(code $^($result.ReturnValue^)^)" -ForegroundColor Red
 echo             $failed++
 echo         }
 echo     }
 echo }
 echo Write-Host ""
-echo if ($changed -gt 0^) { Write-Host "  $changed adapter(s^) updated." -ForegroundColor Green }
-echo if ($failed -gt 0^) { Write-Host "  $failed adapter(s^) failed." -ForegroundColor Red }
+echo if ^($changed -gt 0^) { Write-Host "  $changed adapter^(s^) updated." -ForegroundColor Green }
+echo if ^($failed -gt 0^) { Write-Host "  $failed adapter^(s^) failed." -ForegroundColor Red }
 ) > "%PSSCRIPT%"
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PSSCRIPT%"

@@ -62,10 +62,10 @@ set "PSSCRIPT=%TEMP%\smb_status.ps1"
 (
 echo # Check SMB server config
 echo $server = Get-SmbServerConfiguration -ErrorAction SilentlyContinue
-echo if ($server^) {
-echo     function Show-Setting($name, $value, $desired^) {
-echo         $color = if ($value -eq $desired^) { 'Green' } else { 'Red' }
-echo         $mark = if ($value -eq $desired^) { '[OK]' } else { '[^^!^^!]' }
+echo if ^($server^) {
+echo     function Show-Setting^($name, $value, $desired^) {
+echo         $color = if ^($value -eq $desired^) { 'Green' } else { 'Red' }
+echo         $mark = if ^($value -eq $desired^) { '[OK]' } else { '[^^!^^!]' }
 echo         Write-Host "  $mark $name : " -NoNewline -ForegroundColor $color
 echo         Write-Host "$value" -ForegroundColor $color
 echo     }
@@ -79,22 +79,22 @@ echo     Show-Setting "Encrypt Data          " $server.EncryptData $true
 echo     Show-Setting "Reject Unencrypted    " $server.RejectUnencryptedAccess $true
 echo     Show-Setting "Enable Insecure Guest " $server.EnableInsecureGuestLogons $false
 echo     Write-Host ""
-echo     if ($server.DisableCompression -ne $null^) {
+echo     if ^($server.DisableCompression -ne $null^) {
 echo         Show-Setting "Disable Compression   " $server.DisableCompression $true
 echo     }
 echo } else {
 echo     Write-Host "  Could not query SMB server configuration." -ForegroundColor Yellow
-echo     Write-Host "  (SMB Server service may not be running.)" -ForegroundColor DarkGray
+echo     Write-Host "  ^(SMB Server service may not be running.^)" -ForegroundColor DarkGray
 echo }
 echo Write-Host ""
 echo # Check SMB client config
 echo $client = Get-SmbClientConfiguration -ErrorAction SilentlyContinue
-echo if ($client^) {
+echo if ^($client^) {
 echo     Write-Host "  SMB Client Settings:" -ForegroundColor White
 echo     Write-Host ""
-echo     function Show-ClientSetting($name, $value, $desired^) {
-echo         $color = if ($value -eq $desired^) { 'Green' } else { 'Red' }
-echo         $mark = if ($value -eq $desired^) { '[OK]' } else { '[^^!^^!]' }
+echo     function Show-ClientSetting^($name, $value, $desired^) {
+echo         $color = if ^($value -eq $desired^) { 'Green' } else { 'Red' }
+echo         $mark = if ^($value -eq $desired^) { '[OK]' } else { '[^^!^^!]' }
 echo         Write-Host "  $mark $name : " -NoNewline -ForegroundColor $color
 echo         Write-Host "$value" -ForegroundColor $color
 echo     }
@@ -164,14 +164,14 @@ echo }
 echo try {
 echo     # Disable insecure guest logons
 echo     Set-SmbServerConfiguration -EnableInsecureGuestLogons $false -Confirm:$false 2>$null
-echo     Write-Host "  [OK] Insecure guest logons disabled (server)" -ForegroundColor Green
+echo     Write-Host "  [OK] Insecure guest logons disabled ^(server^)" -ForegroundColor Green
 echo } catch {
 echo     Write-Host "  [SKIP] EnableInsecureGuestLogons not available on server config" -ForegroundColor DarkGray
 echo }
-echo # Disable SMB compression (SMBGhost mitigation)
+echo # Disable SMB compression ^(SMBGhost mitigation^)
 echo try {
 echo     Set-SmbServerConfiguration -DisableCompression $true -Confirm:$false 2>$null
-echo     Write-Host "  [OK] SMB compression disabled (SMBGhost mitigation)" -ForegroundColor Green
+echo     Write-Host "  [OK] SMB compression disabled ^(SMBGhost mitigation^)" -ForegroundColor Green
 echo } catch {
 echo     Write-Host "  [SKIP] SMB compression setting not available on this version" -ForegroundColor DarkGray
 echo }
@@ -204,7 +204,7 @@ echo }
 echo try {
 echo     # Disable insecure guest logons on client
 echo     Set-SmbClientConfiguration -EnableInsecureGuestLogons $false -Confirm:$false
-echo     Write-Host "  [OK] Insecure guest logons disabled (client)" -ForegroundColor Green
+echo     Write-Host "  [OK] Insecure guest logons disabled ^(client^)" -ForegroundColor Green
 echo } catch {
 echo     Write-Host "  [FAIL] Could not disable insecure guest logons: $_" -ForegroundColor Red
 echo }
