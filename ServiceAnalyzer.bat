@@ -166,7 +166,7 @@ echo     'NVDisplay.ContainerLocalSystem' = 'NVIDIA Container - Can cause issues
 echo     # AMD
 echo     'AMD External Events Utility' = 'AMD Events - Usually not needed'
 echo     # Third-party antivirus
-echo     'avast! Antivirus' = 'Avast - Windows Defender is sufficient'
+echo     'avast^^! Antivirus' = 'Avast - Windows Defender is sufficient'
 echo     'AVG Antivirus' = 'AVG - Windows Defender is sufficient'
 echo     'McAfee' = 'McAfee - Windows Defender is sufficient'
 echo     'Norton' = 'Norton - Windows Defender is sufficient'
@@ -302,7 +302,7 @@ echo     Write-Host '===========================================================
 echo     Write-Host ''
 echo     foreach ^($svc in $telemetry^) {
 echo         $statusColor = if ^($svc.Status -eq 'Running'^) { 'Magenta' } else { 'DarkMagenta' }
-echo         Write-Host "  [!] $^($svc.DisplayName^)" -ForegroundColor $statusColor
+echo         Write-Host "  [^^!] $^($svc.DisplayName^)" -ForegroundColor $statusColor
 echo         Write-Host "      Service: $^($svc.Name^) - Status: $^($svc.Status^)" -ForegroundColor Gray
 echo         Write-Host "      $^($svc.Reason^)" -ForegroundColor DarkYellow
 echo     }
@@ -436,7 +436,7 @@ del "%TEMP%\manual_services.txt" 2>nul
 
 echo.
 echo ============================================================================
-echo  Complete!
+echo  Complete^!
 echo ============================================================================
 echo.
 echo Tips:

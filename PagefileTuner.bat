@@ -118,7 +118,7 @@ echo         Write-Host "  Current Usage:     $usedGB GB ($usedMB MB) ($usePct%%
 echo         Write-Host "  Peak Usage:        $peakGB GB ($peakMB MB)"
 echo     }
 echo } else {
-echo     Write-Host "  No pagefile detected!" -ForegroundColor Red
+echo     Write-Host "  No pagefile detected^^!" -ForegroundColor Red
 echo }
 echo Write-Host ""
 echo.

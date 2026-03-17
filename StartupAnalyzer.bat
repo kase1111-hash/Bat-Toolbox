@@ -206,10 +206,10 @@ echo     'ExpressVPN' = 'VPN software - launch manually when needed'
 echo     'NordVPN' = 'VPN software - launch manually when needed'
 echo     'uTorrent' = 'Torrent client - contains ads, launch manually'
 echo     'WinZip' = 'WinZip - use free 7-Zip instead'
-echo     'Segurazo' = 'MALWARE - Remove immediately!'
-echo     'ByteFence' = 'PUP/Malware - Remove immediately!'
-echo     'Reimage' = 'Scareware - Remove immediately!'
-echo     'PC Accelerate' = 'Scareware - Remove immediately!'
+echo     'Segurazo' = 'MALWARE - Remove immediately^^!'
+echo     'ByteFence' = 'PUP/Malware - Remove immediately^^!'
+echo     'Reimage' = 'Scareware - Remove immediately^^!'
+echo     'PC Accelerate' = 'Scareware - Remove immediately^^!'
 echo     'RegClean' = 'Scareware - registry cleaners are unnecessary'
 echo }
 echo.
@@ -329,7 +329,7 @@ echo ' [REMOVE] Recommended for Removal - Bloatware/Unnecessary'
 echo '============================================================================'
 echo ''
 echo if ^($removeList.Count -eq 0^) {
-echo     Write-Host '  No bloatware found! Your startup is clean.' -ForegroundColor Green
+echo     Write-Host '  No bloatware found^^! Your startup is clean.' -ForegroundColor Green
 echo } else {
 echo     $i = 1
 echo     foreach ^($item in $removeList^) {
@@ -434,7 +434,7 @@ del "%TEMP_REMOVE%" 2>nul
 
 echo.
 echo ============================================================================
-echo  Complete!
+echo  Complete^!
 echo ============================================================================
 echo.
 echo Tips:

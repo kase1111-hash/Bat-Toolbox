@@ -341,7 +341,7 @@ set "PSNOPWD=%TEMP%\audit_nopwd.ps1"
 echo $noPwd = Get-LocalUser ^| Where-Object { $_.Enabled -eq $true -and $_.PasswordRequired -eq $false }
 echo if ^($noPwd^) {
 echo     foreach ^($u in $noPwd^) {
-echo         Write-Host "   [FAIL] $($u.Name) - no password required!" -ForegroundColor Red
+echo         Write-Host "   [FAIL] $($u.Name) - no password required^^!" -ForegroundColor Red
 echo         "[FAIL] $($u.Name) - no password required"
 echo     }
 echo     $noPwd.Count
@@ -454,7 +454,7 @@ if not errorlevel 1 (
     (echo [PASS] UAC: Enabled) >> "%REPORT%"
     set /a passScore+=1
 ) else (
-    echo   %RED%[FAIL] UAC (User Account Control): Disabled!%RESET%
+    echo   %RED%[FAIL] UAC (User Account Control): Disabled^^!%RESET%
     (echo [FAIL] UAC: Disabled) >> "%REPORT%"
     set /a issues+=1
 )
@@ -488,14 +488,14 @@ if defined uacLevel (
 set /a totalChecks+=1
 reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon 2>nul | find "1" >nul 2>&1
 if not errorlevel 1 (
-    echo   %RED%[FAIL] Auto-logon: Enabled (bypasses login screen!)%RESET%
+    echo   %RED%[FAIL] Auto-logon: Enabled (bypasses login screen^^!)%RESET%
     (echo [FAIL] Auto-logon: Enabled) >> "%REPORT%"
     set /a issues+=1
 
     :: Check if password is stored in plaintext
     reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword >nul 2>&1
     if not errorlevel 1 (
-        echo   %RED%[FAIL] Auto-logon password is stored in plaintext in registry!%RESET%
+        echo   %RED%[FAIL] Auto-logon password is stored in plaintext in registry^^!%RESET%
         (echo [FAIL] Auto-logon password stored in plaintext registry) >> "%REPORT%"
         set /a issues+=1
     )
@@ -600,7 +600,7 @@ if !scorePercent! GEQ 90 (
     echo   %YELLOW%Grade: D - Weak security posture, action needed%RESET%
     (echo Grade: D - Weak security posture, action needed) >> "%REPORT%"
 ) else (
-    echo   %RED%Grade: F - Critical security issues found!%RESET%
+    echo   %RED%Grade: F - Critical security issues found^^!%RESET%
     (echo Grade: F - Critical security issues) >> "%REPORT%"
 )
 

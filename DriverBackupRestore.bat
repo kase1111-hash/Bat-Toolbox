@@ -447,7 +447,7 @@ echo.
 echo :: Check for admin
 echo net session ^>nul 2^>^&1
 echo if %%errorlevel%% neq 0 ^(
-echo     echo [ERROR] Run as administrator!
+echo     echo [ERROR] Run as administrator^^!
 echo     pause
 echo     exit /b 1
 echo ^)
