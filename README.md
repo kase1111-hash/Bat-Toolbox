@@ -28,9 +28,11 @@ Every script tells you what it's about to do. Every script asks before making ch
 | **Updates** | DisableWindowsUpdate | Stop forced updates, silence all notifications |
 | **Performance** | StorageLatencyTuning, InterruptLatencyTuning, GPUDriverOptimizer | Microstutter, I/O latency, driver heuristics |
 | **Analysis** | StartupAnalyzer, ProcessScanner, ServiceAnalyzer, ScheduledTaskAuditor, FirmwareCheck, BrightnessDiagnostic, DiskHealthCheck | Find what's slowing you down |
+| **Security** | OpenPortScanner, PasswordPolicyAudit, Honeypot | Port auditing, password policy, intrusion detection |
+| **Privacy** | RecentActivityCleaner | Clear usage history, jump lists, search traces |
 | **Battery** | BatteryChargeLimit | Set max charge level to extend battery lifespan |
 | **Maintenance** | NetworkReset, RestoreRecycleBin, WindowsTweaks, WindowsRepairKit | Fix common issues, repair system files, customize Windows |
-| **Utilities** | ExportInstalledPrograms, WifiPasswordExporter, FileSorter, Honeypot, ScreenSleepGuard | Backup, organize, security |
+| **Utilities** | ExportInstalledPrograms, WifiPasswordExporter, FileSorter, ScreenSleepGuard | Backup, organize, utilities |
 
 ---
 
@@ -505,6 +507,66 @@ DIRECT LINKS
 
 ---
 
+### OpenPortScanner.bat
+
+**Purpose:** Scans all listening TCP and UDP ports, resolves PIDs to process names, flags known-suspicious ports, and highlights unexpected services listening on 0.0.0.0. A lightweight local audit without installing Nmap.
+
+**What it scans:**
+| Phase | Description |
+|-------|-------------|
+| Listening Ports | All TCP/UDP ports with process names, suspicious port detection |
+| Firewall Status | Domain, Private, and Public profile status |
+| Remote Access | RDP, SSH, WinRM, Telnet service status |
+| Established Connections | Active outbound TCP connections with process names |
+
+**Port status flags:**
+| Status | Meaning |
+|--------|---------|
+| OK | Normal, expected port |
+| SUSPICIOUS | Port commonly associated with malware or insecure services |
+| HIGH RISK | Port strongly associated with known trojans/backdoors |
+| WILDCARD | Service listening on all network interfaces (0.0.0.0) |
+
+**Known suspicious ports flagged:** 4444 (Metasploit), 6666/6667 (IRC), 12345 (NetBus), 31337 (Back Orifice), 1337, 5555, 23 (Telnet), exposed databases (1433, 3306, 5432, 27017, 6379), and more.
+
+**Output:** Creates `PortScan_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:** Periodically for security hygiene, after installing new software, or if you suspect unauthorized network activity.
+
+**Admin required:** Yes (recommended; works without admin but some process names may show as "Unknown")
+
+---
+
+### PasswordPolicyAudit.bat
+
+**Purpose:** Audits local password policy, account lockout settings, user accounts, audit policy, and general security configuration. Reports security posture with a letter grade (A-F).
+
+**What it checks:**
+| Phase | Details |
+|-------|---------|
+| Password Policy | Min length, max/min age, history, lockout threshold/duration |
+| Complexity | Complexity requirements, reversible encryption |
+| User Accounts | Guest/Administrator status, accounts without passwords, admin group members |
+| Audit Policy | Logon, lockout, account management, policy change auditing |
+| Additional | UAC status/level, auto-logon, screen lock timeout, Defender status |
+
+**Scoring:**
+| Grade | Score | Meaning |
+|-------|-------|---------|
+| A | 90-100% | Excellent security posture |
+| B | 75-89% | Good, minor improvements possible |
+| C | 60-74% | Acceptable but improvements needed |
+| D | 40-59% | Weak, action needed |
+| F | 0-39% | Critical issues, fix immediately |
+
+**Output:** Creates `PasswordAudit_COMPUTERNAME_DATE.txt` on Desktop
+
+**When to use:** On shared machines, family computers, small office PCs, or for compliance documentation.
+
+**Admin required:** Yes
+
+---
+
 ### ProcessScanner.bat
 
 **Purpose:** Scans running processes to identify bloatware, forgotten background programs, and resource hogs.
@@ -763,6 +825,35 @@ DIRECT LINKS
 
 ---
 
+### RecentActivityCleaner.bat
+
+**Purpose:** Clears recent files lists, jump lists, Explorer address bar history, Run dialog history, Windows Search history, and other activity traces. A privacy-focused cleanup that goes beyond just temp files.
+
+**What it clears:**
+| Category | Items |
+|----------|-------|
+| Recent Files | Quick Access history, Recent Items folder |
+| Jump Lists | Taskbar right-click history per application |
+| Explorer History | Address bar paths, search queries, Open/Save dialog history |
+| Command History | Run dialog (Win+R), PowerShell history, doskey |
+| Search History | Windows Search, Cortana local database |
+| Cache | Thumbnail cache, icon cache |
+| App History | Office, Paint, WordPad, Notepad, Media Player recent files |
+| Activity | Windows Activity Timeline, clipboard history |
+| Traces | Prefetch data, temp files, notification history |
+
+**What it does NOT clear:**
+- Browser history (use browser settings)
+- Installed programs and settings
+- Saved files and documents
+- Pinned Quick Access items
+
+**When to use:** Before handing a shared computer to another user, before screen sharing or presentations, or for general privacy hygiene.
+
+**Admin required:** Partial (most items work without admin; Prefetch and system temp require admin)
+
+---
+
 ### ScheduledTaskAuditor.bat
 
 **Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
@@ -999,12 +1090,15 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | Honeypot.bat | No |
 | InterruptLatencyTuning.bat | Yes |
 | NetworkReset.bat | Yes |
+| OpenPortScanner.bat | Yes (recommended) |
+| PasswordPolicyAudit.bat | Yes |
 | ProcessScanner.bat | Yes |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveMcAfeeBloat.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RemoveRealtekBloat.bat | Yes |
+| RecentActivityCleaner.bat | Partial (most no, prefetch yes) |
 | RestoreRecycleBin.bat | No |
 | ScheduledTaskAuditor.bat | Yes |
 | ScreenSleepGuard.bat | No |
