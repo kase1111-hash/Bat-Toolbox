@@ -12,14 +12,14 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Registry Performance Tweaks
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -29,14 +29,14 @@ echo  - Disable window animations
 echo  - Disable taskbar animations
 echo  - Disable Aero Peek
 echo  - Optimize visual effects for performance
-echo.
+echo(
 echo NOTE: This will make Windows feel snappier but less "pretty".
 echo You can adjust visual effects in System Properties if needed.
-echo.
+echo(
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
-echo.
+echo(
 echo ============================================================================
 echo  Disabling Visual Effects...
 echo ============================================================================
@@ -50,16 +50,16 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Ta
 echo Disabling Aero Peek...
 reg add "HKCU\SOFTWARE\Microsoft\Windows\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f
 
-echo.
+echo(
 echo ============================================================================
 echo  Performance registry tweaks applied successfully!
 echo ============================================================================
-echo.
+echo(
 echo NOTE: To restore visual effects, go to:
 echo System Properties ^> Advanced ^> Performance Settings
 echo and select "Let Windows choose what's best for my computer"
-echo.
+echo(
 echo A reboot or sign-out may be needed for all changes to take effect.
-echo.
+echo(
 
 pause

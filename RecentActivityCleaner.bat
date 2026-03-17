@@ -23,10 +23,10 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Recent Activity Cleaner%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo This script clears recent activity traces and usage history from Windows.
-echo.
+echo(
 echo %YELLOW%What will be CLEARED:%RESET%
 echo  - Recent files list (Quick Access / Recent Items)
 echo  - Jump lists (taskbar right-click history)
@@ -39,13 +39,13 @@ echo  - Recent documents per application (Office, Notepad, etc.)
 echo  - Windows Activity Timeline
 echo  - Prefetch data (recent app launch traces)
 echo  - Clipboard history
-echo.
+echo(
 echo %GREEN%What will NOT be affected:%RESET%
 echo  - Installed programs
 echo  - Saved files and documents
 echo  - Browser history (use browser settings for that)
 echo  - System settings and configuration
-echo.
+echo(
 
 :: Admin check - some features need it, some don't
 set "isAdmin=0"
@@ -55,13 +55,13 @@ if %errorlevel% equ 0 set "isAdmin=1"
 if "!isAdmin!"=="0" (
     echo %YELLOW%[INFO] Running without admin. Some items require admin to clear.%RESET%
     echo %YELLOW%       Right-click "Run as administrator" for full cleanup.%RESET%
-    echo.
+    echo(
 )
 
 :: Confirm before proceeding
 set /p "confirm=Clear all recent activity? [Y/N]: "
 if /i not "%confirm%"=="Y" (
-    echo.
+    echo(
     echo Operation cancelled.
     pause
     exit /b 0
@@ -70,11 +70,11 @@ if /i not "%confirm%"=="Y" (
 set "success=0"
 set "skipped=0"
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Recent Files and Quick Access%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [1/9] Clearing recent files list...
 
@@ -99,11 +99,11 @@ if exist "%AppData%\Microsoft\Windows\Recent\AutomaticDestinations\*" (
 :: Custom Destinations (Quick Access pinned - skip these, user pinned intentionally)
 echo       - Skipped Quick Access pinned items (user-pinned, kept intentionally)
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 2: Jump Lists%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [2/9] Clearing jump lists (taskbar right-click history)...
 
@@ -121,11 +121,11 @@ if exist "%AppData%\Microsoft\Windows\Recent\CustomDestinations\*" (
     set /a success+=1
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 3: Explorer History%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [3/9] Clearing Explorer address bar and search history...
 
@@ -157,11 +157,11 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSa
 echo       %GREEN%- Cleared Open/Save dialog history%RESET%
 set /a success+=1
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 4: Run Dialog and Command History%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [4/9] Clearing Run dialog and command history...
 
@@ -185,11 +185,11 @@ if exist "%AppData%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.
     echo       - PowerShell history not found (may not exist)
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 5: Windows Search History%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [5/9] Clearing Windows Search and Cortana history...
 
@@ -218,11 +218,11 @@ if exist "%LocalAppData%\Packages\Microsoft.Windows.Search_cw5n1h2txyewy\LocalSt
     set /a success+=1
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 6: Thumbnail Cache%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [6/9] Clearing thumbnail cache...
 
@@ -242,11 +242,11 @@ if exist "%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*" (
     set /a success+=1
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 7: Application-Specific History%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [7/9] Clearing application-specific recent file lists...
 
@@ -273,11 +273,11 @@ reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Wordpad\Recen
 
 set /a success+=1
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 8: Windows Activity Timeline and Clipboard%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [8/9] Clearing Activity Timeline and clipboard history...
 
@@ -306,11 +306,11 @@ reg add "HKCU\SOFTWARE\Microsoft\Clipboard" /v "EnableClipboardHistory" /t REG_D
 echo       %GREEN%- Cleared and disabled clipboard history%RESET%
 set /a success+=1
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 9: Prefetch and Temp Traces%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo [9/9] Clearing prefetch and temp traces...
 
@@ -350,11 +350,11 @@ if exist "%LocalAppData%\Microsoft\Windows\Notifications" (
     set /a success+=1
 )
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Restarting Explorer%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo Restarting Explorer to apply changes...
 taskkill /f /im explorer.exe >nul 2>&1
@@ -362,16 +362,16 @@ timeout /t 2 /nobreak >nul
 start explorer.exe
 echo       %GREEN%- Explorer restarted%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo %GREEN%Cleanup complete!%RESET%
-echo.
+echo(
 echo   Items cleared:  !success!
 echo   Items skipped:  !skipped!
-echo.
+echo(
 echo What was cleared:
 echo  - Recent files and Quick Access history
 echo  - Taskbar jump lists
@@ -386,14 +386,14 @@ echo  - Windows Activity Timeline
 echo  - Clipboard history
 echo  - Prefetch data
 echo  - Temp files and notification history
-echo.
+echo(
 echo %YELLOW%NOT cleared (use browser settings):%RESET%
 echo  - Browser history, cookies, and cache
 echo  - Saved browser passwords
-echo.
+echo(
 echo %YELLOW%NOTE: Some caches will rebuild naturally as you use Windows.%RESET%
 echo %YELLOW%      This is normal and expected behavior.%RESET%
-echo.
+echo(
 
 pause
 exit /b 0

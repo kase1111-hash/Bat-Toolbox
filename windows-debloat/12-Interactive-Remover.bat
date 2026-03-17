@@ -12,14 +12,14 @@ setlocal EnableDelayedExpansion
 echo ============================================================================
 echo  Windows 10 Debloat - Interactive Program Remover
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -29,20 +29,20 @@ echo For each item, you'll see:
 echo   - What it is
 echo   - Whether removing it may break something
 echo   - Option to remove (Y) or skip (N)
-echo.
+echo(
 echo TIP: Press Enter to use the default choice shown in [brackets]
-echo.
+echo(
 echo Press any key to begin...
 pause >nul
 
 set "REMOVED_COUNT=0"
 set "SKIPPED_COUNT=0"
 
-echo.
+echo(
 echo ============================================================================
 echo  PART 1: Pre-installed Apps (AppX Packages)
 echo ============================================================================
-echo.
+echo(
 
 :: -------------------------------------------------------------------------
 :: 3D Apps
@@ -105,9 +105,9 @@ call :AskRemoveApp "Microsoft.WindowsFeedbackHub" "Feedback Hub" "Send feedback 
 :: Xbox Apps
 :: -------------------------------------------------------------------------
 
-echo.
+echo(
 echo --- Xbox Apps (skip all if you play PC games) ---
-echo.
+echo(
 
 call :AskRemoveApp "Microsoft.XboxApp" "Xbox Console Companion" "Manage Xbox profile, friends, achievements." "Maybe - needed for Xbox social features" "N"
 call :AskRemoveApp "Microsoft.XboxGameOverlay" "Xbox Game Bar Overlay" "In-game overlay (Win+G) for screenshots, recording." "YES - breaks Game Bar if removed" "Y"
@@ -120,9 +120,9 @@ call :AskRemoveApp "Microsoft.XboxSpeechToTextOverlay" "Xbox Speech to Text" "Vo
 :: Third-Party Bloatware (may not be installed)
 :: -------------------------------------------------------------------------
 
-echo.
+echo(
 echo --- Third-Party Apps (installed by OEM or promotions) ---
-echo.
+echo(
 
 call :AskRemoveApp "*CandyCrush*" "Candy Crush (any version)" "Promotional game." "No - safe to remove" "N"
 call :AskRemoveApp "*Facebook*" "Facebook" "Facebook app." "No - safe to remove, use browser" "N"
@@ -142,11 +142,11 @@ call :AskRemoveApp "*Fitbit*" "Fitbit" "Fitness tracking app." "No - safe to rem
 :: Potentially Breaking Apps (ask with caution)
 :: -------------------------------------------------------------------------
 
-echo.
+echo(
 echo ============================================================================
 echo  CAUTION: The following apps may cause issues if removed
 echo ============================================================================
-echo.
+echo(
 
 call :AskRemoveAppCaution "Microsoft.Windows.Photos" "Photos" "Default photo viewer and basic editor." "YES - need alternative viewer (IrfanView, etc)" "Y"
 call :AskRemoveAppCaution "Microsoft.WindowsCalculator" "Calculator" "Windows Calculator app." "YES - need alternative calculator" "Y"
@@ -154,11 +154,11 @@ call :AskRemoveAppCaution "Microsoft.WindowsStore" "Microsoft Store" "App store 
 call :AskRemoveAppCaution "Microsoft.StorePurchaseApp" "Store Purchase App" "Handles Store purchases and licenses." "YES - breaks Store purchases" "Y"
 call :AskRemoveAppCaution "Microsoft.DesktopAppInstaller" "App Installer" "Installs .appx, .msix, and winget packages." "YES - breaks modern app installation" "Y"
 
-echo.
+echo(
 echo ============================================================================
 echo  PART 2: Optional Windows Features
 echo ============================================================================
-echo.
+echo(
 
 :: -------------------------------------------------------------------------
 :: Optional Features (DISM)
@@ -170,25 +170,25 @@ call :AskRemoveFeature "WorkFolders-Client" "Work Folders" "Sync files with corp
 call :AskRemoveFeature "Printing-XPSServices-Features" "XPS Document Writer" "Print to XPS format (like PDF but less common)." "No - safe to remove" "N"
 call :AskRemoveFeature "FaxServicesClientPackage" "Windows Fax and Scan" "Send/receive faxes." "No - safe to remove unless you fax" "N"
 
-echo.
+echo(
 echo --- Security Risk Features (recommended to remove) ---
-echo.
+echo(
 
 call :AskRemoveFeature "SMB1Protocol" "SMB 1.0 Protocol" "Old file sharing protocol with security vulnerabilities." "SECURITY RISK - WannaCry exploit. Remove unless needed for old NAS" "N"
 call :AskRemoveFeature "MicrosoftWindowsPowerShellV2Root" "PowerShell 2.0" "Old PowerShell version that bypasses security features." "SECURITY RISK - used to bypass security. Safe to remove" "N"
 
-echo.
+echo(
 echo ============================================================================
 echo  Summary
 echo ============================================================================
-echo.
+echo(
 echo  Items removed: %REMOVED_COUNT%
 echo  Items skipped: %SKIPPED_COUNT%
-echo.
+echo(
 
 if %REMOVED_COUNT% gtr 0 (
     echo A restart is recommended to complete all changes.
-    echo.
+    echo(
 )
 
 echo Press any key to exit...
@@ -223,7 +223,7 @@ echo  %NAME%
 echo ---------------------------------------------------------------------------
 echo  What it is: %DESC%
 echo  Will removing break anything? %BREAKS%
-echo.
+echo(
 
 if /i "%DEFAULT%"=="Y" (
     set /p "CHOICE=  Remove this app? [y/N]: "
@@ -243,7 +243,7 @@ if /i "%CHOICE%"=="Y" (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"
 )
-echo.
+echo(
 goto :eof
 
 :AskRemoveAppCaution
@@ -266,7 +266,7 @@ echo  *** CAUTION *** %NAME%
 echo ---------------------------------------------------------------------------
 echo  What it is: %DESC%
 echo  Will removing break anything? %BREAKS%
-echo.
+echo(
 
 if /i "%DEFAULT%"=="Y" (
     set /p "CHOICE=  Remove this app? (NOT recommended) [y/N]: "
@@ -286,7 +286,7 @@ if /i "%CHOICE%"=="Y" (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"
 )
-echo.
+echo(
 goto :eof
 
 :AskRemoveFeature
@@ -313,7 +313,7 @@ echo  %NAME%
 echo ---------------------------------------------------------------------------
 echo  What it is: %DESC%
 echo  Will removing break anything? %BREAKS%
-echo.
+echo(
 
 if /i "%DEFAULT%"=="Y" (
     set /p "CHOICE=  Remove this feature? [y/N]: "
@@ -332,5 +332,5 @@ if /i "%CHOICE%"=="Y" (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"
 )
-echo.
+echo(
 goto :eof

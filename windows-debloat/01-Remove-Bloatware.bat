@@ -10,14 +10,14 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Remove Bloatware Apps
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -36,13 +36,13 @@ echo  - Maps, Alarms, Camera, Sound Recorder
 echo  - Feedback Hub, Get Help, Tips
 echo  - Wallet, Print3D, OneConnect
 echo  - Third-party bloat (Candy Crush, Facebook, Spotify, etc.)
-echo.
+echo(
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
-echo.
+echo(
 echo Removing Microsoft bloatware apps...
-echo.
+echo(
 
 :: Create temporary PowerShell script
 set "PSSCRIPT=%TEMP%\remove-bloatware.ps1"
@@ -84,18 +84,18 @@ echo     'Microsoft.YourPhone',
 echo     'Microsoft.ZuneMusic',
 echo     'Microsoft.ZuneVideo'
 echo ^)
-echo.
+echo(
 echo $removedCount = 0
 echo $skippedCount = 0
-echo.
+echo(
 echo foreach ^($app in $bloatware^) {
 echo     $packages = Get-AppxPackage -Name $app -ErrorAction SilentlyContinue
 echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $app
-echo.
+echo(
 echo     if ^($packages -or $provPackages^) {
 echo         Write-Host "Removing $app..." -ForegroundColor Yellow
 echo         $success = $false
-echo.
+echo(
 echo         # Remove for current user
 echo         foreach ^($pkg in $packages^) {
 echo             try {
@@ -105,7 +105,7 @@ echo             } catch {
 echo                 # Try without -AllUsers if it fails
 echo             }
 echo         }
-echo.
+echo(
 echo         # Remove provisioned package ^(prevents reinstall for new users^)
 echo         foreach ^($provPkg in $provPackages^) {
 echo             try {
@@ -115,7 +115,7 @@ echo             } catch {
 echo                 # Package may already be removed
 echo             }
 echo         }
-echo.
+echo(
 echo         if ^($success^) {
 echo             Write-Host "  Removed." -ForegroundColor Green
 echo             $removedCount++
@@ -125,15 +125,15 @@ echo             $skippedCount++
 echo         }
 echo     }
 echo }
-echo.
+echo(
 echo Write-Host ''
 echo Write-Host 'Removing third-party bloatware...' -ForegroundColor Cyan
 echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*', '*Disney*', '*Amazon*', '*TikTok*', '*Instagram*'^)
-echo.
+echo(
 echo foreach ^($pattern in $thirdParty^) {
 echo     $packages = Get-AppxPackage -Name $pattern -ErrorAction SilentlyContinue
 echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $pattern
-echo.
+echo(
 echo     foreach ^($pkg in $packages^) {
 echo         Write-Host "Removing $^($pkg.Name^)..." -ForegroundColor Yellow
 echo         try {
@@ -145,14 +145,14 @@ echo             Write-Host "  Could not remove." -ForegroundColor DarkYellow
 echo             $skippedCount++
 echo         }
 echo     }
-echo.
+echo(
 echo     foreach ^($provPkg in $provPackages^) {
 echo         try {
 echo             Remove-AppxProvisionedPackage -Online -PackageName $provPkg.PackageName -ErrorAction Stop ^| Out-Null
 echo         } catch { }
 echo     }
 echo }
-echo.
+echo(
 echo Write-Host ''
 echo Write-Host "========================================" -ForegroundColor Cyan
 echo Write-Host "  Removed: $removedCount apps" -ForegroundColor Green
@@ -166,19 +166,19 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 :: Clean up
 del "%PSSCRIPT%" 2>nul
 
-echo.
+echo(
 echo ============================================================================
 echo  Bloatware removal complete!
 echo ============================================================================
-echo.
+echo(
 echo NOTE: Some apps may reappear after Windows updates.
 echo Run this script again after major updates if needed.
-echo.
+echo(
 echo If some apps failed to remove:
 echo  - Try restarting and running again
 echo  - Some system apps cannot be removed without third-party tools
-echo.
+echo(
 echo A reboot is recommended to complete the removal process.
-echo.
+echo(
 
 pause

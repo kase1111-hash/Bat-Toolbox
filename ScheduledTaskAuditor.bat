@@ -13,7 +13,7 @@ color 0B
 echo ============================================================================
 echo  Scheduled Task Auditor
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -21,7 +21,7 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -40,7 +40,7 @@ set "OUTFILE=%USERPROFILE%\Desktop\TaskAudit_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,
 
 echo Scanning scheduled tasks and categorizing them...
 echo Results will be saved to your Desktop.
-echo.
+echo(
 
 :: Create PowerShell script for task analysis
 set "PSSCRIPT=%TEMP%\task_auditor.ps1"
@@ -48,9 +48,9 @@ set "PSSCRIPT=%TEMP%\task_auditor.ps1"
 (
 echo # Scheduled Task Auditor
 echo # Scans and categorizes all scheduled tasks
-echo.
+echo(
 echo $ErrorActionPreference = 'SilentlyContinue'
-echo.
+echo(
 echo # Known task categories
 echo $telemetryTasks = @(
 echo     '*Consolidator*', '*UsbCeip*', '*DmClient*', '*DmClientOnScenario*',
@@ -62,7 +62,7 @@ echo     '*Sqm-Tasks*', '*DiagTrack*', '*dmwappushservice*',
 echo     '*AitAgent*', '*CEIP*', '*Customer Experience*',
 echo     '*OfficeTelemetry*', '*Telemetry*'
 echo ^)
-echo.
+echo(
 echo $bloatwareTasks = @(
 echo     '*Adobe*Update*', '*Adobe*ARM*', '*AdobeGC*',
 echo     '*GoogleUpdate*', '*Google*Reporting*', '*Google*Crash*',
@@ -78,7 +78,7 @@ echo     '*Samsung*Magician*Update*', '*Corsair*Update*',
 echo     '*HP*Telemetry*', '*Dell*SupportAssist*Telemetry*',
 echo     '*LenovoVantage*Telemetry*', '*ASUS*Update*'
 echo ^)
-echo.
+echo(
 echo $essentialTasks = @(
 echo     '*Windows Defender*', '*MpIdleTask*', '*ExploitGuard*',
 echo     '*ScanForUpdates*', '*Schedule Scan*',
@@ -90,7 +90,7 @@ echo     '*CacheTask*', '*StartupAppTask*',
 echo     '*CreateObjectTask*', '*BthSQM*',
 echo     '*AnalyzeSystem*', '*WdiServiceHost*'
 echo ^)
-echo.
+echo(
 echo $optionalTasks = @(
 echo     '*XblGameSave*', '*Xbox*', '*Xbl*',
 echo     '*OneDrive*', '*Edge*Update*', '*MicrosoftEdge*',
@@ -102,31 +102,31 @@ echo     '*Rempl*', '*MozillaMaintenance*',
 echo     '*Speech*', '*Clip*', '*NahimicSvc*',
 echo     '*SpeechModelDownload*', '*ReconcileFeatures*'
 echo ^)
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "Scanning scheduled tasks..." -ForegroundColor Cyan
 echo Write-Host ""
-echo.
+echo(
 echo # Get all scheduled tasks
 echo $allTasks = Get-ScheduledTask 2^>$null
-echo.
+echo(
 echo if ^(-not $allTasks^) {
 echo     Write-Host "[ERROR] Could not retrieve scheduled tasks." -ForegroundColor Red
 echo     exit
 echo }
-echo.
+echo(
 echo $report = @^(^)
 echo $telemetryList = @^(^)
 echo $bloatwareList = @^(^)
 echo $essentialList = @^(^)
 echo $optionalList = @^(^)
 echo $unknownList = @^(^)
-echo.
+echo(
 echo foreach ^($task in $allTasks^) {
 echo     $fullName = "$^($task.TaskPath^)$^($task.TaskName^)"
 echo     $state = $task.State.ToString^(^)
 echo     $category = 'UNKNOWN'
-echo.
+echo(
 echo     # Categorize
 echo     foreach ^($pattern in $essentialTasks^) {
 echo         if ^($fullName -like $pattern -or $task.TaskName -like $pattern^) {
@@ -134,7 +134,7 @@ echo             $category = 'ESSENTIAL'
 echo             break
 echo         }
 echo     }
-echo.
+echo(
 echo     if ^($category -eq 'UNKNOWN'^) {
 echo         foreach ^($pattern in $telemetryTasks^) {
 echo             if ^($fullName -like $pattern -or $task.TaskName -like $pattern^) {
@@ -143,7 +143,7 @@ echo                 break
 echo             }
 echo         }
 echo     }
-echo.
+echo(
 echo     if ^($category -eq 'UNKNOWN'^) {
 echo         foreach ^($pattern in $bloatwareTasks^) {
 echo             if ^($fullName -like $pattern -or $task.TaskName -like $pattern^) {
@@ -152,7 +152,7 @@ echo                 break
 echo             }
 echo         }
 echo     }
-echo.
+echo(
 echo     if ^($category -eq 'UNKNOWN'^) {
 echo         foreach ^($pattern in $optionalTasks^) {
 echo             if ^($fullName -like $pattern -or $task.TaskName -like $pattern^) {
@@ -161,12 +161,12 @@ echo                 break
 echo             }
 echo         }
 echo     }
-echo.
+echo(
 echo     # Skip Microsoft\Windows system tasks from unknown (they're usually fine)
 echo     if ^($category -eq 'UNKNOWN' -and $task.TaskPath -match '\\Microsoft\\Windows\\'^) {
 echo         $category = 'WINDOWS'
 echo     }
-echo.
+echo(
 echo     $info = [PSCustomObject]@{
 echo         Name = $task.TaskName
 echo         Path = $task.TaskPath
@@ -174,7 +174,7 @@ echo         FullName = $fullName
 echo         State = $state
 echo         Category = $category
 echo     }
-echo.
+echo(
 echo     switch ^($category^) {
 echo         'TELEMETRY' { $telemetryList += $info }
 echo         'BLOATWARE' { $bloatwareList += $info }
@@ -183,19 +183,19 @@ echo         'OPTIONAL' { $optionalList += $info }
 echo         default { $unknownList += $info }
 echo     }
 echo }
-echo.
+echo(
 echo # Display results
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " SCHEDULED TASK AUDIT RESULTS" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo.
+echo(
 echo $report += "============================================================================"
 echo $report += " Scheduled Task Audit - $env:COMPUTERNAME"
 echo $report += " Date: $^(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'^)"
 echo $report += "============================================================================"
 echo $report += ""
-echo.
+echo(
 echo # Telemetry
 echo $activeTelemetry = @^($telemetryList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeTelemetry.Count -gt 0^) {
@@ -209,7 +209,7 @@ echo     }
 echo     Write-Host ""
 echo     $report += ""
 echo }
-echo.
+echo(
 echo # Bloatware
 echo $activeBloatware = @^($bloatwareList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeBloatware.Count -gt 0^) {
@@ -223,7 +223,7 @@ echo     }
 echo     Write-Host ""
 echo     $report += ""
 echo }
-echo.
+echo(
 echo # Optional
 echo $activeOptional = @^($optionalList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeOptional.Count -gt 0^) {
@@ -237,14 +237,14 @@ echo     }
 echo     Write-Host ""
 echo     $report += ""
 echo }
-echo.
+echo(
 echo # Essential (brief)
 echo $activeEssential = @^($essentialList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo Write-Host "[ESSENTIAL] - $^($activeEssential.Count^) core tasks (will not be touched)" -ForegroundColor Green
 echo $report += "[ESSENTIAL] - $^($activeEssential.Count^) core tasks (not touched)"
 echo Write-Host ""
 echo $report += ""
-echo.
+echo(
 echo # Already disabled
 echo $disabledCount = @^($allTasks ^| Where-Object { $_.State -eq 'Disabled' }^).Count
 echo if ^($disabledCount -gt 0^) {
@@ -253,7 +253,7 @@ echo     $report += "[DISABLED] - $disabledCount tasks already disabled"
 echo     Write-Host ""
 echo     $report += ""
 echo }
-echo.
+echo(
 echo # Summary
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " SUMMARY" -ForegroundColor Cyan
@@ -275,7 +275,7 @@ echo $report += "  Optional:          $^($activeOptional.Count^) active"
 echo $report += "  Essential:         $^($activeEssential.Count^) active"
 echo $report += "  Already disabled:  $disabledCount"
 echo $report += ""
-echo.
+echo(
 echo # Offer to disable telemetry tasks
 echo if ^($activeTelemetry.Count -gt 0^) {
 echo     Write-Host ""
@@ -294,7 +294,7 @@ echo         }
 echo         Write-Host ""
 echo     }
 echo }
-echo.
+echo(
 echo # Offer to disable bloatware tasks
 echo if ^($activeBloatware.Count -gt 0^) {
 echo     Write-Host ""
@@ -313,7 +313,7 @@ echo         }
 echo         Write-Host ""
 echo     }
 echo }
-echo.
+echo(
 echo # Offer to review optional tasks
 echo if ^($activeOptional.Count -gt 0^) {
 echo     Write-Host ""
@@ -336,10 +336,10 @@ echo         }
 echo         Write-Host ""
 echo     }
 echo }
-echo.
+echo(
 echo # Save report
 echo $report ^| Out-File -FilePath '%OUTFILE%' -Encoding UTF8
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " Scheduled Task Auditor Complete" -ForegroundColor Cyan
@@ -358,5 +358,5 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 :: Cleanup
 del "%PSSCRIPT%" 2>nul
 
-echo.
+echo(
 pause

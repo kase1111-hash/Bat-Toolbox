@@ -23,7 +23,7 @@ if not exist "%PS_HELPER%" (
     color 0C
     echo [ERROR] BrightnessDiagnostic.ps1 not found!
     echo Please ensure BrightnessDiagnostic.ps1 is in the same folder as this batch file.
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -42,7 +42,7 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                    BRIGHTNESS DIAGNOSTIC TOOL%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   %WHITE%[1]%RESET% Run Full Brightness Diagnostic
 echo   %WHITE%[2]%RESET% Quick Fix - Disable All Auto-Dimming
 echo   %WHITE%[3]%RESET% Set Brightness to Maximum (100%%)
@@ -51,9 +51,9 @@ echo   %WHITE%[5]%RESET% Reset Display Settings to Default
 echo   %WHITE%[6]%RESET% View Current Brightness Info
 echo   %WHITE%[7]%RESET% Advanced Options
 echo   %WHITE%[0]%RESET% Exit
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 set /p "choice=Select an option [0-7]: "
 
 if "%choice%"=="1" goto FULL_DIAGNOSTIC
@@ -74,26 +74,26 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                    FULL BRIGHTNESS DIAGNOSTIC%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo %YELLOW%[1/8]%RESET% Checking current brightness level...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-brightness
-echo.
+echo(
 
 echo %YELLOW%[2/8]%RESET% Checking display adapters...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-adapters
-echo.
+echo(
 
 echo %YELLOW%[3/8]%RESET% Checking for Adaptive Brightness...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-sensor
-echo.
+echo(
 
 :: Check adaptive brightness registry settings
 echo %YELLOW%[4/8]%RESET% Checking Adaptive Brightness Registry Settings...
-echo.
+echo(
 for /f "tokens=3" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" /v IsEnabled 2^>nul ^| findstr /i "IsEnabled"') do (
     if "%%a"=="0x1" (
         echo   %YELLOW%Adaptive Brightness: ENABLED - can cause dimming%RESET%
@@ -101,35 +101,35 @@ for /f "tokens=3" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVer
         echo   %GREEN%Adaptive Brightness: DISABLED%RESET%
     )
 )
-echo.
+echo(
 
 echo %YELLOW%[5/8]%RESET% Checking Power Plan Brightness Settings...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-powerplan
-echo.
+echo(
 
 echo %YELLOW%[6/8]%RESET% Checking for Content Adaptive Brightness Control (CABC)...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-cabc
-echo.
+echo(
 
 echo %YELLOW%[7/8]%RESET% Checking Intel/AMD/NVIDIA Display Power Saving...
-echo.
+echo(
 for /f "tokens=3" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl 2^>nul ^| findstr /i "FeatureTestControl"') do (
     echo   Intel DPST Registry Value: %%a
 )
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-dpst
-echo.
+echo(
 
 echo %YELLOW%[8/8]%RESET% Checking Night Light Status...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-nightlight
-echo.
+echo(
 
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                         DIAGNOSTIC SUMMARY%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   Common causes of auto-dimming:
 echo   %YELLOW%*%RESET% Adaptive Brightness enabled (light sensor)
 echo   %YELLOW%*%RESET% Intel DPST (Display Power Saving Technology)
@@ -137,9 +137,9 @@ echo   %YELLOW%*%RESET% AMD Vari-Bright
 echo   %YELLOW%*%RESET% Content Adaptive Brightness Control (CABC)
 echo   %YELLOW%*%RESET% Power plan dim settings
 echo   %YELLOW%*%RESET% Sensor Monitoring Service running
-echo.
+echo(
 echo   %GREEN%Recommendation:%RESET% Use option [2] Quick Fix to disable all auto-dimming
-echo.
+echo(
 pause
 goto MAIN_MENU
 
@@ -151,14 +151,14 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%              QUICK FIX - DISABLE ALL AUTO-DIMMING%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR]%RESET% This option requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     goto MAIN_MENU
 )
@@ -202,18 +202,18 @@ echo %YELLOW%[6/6]%RESET% Disabling CABC (Content Adaptive Brightness)...
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v KMD_EnableBrightnessInterface2 /t REG_DWORD /d 0 /f >nul 2>&1
 echo   %GREEN%[OK]%RESET% CABC disabled (if applicable)
 
-echo.
+echo(
 echo %GREEN%============================================================================%RESET%
 echo %WHITE%                         QUICK FIX COMPLETE%RESET%
 echo %GREEN%============================================================================%RESET%
-echo.
+echo(
 echo   All auto-dimming features have been disabled.
 echo   %YELLOW%NOTE:%RESET% A restart may be required for all changes to take effect.
-echo.
+echo(
 echo   If brightness still dims, check:
 echo   %WHITE%*%RESET% GPU control panel (NVIDIA/AMD/Intel) for power saving
 echo   %WHITE%*%RESET% Laptop manufacturer software (Dell, HP, Lenovo utilities)
-echo.
+echo(
 pause
 goto MAIN_MENU
 
@@ -225,13 +225,13 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                   SET BRIGHTNESS TO MAXIMUM%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo Setting brightness to 100%%...
-echo.
+echo(
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action set-max
 
-echo.
+echo(
 pause
 goto MAIN_MENU
 
@@ -243,12 +243,12 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%              GAMMA BOOST - BEYOND WINDOWS LIMITS%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   Gamma adjustment can make your screen appear brighter than 100%% by
 echo   boosting the RGB gamma curves. This works on ALL monitors.
-echo.
+echo(
 echo   %YELLOW%WARNING:%RESET% Extreme values may cause washed-out colors or eye strain.
-echo.
+echo(
 echo   %WHITE%[1]%RESET% Slight Boost   (+10%% perceived brightness)
 echo   %WHITE%[2]%RESET% Medium Boost   (+20%% perceived brightness)
 echo   %WHITE%[3]%RESET% Strong Boost   (+30%% perceived brightness)
@@ -256,9 +256,9 @@ echo   %WHITE%[4]%RESET% Maximum Boost  (+50%% - may wash out colors)
 echo   %WHITE%[5]%RESET% Custom Gamma Value
 echo   %WHITE%[6]%RESET% Reset to Default Gamma
 echo   %WHITE%[0]%RESET% Back to Main Menu
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 set /p "gchoice=Select an option [0-6]: "
 
 if "%gchoice%"=="1" (
@@ -283,10 +283,10 @@ if "%gchoice%"=="0" goto MAIN_MENU
 goto GAMMA_BOOST_MENU
 
 :CUSTOM_GAMMA
-echo.
+echo(
 echo   Enter gamma value (0.5 = darker, 1.0 = normal, 2.0 = much brighter)
 echo   Recommended range: 1.0 to 1.5
-echo.
+echo(
 set /p "GAMMA_VALUE=Enter gamma value: "
 goto APPLY_GAMMA
 
@@ -295,16 +295,16 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                      APPLYING GAMMA BOOST%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   Applying gamma value: %GAMMA_VALUE%
-echo.
+echo(
 
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action set-gamma -GammaValue %GAMMA_VALUE%
 
-echo.
+echo(
 echo   %YELLOW%NOTE:%RESET% Gamma resets when you restart or log off.
 echo   To make permanent, use this tool at startup or use GPU control panel.
-echo.
+echo(
 pause
 goto GAMMA_BOOST_MENU
 
@@ -313,11 +313,11 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                      RESETTING GAMMA%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-gamma
 
-echo.
+echo(
 pause
 goto GAMMA_BOOST_MENU
 
@@ -329,16 +329,16 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                    RESET DISPLAY SETTINGS%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   This will:
 echo   %WHITE%*%RESET% Reset gamma to default (1.0)
 echo   %WHITE%*%RESET% Re-enable adaptive brightness
 echo   %WHITE%*%RESET% Restart display driver
-echo.
+echo(
 set /p "confirm=Are you sure you want to reset? (Y/N): "
 if /i not "%confirm%"=="Y" goto MAIN_MENU
 
-echo.
+echo(
 echo %YELLOW%[1/3]%RESET% Resetting gamma to default...
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-gamma
 
@@ -356,9 +356,9 @@ if %errorlevel% equ 0 (
 echo %YELLOW%[3/3]%RESET% Restarting display driver...
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action restart-driver
 
-echo.
+echo(
 echo %GREEN%[COMPLETE]%RESET% Display settings have been reset.
-echo.
+echo(
 pause
 goto MAIN_MENU
 
@@ -370,11 +370,11 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                    CURRENT BRIGHTNESS INFO%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action view-brightness
 
-echo.
+echo(
 pause
 goto MAIN_MENU
 
@@ -386,7 +386,7 @@ cls
 echo %CYAN%============================================================================%RESET%
 echo %WHITE%                        ADVANCED OPTIONS%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   %WHITE%[1]%RESET% Disable Intel DPST (Display Power Saving)
 echo   %WHITE%[2]%RESET% Disable AMD Vari-Bright
 echo   %WHITE%[3]%RESET% Disable Panel Self-Refresh (PSR)
@@ -395,9 +395,9 @@ echo   %WHITE%[5]%RESET% Open Windows Display Settings
 echo   %WHITE%[6]%RESET% Open Power Plan Settings
 echo   %WHITE%[7]%RESET% Export Diagnostic Report
 echo   %WHITE%[0]%RESET% Back to Main Menu
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 set /p "achoice=Select an option [0-7]: "
 
 if "%achoice%"=="1" goto DISABLE_DPST
@@ -413,7 +413,7 @@ goto ADVANCED_MENU
 :DISABLE_DPST
 cls
 echo %CYAN%Disabling Intel Display Power Saving Technology (DPST)...%RESET%
-echo.
+echo(
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR]%RESET% Requires Administrator privileges.
@@ -428,14 +428,14 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v DPST_Enabled /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo %GREEN%[OK]%RESET% Intel DPST disabled. Restart required for full effect.
-echo.
+echo(
 pause
 goto ADVANCED_MENU
 
 :DISABLE_VARIBRIGHT
 cls
 echo %CYAN%Disabling AMD Vari-Bright...%RESET%
-echo.
+echo(
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR]%RESET% Requires Administrator privileges.
@@ -447,17 +447,17 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v PP_VariBrightFeatureControl /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo %GREEN%[OK]%RESET% AMD Vari-Bright disabled. Restart required for full effect.
-echo.
+echo(
 echo %YELLOW%TIP:%RESET% Also disable Vari-Bright in AMD Radeon Software:
 echo      Gaming ^> Display ^> Vari-Bright ^> OFF
-echo.
+echo(
 pause
 goto ADVANCED_MENU
 
 :DISABLE_PSR
 cls
 echo %CYAN%Disabling Panel Self-Refresh (PSR)...%RESET%
-echo.
+echo(
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR]%RESET% Requires Administrator privileges.
@@ -470,21 +470,21 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v EnablePSR /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo %GREEN%[OK]%RESET% Panel Self-Refresh disabled. Restart required.
-echo.
+echo(
 pause
 goto ADVANCED_MENU
 
 :RESET_ADAPTER
 cls
 echo %CYAN%Resetting Display Adapter...%RESET%
-echo.
+echo(
 echo This will briefly flash your screen.
 set /p "confirm=Continue? (Y/N): "
 if /i not "%confirm%"=="Y" goto ADVANCED_MENU
 
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-adapter
 
-echo.
+echo(
 pause
 goto ADVANCED_MENU
 
@@ -499,7 +499,7 @@ goto ADVANCED_MENU
 :EXPORT_REPORT
 cls
 echo %CYAN%Exporting Diagnostic Report...%RESET%
-echo.
+echo(
 
 set "REPORT_FILE=%USERPROFILE%\Desktop\BrightnessReport_%DATE:~-4%%DATE:~4,2%%DATE:~7,2%.txt"
 
@@ -509,33 +509,33 @@ echo  BRIGHTNESS DIAGNOSTIC REPORT
 echo  Generated: %DATE% %TIME%
 echo  Computer: %COMPUTERNAME%
 echo ============================================================================
-echo.
+echo(
 echo == BRIGHTNESS LEVEL ==
 powershell -Command "Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness -ErrorAction SilentlyContinue | Format-List *"
-echo.
+echo(
 echo == DISPLAY ADAPTERS ==
 powershell -Command "Get-CimInstance Win32_VideoController | Format-List Name, DriverVersion, Status, AdapterRAM"
-echo.
+echo(
 echo == ADAPTIVE BRIGHTNESS REGISTRY ==
 reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" 2>nul
-echo.
+echo(
 echo == POWER PLAN DISPLAY SETTINGS ==
 powercfg /query SCHEME_CURRENT 7516b95f-f776-4464-8c53-06167f40cc99
-echo.
+echo(
 echo == SENSOR SERVICE STATUS ==
 sc query SensrSvc
-echo.
+echo(
 echo == INTEL DPST SETTINGS ==
 reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl 2>nul
 reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v DPST_Enabled 2>nul
-echo.
+echo(
 echo == MONITORS ==
 powershell -Command "Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorID -ErrorAction SilentlyContinue | ForEach-Object { $name = ($_.UserFriendlyName | Where-Object {$_ -ne 0} | ForEach-Object {[char]$_}) -join ''; Write-Output \"Monitor: $name\" }"
 ) > "%REPORT_FILE%"
 
 echo %GREEN%[OK]%RESET% Report saved to:
 echo      %REPORT_FILE%
-echo.
+echo(
 pause
 goto ADVANCED_MENU
 
@@ -543,7 +543,7 @@ goto ADVANCED_MENU
 :: EXIT
 :: ============================================================================
 :EXIT
-echo.
+echo(
 echo Goodbye!
 endlocal
 exit /b 0

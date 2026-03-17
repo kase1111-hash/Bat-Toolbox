@@ -13,39 +13,39 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Performance Optimizations
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
 echo This script will apply the following optimizations:
-echo.
+echo(
 echo  1. Disable Hibernation
 echo     - Saves disk space (hiberfil.sys can be several GB)
 echo     - Not needed if you shut down instead of hibernate
-echo.
+echo(
 echo  2. Clear Temporary Files
 echo     - Removes files from TEMP and Windows\Temp folders
-echo.
+echo(
 echo  3. Disable Prefetch/Superfetch (SysMain)
 echo     - Recommended for SSD systems
 echo     - May improve performance by reducing disk writes
-echo.
+echo(
 echo  4. Disable Windows Search Indexing
 echo     - Reduces disk activity
 echo     - Consider using "Everything" search as alternative
-echo.
+echo(
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
-echo.
+echo(
 echo ============================================================================
 echo  Disabling Hibernation...
 echo ============================================================================
@@ -53,7 +53,7 @@ echo ===========================================================================
 powercfg /hibernate off
 echo Hibernation disabled. hiberfil.sys will be removed on reboot.
 
-echo.
+echo(
 echo ============================================================================
 echo  Clearing Temporary Files...
 echo ============================================================================
@@ -66,7 +66,7 @@ del /q /f /s "%SystemRoot%\Temp\*" 2>nul
 
 echo Temp files cleared.
 
-echo.
+echo(
 echo ============================================================================
 echo  Disabling Prefetch/Superfetch (SysMain)...
 echo ============================================================================
@@ -81,7 +81,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
 
 echo Prefetch/Superfetch disabled.
 
-echo.
+echo(
 echo ============================================================================
 echo  Disabling Windows Search Indexing...
 echo ============================================================================
@@ -92,19 +92,19 @@ net stop WSearch >nul 2>&1
 
 echo Windows Search indexing disabled.
 
-echo.
+echo(
 echo ============================================================================
 echo  Performance optimizations applied successfully!
 echo ============================================================================
-echo.
+echo(
 echo NOTES:
 echo  - Consider installing "Everything" search (voidtools.com) as a
 echo    faster alternative to Windows Search
 echo  - If you use a HDD (not SSD), you may want to re-enable Superfetch:
 echo      sc config SysMain start= auto
 echo      net start SysMain
-echo.
+echo(
 echo A reboot is recommended to complete all changes.
-echo.
+echo(
 
 pause

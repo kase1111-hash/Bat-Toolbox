@@ -13,7 +13,7 @@ color 0B
 echo ============================================================================
 echo  Context Menu Cleaner
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -21,7 +21,7 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -41,9 +41,9 @@ set "PSSCRIPT=%TEMP%\context_menu_cleaner.ps1"
 (
 echo # Context Menu Cleaner
 echo # Scans registry for right-click context menu entries
-echo.
+echo(
 echo $ErrorActionPreference = 'SilentlyContinue'
-echo.
+echo(
 echo # Known bloatware/unnecessary context menu entries
 echo $bloatwareEntries = @{
 echo     '7-Zip' = 'OPTIONAL'
@@ -92,7 +92,7 @@ echo     'CCleaner' = 'BLOATWARE'
 echo     'IObit' = 'BLOATWARE'
 echo     'Bitdefender' = 'BLOATWARE'
 echo }
-echo.
+echo(
 echo # Registry locations to scan
 echo $contextMenuPaths = @(
 echo     'HKCR:\*\shell'
@@ -109,45 +109,45 @@ echo     'HKLM:\SOFTWARE\Classes\Directory\shell'
 echo     'HKCU:\SOFTWARE\Classes\Directory\background\shell'
 echo     'HKCU:\SOFTWARE\Classes\Directory\shell'
 echo ^)
-echo.
+echo(
 echo # Map HKEY_CLASSES_ROOT
 echo if (-not ^(Test-Path 'HKCR:'^)^) {
 echo     New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT ^| Out-Null
 echo }
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "Scanning registry for context menu entries..." -ForegroundColor Cyan
 echo Write-Host ""
-echo.
+echo(
 echo $allEntries = @^(^)
 echo $bloatCount = 0
 echo $optionalCount = 0
 echo $keepCount = 0
 echo $unknownCount = 0
-echo.
+echo(
 echo foreach ^($path in $contextMenuPaths^) {
 echo     if ^(Test-Path $path^) {
 echo         $subkeys = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
 echo         foreach ^($key in $subkeys^) {
 echo             $name = $key.PSChildName
 echo             $displayName = $name
-echo.
+echo(
 echo             # Try to get a display name
 echo             $muiVerb = ^(Get-ItemProperty -Path $key.PSPath -Name 'MUIVerb' -ErrorAction SilentlyContinue^).MUIVerb
 echo             if ^($muiVerb -and $muiVerb -notmatch '^@'^) { $displayName = $muiVerb }
-echo.
+echo(
 echo             $defaultVal = ^(Get-ItemProperty -Path $key.PSPath -Name '^(Default^)' -ErrorAction SilentlyContinue^).'^(Default^)'
 echo             if ^($defaultVal -and -not $muiVerb^) { $displayName = $defaultVal }
-echo.
+echo(
 echo             # Check if entry is hidden/disabled
 echo             $legacyDisable = ^(Get-ItemProperty -Path $key.PSPath -Name 'LegacyDisable' -ErrorAction SilentlyContinue^)
 echo             $extended = ^(Get-ItemProperty -Path $key.PSPath -Name 'Extended' -ErrorAction SilentlyContinue^)
 echo             $programmaticOnly = ^(Get-ItemProperty -Path $key.PSPath -Name 'ProgrammaticAccessOnly' -ErrorAction SilentlyContinue^)
-echo.
+echo(
 echo             $status = 'Active'
 echo             if ^($legacyDisable -or $programmaticOnly^) { $status = 'Disabled' }
 echo             if ^($extended^) { $status = 'Shift+Click only' }
-echo.
+echo(
 echo             # Categorize
 echo             $category = 'UNKNOWN'
 echo             foreach ^($pattern in $bloatwareEntries.Keys^) {
@@ -156,7 +156,7 @@ echo                     $category = $bloatwareEntries[$pattern]
 echo                     break
 echo                 }
 echo             }
-echo.
+echo(
 echo             $entry = [PSCustomObject]@{
 echo                 Name = $name
 echo                 DisplayName = $displayName
@@ -165,7 +165,7 @@ echo                 Status = $status
 echo                 Category = $category
 echo             }
 echo             $allEntries += $entry
-echo.
+echo(
 echo             switch ^($category^) {
 echo                 'BLOATWARE' { $bloatCount++ }
 echo                 'OPTIONAL' { $optionalCount++ }
@@ -175,16 +175,16 @@ echo             }
 echo         }
 echo     }
 echo }
-echo.
+echo(
 echo # Remove duplicates by name
 echo $uniqueEntries = $allEntries ^| Sort-Object Name -Unique
-echo.
+echo(
 echo # Display results
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " SCAN RESULTS" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo.
+echo(
 echo # Show bloatware first
 echo $bloat = $uniqueEntries ^| Where-Object { $_.Category -eq 'BLOATWARE' -and $_.Status -eq 'Active' }
 echo if ^($bloat^) {
@@ -195,7 +195,7 @@ echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
-echo.
+echo(
 echo # Show optional
 echo $optional = $uniqueEntries ^| Where-Object { $_.Category -eq 'OPTIONAL' -and $_.Status -eq 'Active' }
 echo if ^($optional^) {
@@ -206,7 +206,7 @@ echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
-echo.
+echo(
 echo # Show essential
 echo $keep = $uniqueEntries ^| Where-Object { $_.Category -eq 'KEEP' -and $_.Status -eq 'Active' }
 echo if ^($keep^) {
@@ -216,7 +216,7 @@ echo         Write-Host "  [+] $^($e.DisplayName^)" -ForegroundColor Green
 echo     }
 echo     Write-Host ""
 echo }
-echo.
+echo(
 echo # Show already disabled
 echo $disabled = $uniqueEntries ^| Where-Object { $_.Status -eq 'Disabled' }
 echo if ^($disabled^) {
@@ -226,7 +226,7 @@ echo         Write-Host "  [x] $^($e.DisplayName^)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
-echo.
+echo(
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " SUMMARY" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
@@ -238,7 +238,7 @@ echo if ^($activeBloat -gt 0^) { Write-Host "  Bloatware:  $activeBloat entries"
 echo if ^($activeOptional -gt 0^) { Write-Host "  Optional:   $activeOptional entries" -ForegroundColor Yellow }
 echo Write-Host "  Essential:  $^(@^($keep^).Count^) entries" -ForegroundColor Green
 echo Write-Host ""
-echo.
+echo(
 echo # Offer to disable bloatware entries
 echo if ^($activeBloat -gt 0^) {
 echo     Write-Host ""
@@ -256,7 +256,7 @@ echo         }
 echo         Write-Host ""
 echo     }
 echo }
-echo.
+echo(
 echo # Offer to disable optional entries one by one
 echo if ^($activeOptional -gt 0^) {
 echo     Write-Host ""
@@ -279,7 +279,7 @@ echo         }
 echo         Write-Host ""
 echo     }
 echo }
-echo.
+echo(
 echo # Common Windows 11 context menu fix
 echo $osVersion = [System.Environment]::OSVersion.Version
 echo if ^($osVersion.Build -ge 22000^) {
@@ -305,7 +305,7 @@ echo             Write-Host "  [FAIL] Could not restore classic menu: $^($_.Exce
 echo         }
 echo     }
 echo }
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " Context Menu Cleaner Complete" -ForegroundColor Cyan
@@ -322,5 +322,5 @@ powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 :: Cleanup
 del "%PSSCRIPT%" 2>nul
 
-echo.
+echo(
 pause

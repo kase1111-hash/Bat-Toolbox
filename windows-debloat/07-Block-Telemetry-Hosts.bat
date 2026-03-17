@@ -10,14 +10,14 @@ setlocal
 echo ============================================================================
 echo  Windows 10 Debloat - Block Telemetry via Hosts File
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -26,23 +26,23 @@ echo This script will add entries to your hosts file to block:
 echo  - Microsoft telemetry servers
 echo  - Microsoft feedback servers
 echo  - Advertising networks (MSN, DoubleClick, etc.)
-echo.
+echo(
 echo Location: C:\Windows\System32\drivers\etc\hosts
-echo.
+echo(
 echo NOTE: This provides an additional layer of protection beyond
 echo disabling services and scheduled tasks.
-echo.
+echo(
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
 set HOSTS_FILE=%SystemRoot%\System32\drivers\etc\hosts
 
-echo.
+echo(
 echo Creating backup of hosts file...
 copy "%HOSTS_FILE%" "%HOSTS_FILE%.backup" >nul 2>&1
 
 echo Adding telemetry blocks to hosts file...
-echo.
+echo(
 
 :: Check if we've already added our blocks
 findstr /C:"# Windows 10 Debloat - Telemetry Blocks" "%HOSTS_FILE%" >nul 2>&1
@@ -54,12 +54,12 @@ if %errorlevel% equ 0 (
 
 :: Add the telemetry blocks
 (
-echo.
+echo(
 echo # ============================================================================
 echo # Windows 10 Debloat - Telemetry Blocks
 echo # Added by windows-debloat scripts
 echo # ============================================================================
-echo.
+echo(
 echo # Microsoft Telemetry
 echo 0.0.0.0 vortex.data.microsoft.com
 echo 0.0.0.0 vortex-win.data.microsoft.com
@@ -84,12 +84,12 @@ echo 0.0.0.0 statsfe2.update.microsoft.com.akadns.net
 echo 0.0.0.0 diagnostics.support.microsoft.com
 echo 0.0.0.0 corp.sts.microsoft.com
 echo 0.0.0.0 statsfe1.ws.microsoft.com
-echo.
+echo(
 echo # Feedback
 echo 0.0.0.0 feedback.windows.com
 echo 0.0.0.0 feedback.microsoft-hohm.com
 echo 0.0.0.0 feedback.search.microsoft.com
-echo.
+echo(
 echo # Advertising
 echo 0.0.0.0 rad.msn.com
 echo 0.0.0.0 preview.msn.com
@@ -101,29 +101,29 @@ echo 0.0.0.0 a.ads1.msn.com
 echo 0.0.0.0 a.ads2.msn.com
 echo 0.0.0.0 adnexus.net
 echo 0.0.0.0 adnxs.com
-echo.
+echo(
 echo # ============================================================================
 ) >> "%HOSTS_FILE%"
 
 :done
-echo.
+echo(
 echo ============================================================================
 echo  Hosts file updated successfully!
 echo ============================================================================
-echo.
+echo(
 echo A backup was saved to: %HOSTS_FILE%.backup
-echo.
+echo(
 echo To flush DNS cache and apply changes immediately, run:
 echo   ipconfig /flushdns
-echo.
+echo(
 echo To undo these changes, restore from backup or manually edit the hosts file.
-echo.
+echo(
 
 :: Flush DNS cache
 echo Flushing DNS cache...
 ipconfig /flushdns >nul 2>&1
 
 echo Done!
-echo.
+echo(
 
 pause

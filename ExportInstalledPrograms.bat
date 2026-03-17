@@ -13,17 +13,17 @@ color 0B
 echo ============================================================================
 echo  Installed Programs Exporter
 echo ============================================================================
-echo.
+echo(
 echo This script will scan your system and create a list of installed programs.
 echo Useful for documenting what to reinstall after a clean Windows install.
-echo.
+echo(
 echo The following will be exported:
 echo  - Desktop applications [from Registry]
 echo  - Microsoft Store apps [AppX packages]
 echo  - Windows optional features
 echo  - Detailed program list with versions
 echo  - Winget JSON file [for automated bulk reinstall]
-echo.
+echo(
 
 :: Set output directory and filename
 set "EXPORT_DIR=%USERPROFILE%\Desktop"
@@ -33,30 +33,30 @@ set "EXPORT_FILE=%EXPORT_DIR%\InstalledPrograms_%COMPUTERNAME%_%TIMESTAMP%.txt"
 
 echo Output will be saved to:
 echo  %EXPORT_FILE%
-echo.
+echo(
 echo Press any key to start scanning...
 pause >nul
 
-echo.
+echo(
 echo ============================================================================
 echo  Scanning System...
 echo ============================================================================
-echo.
+echo(
 
 :: Create/clear output file
 echo ============================================================================ > "%EXPORT_FILE%"
 echo  INSTALLED PROGRAMS REPORT >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo Computer Name: %COMPUTERNAME% >> "%EXPORT_FILE%"
 echo Username: %USERNAME% >> "%EXPORT_FILE%"
 echo Export Date: %DATE% %TIME% >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 :: Get Windows version
 for /f "tokens=4-5 delims=[.] " %%i in ('ver') do set "WINVER=%%i.%%j"
 echo Windows Version: %WINVER% >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 :: ============================================================================
 :: Section 1: Desktop Applications (Registry - 64-bit)
@@ -66,7 +66,7 @@ echo [1/7] Scanning desktop applications (64-bit registry)...
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  DESKTOP APPLICATIONS (64-bit) >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 set "count=0"
 for /f "tokens=*" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" /s 2^>nul ^| findstr /i "DisplayName"') do (
@@ -84,11 +84,11 @@ echo   Found %count% programs
 :: ============================================================================
 echo [2/7] Scanning desktop applications (32-bit registry)...
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  DESKTOP APPLICATIONS (32-bit / WoW64) >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 set "count=0"
 for /f "tokens=*" %%a in ('reg query "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" /s 2^>nul ^| findstr /i "DisplayName"') do (
@@ -106,11 +106,11 @@ echo   Found %count% programs
 :: ============================================================================
 echo [3/7] Scanning user-installed applications...
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  USER-INSTALLED APPLICATIONS >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 set "count=0"
 for /f "tokens=*" %%a in ('reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" /s 2^>nul ^| findstr /i "DisplayName"') do (
@@ -128,11 +128,11 @@ echo   Found %count% programs
 :: ============================================================================
 echo [4/7] Scanning Microsoft Store apps...
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  MICROSOFT STORE APPS >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 set "PSSCRIPT=%TEMP%\get-appx.ps1"
 
@@ -161,11 +161,11 @@ echo   Found %count% apps
 :: ============================================================================
 echo [5/7] Scanning Windows optional features...
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  WINDOWS OPTIONAL FEATURES (Enabled) >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 set "count=0"
 for /f "tokens=*" %%a in ('dism /online /get-features /format:table 2^>nul ^| findstr /i "Enabled"') do (
@@ -181,11 +181,11 @@ echo   Found %count% features
 :: ============================================================================
 echo [6/7] Creating detailed program list with versions...
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  DETAILED PROGRAM LIST [Name, Version, Publisher] >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 echo NAME                                                         ^| VERSION              ^| PUBLISHER >> "%EXPORT_FILE%"
 echo ------------------------------------------------------------ ^| -------------------- ^| ------------------------------ >> "%EXPORT_FILE%"
@@ -210,16 +210,16 @@ if %errorlevel% equ 0 (
         set "winget_count=0"
         for /f %%a in ('powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages.Count" 2^>nul') do set "winget_count=%%a"
         echo       - Exported !winget_count! programs to Winget JSON
-        echo. >> "%EXPORT_FILE%"
+        echo( >> "%EXPORT_FILE%"
         echo ============================================================================ >> "%EXPORT_FILE%"
         echo  WINGET EXPORT >> "%EXPORT_FILE%"
         echo ============================================================================ >> "%EXPORT_FILE%"
-        echo. >> "%EXPORT_FILE%"
+        echo( >> "%EXPORT_FILE%"
         echo Winget JSON file created: %WINGET_FILE% >> "%EXPORT_FILE%"
-        echo. >> "%EXPORT_FILE%"
+        echo( >> "%EXPORT_FILE%"
         echo To reinstall after clean install, run: >> "%EXPORT_FILE%"
         echo   winget import -i "%WINGET_FILE%" --accept-source-agreements --accept-package-agreements >> "%EXPORT_FILE%"
-        echo. >> "%EXPORT_FILE%"
+        echo( >> "%EXPORT_FILE%"
         echo Programs included in Winget export: >> "%EXPORT_FILE%"
         powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages | ForEach-Object { Write-Output ('  - ' + $_.PackageIdentifier) }" >> "%EXPORT_FILE%" 2>nul
     ) else (
@@ -234,11 +234,11 @@ if %errorlevel% equ 0 (
 :: Section 8: Browser Extensions Reminder
 :: ============================================================================
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  MANUAL CHECKLIST - Don't Forget! >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo [ ] Browser extensions ^(Chrome: chrome://extensions, Firefox: about:addons^) >> "%EXPORT_FILE%"
 echo [ ] Browser bookmarks ^(export to HTML^) >> "%EXPORT_FILE%"
 echo [ ] Saved passwords ^(use a password manager^) >> "%EXPORT_FILE%"
@@ -250,34 +250,34 @@ echo [ ] Drivers ^(especially GPU, audio, network^) >> "%EXPORT_FILE%"
 echo [ ] VPN configurations >> "%EXPORT_FILE%"
 echo [ ] SSH keys ^(%USERPROFILE%\.ssh^) >> "%EXPORT_FILE%"
 echo [ ] Development environments ^(Python packages, npm global, etc.^) >> "%EXPORT_FILE%"
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 
 :: ============================================================================
 :: Summary
 :: ============================================================================
 
-echo. >> "%EXPORT_FILE%"
+echo( >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo  END OF REPORT >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 
-echo.
+echo(
 echo ============================================================================
 echo  Export Complete!
 echo ============================================================================
-echo.
+echo(
 echo Files saved to:
 echo  Text report: %EXPORT_FILE%
 if exist "%WINGET_FILE%" (
     echo  Winget JSON: %WINGET_FILE%
 )
-echo.
+echo(
 
 :: Count total lines (approximate program count)
 set "totallines=0"
 for /f %%a in ('type "%EXPORT_FILE%" ^| find /c /v ""') do set "totallines=%%a"
 echo Report contains approximately %totallines% lines.
-echo.
+echo(
 
 :: Ask if user wants to open the file
 set /p "openfile=Would you like to open the text report now? [Y/N]: "
@@ -285,28 +285,28 @@ if /i "%openfile%"=="Y" (
     notepad "%EXPORT_FILE%"
 )
 
-echo.
+echo(
 echo ============================================================================
 echo  Tips for Clean Install Recovery
 echo ============================================================================
-echo.
+echo(
 echo 1. Save BOTH files to a USB drive or cloud storage
 echo 2. Use Ninite.com for quick reinstallation of common programs
 echo 3. The Winget JSON can bulk-install programs automatically
 echo 4. Export browser bookmarks and extension lists separately
 echo 5. Back up license keys before formatting
-echo.
+echo(
 if exist "%WINGET_FILE%" (
     echo Winget reinstall command [run after clean install]:
     echo   winget import -i "WingetPrograms_%COMPUTERNAME%_DATE.json" --accept-package-agreements
-    echo.
+    echo(
     echo NOTE: Only programs available in Winget repository are in the JSON.
     echo       Use the text report to manually install the rest.
 ) else (
     echo Winget was not available. Install it from:
     echo   https://github.com/microsoft/winget-cli
 )
-echo.
+echo(
 
 pause
 exit /b 0

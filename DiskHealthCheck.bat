@@ -10,10 +10,17 @@ color 0B
 :: status for all connected drives. Flags drives approaching failure.
 :: ============================================================================
 
-echo ============================================================================
-echo  Disk Health Check
-echo ============================================================================
-echo.
+:: Setup colors early for error messages
+for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
+set "RED=%ESC%[91m"
+set "GREEN=%ESC%[92m"
+set "YELLOW=%ESC%[93m"
+set "CYAN=%ESC%[96m"
+set "MAGENTA=%ESC%[95m"
+set "WHITE=%ESC%[97m"
+set "DIM=%ESC%[90m"
+set "BOLD=%ESC%[1m"
+set "RESET=%ESC%[0m"
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -21,26 +28,33 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
-:: Setup colors
-for /f %%a in ('echo prompt $E^| cmd') do set "ESC=%%a"
-set "RED=%ESC%[91m"
-set "GREEN=%ESC%[92m"
-set "YELLOW=%ESC%[93m"
-set "CYAN=%ESC%[96m"
-set "MAGENTA=%ESC%[95m"
-set "RESET=%ESC%[0m"
+:: Animated header
+cls
+echo(
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %BOLD%%WHITE%Disk Health Check%RESET%                                                      %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %DIM%S.M.A.R.T. data, temperatures, wear levels, and health status%RESET%      %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+echo(
+title [1/2] Disk Health Check - Scanning drives...
 
 :: Output file
 set "OUTFILE=%USERPROFILE%\Desktop\DiskHealth_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
 
-echo This script checks the health of all connected drives.
-echo Results will be saved to your Desktop.
-echo.
+echo   Results will be saved to your Desktop.
+echo(
+<nul set /p "=  %CYAN%[%RESET%%WHITE%*%RESET%%CYAN%]%RESET% Analyzing drives"
+for /l %%i in (1,1,3) do (
+    <nul set /p "=."
+    timeout /t 0 /nobreak >nul
+)
+echo(
+echo(
 
 :: Create PowerShell script for detailed analysis
 set "PSSCRIPT=%TEMP%\disk_health_check.ps1"
@@ -48,48 +62,48 @@ set "PSSCRIPT=%TEMP%\disk_health_check.ps1"
 (
 echo # Disk Health Check
 echo # Reads S.M.A.R.T. data, temperatures, wear levels
-echo.
+echo(
 echo $ErrorActionPreference = 'SilentlyContinue'
-echo.
+echo(
 echo $outFile = '%OUTFILE%'
 echo $report = @^(^)
-echo.
+echo(
 echo function Add-Line^($text^) {
 echo     $script:report += $text
 echo     Write-Host $text
 echo }
-echo.
+echo(
 echo function Add-ColorLine^($text, $color^) {
 echo     $script:report += $text
 echo     Write-Host $text -ForegroundColor $color
 echo }
-echo.
+echo(
 echo Add-Line "============================================================================"
 echo Add-Line " Disk Health Report - $env:COMPUTERNAME"
 echo Add-Line " Date: $^(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'^)"
 echo Add-Line "============================================================================"
 echo Add-Line ""
-echo.
+echo(
 echo # Get physical disks
 echo $disks = Get-PhysicalDisk
-echo.
+echo(
 echo if ^(-not $disks^) {
 echo     Add-ColorLine "[ERROR] Could not enumerate physical disks." "Red"
 echo     $report ^| Out-File -FilePath $outFile -Encoding UTF8
 echo     exit
 echo }
-echo.
+echo(
 echo $warningCount = 0
 echo $criticalCount = 0
 echo $diskIndex = 0
-echo.
+echo(
 echo foreach ^($disk in $disks^) {
 echo     $diskIndex++
 echo     Add-Line "============================================================================"
 echo     Add-ColorLine " DISK $diskIndex: $^($disk.FriendlyName^)" "Cyan"
 echo     Add-Line "============================================================================"
 echo     Add-Line ""
-echo.
+echo(
 echo     # Basic info
 echo     $sizeGB = [math]::Round^($disk.Size / 1GB, 1^)
 echo     Add-Line "  Model:          $^($disk.FriendlyName^)"
@@ -99,7 +113,7 @@ echo     Add-Line "  Bus Type:       $^($disk.BusType^)"
 echo     Add-Line "  Size:           $sizeGB GB"
 echo     Add-Line "  Firmware:       $^($disk.FirmwareVersion^)"
 echo     Add-Line ""
-echo.
+echo(
 echo     # Health Status
 echo     $healthStatus = $disk.HealthStatus
 echo     $opStatus = $disk.OperationalStatus
@@ -121,14 +135,14 @@ echo         }
 echo     }
 echo     Add-Line "  Op. Status:     $opStatus"
 echo     Add-Line ""
-echo.
+echo(
 echo     # Storage Reliability Counters (S.M.A.R.T. equivalent)
 echo     $reliability = Get-StorageReliabilityCounter -PhysicalDisk $disk
-echo.
+echo(
 echo     if ^($reliability^) {
 echo         Add-Line "  --- S.M.A.R.T. / Reliability Data ---"
 echo         Add-Line ""
-echo.
+echo(
 echo         # Temperature
 echo         if ^($reliability.Temperature^) {
 echo             $tempC = $reliability.Temperature
@@ -138,7 +152,7 @@ echo             if ^($tempC -ge 55^) { $tempColor = "Red"; $tempNote = " [HOT^^
 echo             elseif ^($tempC -ge 45^) { $tempColor = "Yellow"; $tempNote = " [Warm]" }
 echo             Add-ColorLine "  Temperature:    ${tempC}C${tempNote}" $tempColor
 echo         }
-echo.
+echo(
 echo         # Power-on hours
 echo         if ^($reliability.PowerOnHours^) {
 echo             $hours = $reliability.PowerOnHours
@@ -150,7 +164,7 @@ echo             elseif ^($hours -ge 17520^) { $hourNote = " (${years} years)" }
 echo             else { $hourNote = " ($days days)" }
 echo             Add-Line "  Power-On Hours: $hours$hourNote"
 echo         }
-echo.
+echo(
 echo         # Wear level (SSD specific)
 echo         if ^($reliability.Wear -ne $null^) {
 echo             $wear = $reliability.Wear
@@ -161,7 +175,7 @@ echo             elseif ^($wear -ge 70^) { $wearColor = "Yellow"; $wearNote = " 
 echo             elseif ^($wear -ge 50^) { $wearColor = "Yellow"; $wearNote = " [Moderate]" }
 echo             Add-ColorLine "  Wear Level:     ${wear}%%${wearNote}" $wearColor
 echo         }
-echo.
+echo(
 echo         # Read/Write errors
 echo         if ^($reliability.ReadErrorsTotal -ne $null^) {
 echo             $readErrors = $reliability.ReadErrorsTotal
@@ -181,12 +195,12 @@ echo             } else {
 echo                 Add-Line "  Write Errors:   0"
 echo             }
 echo         }
-echo.
+echo(
 echo         # Power cycles
 echo         if ^($reliability.StartStopCycleCount^) {
 echo             Add-Line "  Power Cycles:   $^($reliability.StartStopCycleCount^)"
 echo         }
-echo.
+echo(
 echo         # Unexpected shutdowns
 echo         if ^($reliability.UnrecoverableReadErrorsTotal -ne $null^) {
 echo             $unrecoverable = $reliability.UnrecoverableReadErrorsTotal
@@ -199,9 +213,9 @@ echo     } else {
 echo         Add-Line "  --- S.M.A.R.T. data not available for this drive ---"
 echo         Add-Line "  (Some USB drives and virtual disks don't report S.M.A.R.T.)"
 echo     }
-echo.
+echo(
 echo     Add-Line ""
-echo.
+echo(
 echo     # Partition info
 echo     Add-Line "  --- Partitions ---"
 echo     $partitions = Get-Partition -DiskNumber $disk.DeviceId 2^>$null
@@ -222,13 +236,13 @@ echo         }
 echo     }
 echo     Add-Line ""
 echo }
-echo.
+echo(
 echo # WMIC fallback for additional info
 echo Add-Line "============================================================================"
 echo Add-Line " Additional Drive Information (WMI)"
 echo Add-Line "============================================================================"
 echo Add-Line ""
-echo.
+echo(
 echo $wmiDisks = Get-WmiObject -Class Win32_DiskDrive
 echo foreach ^($d in $wmiDisks^) {
 echo     $sizeGB = [math]::Round^($d.Size / 1GB, 1^)
@@ -240,14 +254,14 @@ echo         $warningCount++
 echo     }
 echo     Add-Line ""
 echo }
-echo.
+echo(
 echo # Summary
 echo Add-Line "============================================================================"
 echo Add-ColorLine " HEALTH SUMMARY" "Cyan"
 echo Add-Line "============================================================================"
 echo Add-Line ""
 echo Add-Line "  Disks scanned:  $diskIndex"
-echo.
+echo(
 echo if ^($criticalCount -gt 0^) {
 echo     Add-ColorLine "  CRITICAL:       $criticalCount issues found - BACKUP NOW^^!" "Red"
 echo     Add-Line ""
@@ -267,12 +281,12 @@ echo     Add-ColorLine "  STATUS:         All drives healthy" "Green"
 echo     Add-Line ""
 echo     Add-Line "  Keep regular backups and re-check every few months."
 echo }
-echo.
+echo(
 echo Add-Line ""
-echo.
+echo(
 echo # Save report
 echo $report ^| Out-File -FilePath $outFile -Encoding UTF8
-echo.
+echo(
 echo Write-Host ""
 echo Write-Host "Report saved to: $outFile" -ForegroundColor Green
 echo Write-Host ""
@@ -280,13 +294,14 @@ echo Write-Host ""
 
 :: Run the PowerShell script
 powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
+title [2/2] Disk Health Check - Complete
 
 :: Cleanup
 del "%PSSCRIPT%" 2>nul
 
-echo.
-echo ============================================================================
-echo  Disk Health Check Complete
-echo ============================================================================
-echo.
+echo(
+echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
+echo   %CYAN%║%RESET%  %GREEN%Disk Health Check Complete%RESET%                                               %CYAN%║%RESET%
+echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
+echo(
 pause

@@ -11,10 +11,10 @@ color 0A
 echo ============================================
 echo  Windows 10 EOS Notification Remover
 echo ============================================
-echo.
+echo(
 echo This script will remove the "Windows 10 is no longer supported"
 echo notification icon from your system tray.
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -22,28 +22,28 @@ if !errorlevel! neq 0 (
     color 0C
     echo [ERROR] This script requires administrator privileges.
     echo Please right-click and select "Run as administrator".
-    echo.
+    echo(
     pause
     exit /b 1
 )
 
 echo [INFO] Administrator privileges confirmed.
-echo.
+echo(
 
 :: Confirm before proceeding
 set /p "confirm=Do you want to remove the EOS notification? (Y/N): "
 if /i not "%confirm%"=="Y" (
-    echo.
+    echo(
     echo Operation cancelled by user.
     pause
     exit /b 0
 )
 
-echo.
+echo(
 echo ============================================
 echo  Removing EOS Notification Components
 echo ============================================
-echo.
+echo(
 
 set "success=0"
 set "errors=0"
@@ -116,14 +116,14 @@ if exist "%eosPath%" (
     echo       - EOSNotify.exe not found ^(may already be removed^)
 )
 
-echo.
+echo(
 echo ============================================
 echo  Operation Complete
 echo ============================================
-echo.
+echo(
 echo Successful operations: %success%
 echo Failed operations: %errors%
-echo.
+echo(
 
 if %errors% gtr 0 (
     color 0E
@@ -135,13 +135,13 @@ if %errors% gtr 0 (
     echo The notification icon should no longer appear.
 )
 
-echo.
+echo(
 echo NOTE: You may need to restart your computer or restart
 echo       Windows Explorer for changes to take full effect.
-echo.
+echo(
 set /p "restart=Would you like to restart Windows Explorer now? (Y/N): "
 if /i "%restart%"=="Y" (
-    echo.
+    echo(
     echo Restarting Windows Explorer...
     taskkill /f /im explorer.exe >nul 2>&1
     timeout /t 2 /nobreak >nul
@@ -149,6 +149,6 @@ if /i "%restart%"=="Y" (
     echo Explorer restarted successfully.
 )
 
-echo.
+echo(
 pause
 exit /b 0

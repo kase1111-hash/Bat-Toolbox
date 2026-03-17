@@ -24,14 +24,14 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Power Plan Optimizer%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] This script requires Administrator privileges.%RESET%
     echo %RED%Please right-click and select "Run as administrator"%RESET%
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -54,20 +54,20 @@ if "!isLaptop!"=="1" (
 ) else (
     echo %WHITE%System type:%RESET%  Desktop
 )
-echo.
+echo(
 
 :MainMenu
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Main Menu%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo   [1] Create "Maximum Performance" plan (desktop/gaming)
 echo   [2] Create "Balanced Performance" plan (laptop-friendly)
 echo   [3] View current power plan details
 echo   [4] Unhide all power settings in Control Panel
 echo   [5] Restore Windows default power plans
 echo   [0] Exit
-echo.
+echo(
 
 set /p "choice=Select option: "
 
@@ -79,20 +79,20 @@ if "%choice%"=="5" goto RestoreDefaults
 if "%choice%"=="0" goto Exit
 
 echo %RED%Invalid option.%RESET%
-echo.
+echo(
 goto MainMenu
 
 :: ============================================================================
 :: Option 1: Maximum Performance Plan
 :: ============================================================================
 :MaxPerformance
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Create Maximum Performance Plan%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo This plan maximizes performance at the cost of power consumption.
-echo.
+echo(
 echo %YELLOW%What it does:%RESET%
 echo  - Disables CPU core parking (all cores active)
 echo  - Sets CPU minimum to 100%% (no frequency scaling)
@@ -101,17 +101,17 @@ echo  - Disables USB selective suspend
 echo  - Disables hard disk spin-down
 echo  - Sets maximum timer resolution
 echo  - Disables display/sleep power saving
-echo.
+echo(
 echo %RED%WARNING: This will increase power consumption and heat.%RESET%
 if "!isLaptop!"=="1" (
     echo %RED%         On laptops, battery life will be significantly reduced.%RESET%
 )
-echo.
+echo(
 
 set /p "confirm=Create Maximum Performance plan? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 
 :: Check if our custom plan already exists
 set "PLAN_GUID=77777777-7777-7777-7777-777777777777"
@@ -149,7 +149,7 @@ powercfg /setactive !PLAN_GUID!
 echo       %GREEN%[OK] Maximum Performance is now active%RESET%
 
 :: ---- CPU Settings ----
-echo.
+echo(
 echo [3/10] Configuring CPU settings...
 echo       - CPU minimum processor state: 100%%
 echo         %CYAN%(Prevents frequency scaling - CPU stays at max clock)%RESET%
@@ -168,7 +168,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_PROCESSOR SYSCOOLPOL 1
 echo       %GREEN%[OK] CPU configured for maximum performance%RESET%
 
 :: ---- CPU Core Parking ----
-echo.
+echo(
 echo [4/10] Disabling CPU core parking...
 echo       %CYAN%(Keeps all cores active - prevents wake-up latency)%RESET%
 
@@ -195,7 +195,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_PROCESSOR PERFBOOSTMODE 2 >nul 2>&1
 echo       %GREEN%[OK] Core parking disabled%RESET%
 
 :: ---- PCI Express ----
-echo.
+echo(
 echo [5/10] Disabling PCI Express Link State Power Management...
 echo       %CYAN%(Prevents GPU/NVMe latency spikes from ASPM transitions)%RESET%
 
@@ -206,7 +206,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_PCIEXPRESS ASPM 0
 echo       %GREEN%[OK] PCI Express ASPM disabled%RESET%
 
 :: ---- USB Settings ----
-echo.
+echo(
 echo [6/10] Disabling USB selective suspend...
 echo       %CYAN%(Prevents USB devices from disconnecting/reconnecting)%RESET%
 
@@ -221,7 +221,7 @@ powercfg /setdcvalueindex !PLAN_GUID! 2a737441-1930-4402-8d77-b2bebba308a3 d4e98
 echo       %GREEN%[OK] USB suspend disabled%RESET%
 
 :: ---- Hard Disk ----
-echo.
+echo(
 echo [7/10] Disabling hard disk spin-down...
 echo       %CYAN%(Keeps drives always ready - eliminates spin-up delay)%RESET%
 
@@ -236,7 +236,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK {dab60367-53fe-4fbc-825e-521d069d
 echo       %GREEN%[OK] Disk always-on configured%RESET%
 
 :: ---- Display and Sleep ----
-echo.
+echo(
 echo [8/10] Configuring display and sleep settings...
 echo       %CYAN%(Disable screen timeout and sleep for uninterrupted operation)%RESET%
 
@@ -263,7 +263,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_SLEEP AWAYMODE 1 >nul 2>&1
 echo       %GREEN%[OK] Display/sleep configured%RESET%
 
 :: ---- Timer Resolution ----
-echo.
+echo(
 echo [9/10] Configuring system timer resolution...
 echo       %CYAN%(Higher resolution = more precise scheduling, lower latency)%RESET%
 
@@ -278,7 +278,7 @@ powercfg /setdcvalueindex !PLAN_GUID! SUB_PROCESSOR THROTTLING 0 >nul 2>&1
 echo       %GREEN%[OK] Timer resolution optimized%RESET%
 
 :: ---- Network Adapter ----
-echo.
+echo(
 echo [10/10] Configuring network adapter power settings...
 echo       %CYAN%(Prevents Wi-Fi/Ethernet from sleeping mid-game)%RESET%
 
@@ -291,13 +291,13 @@ echo       %GREEN%[OK] Network adapter configured%RESET%
 :: Apply changes
 powercfg /setactive !PLAN_GUID!
 
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Maximum Performance Plan Applied%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo %GREEN%All settings applied successfully!%RESET%
-echo.
+echo(
 echo Settings summary:
 echo   CPU min/max state:          100%% / 100%%
 echo   CPU cooling policy:         Active (fan before throttle)
@@ -310,17 +310,17 @@ echo   Display timeout (AC):       Never
 echo   Sleep/hibernate:            Never
 echo   Timer resolution:           Maximum
 echo   Network adapter power:      Maximum Performance
-echo.
+echo(
 
 if "!isLaptop!"=="1" (
     echo %YELLOW%LAPTOP NOTE: Battery life will be significantly reduced.%RESET%
     echo %YELLOW%Switch to "Balanced Performance" (option 2) when on battery.%RESET%
-    echo.
+    echo(
 )
 
 echo %YELLOW%To switch back: Control Panel ^> Power Options ^> select another plan%RESET%
 echo %YELLOW%Or run this script ^> option [5] to restore defaults.%RESET%
-echo.
+echo(
 
 pause
 goto MainMenu
@@ -329,19 +329,19 @@ goto MainMenu
 :: Option 2: Balanced Performance Plan
 :: ============================================================================
 :BalancedPerf
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Create Balanced Performance Plan%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo This plan optimizes performance while respecting power/thermal limits.
 echo Good for laptops or quiet desktops.
-echo.
+echo(
 
 set /p "confirm=Create Balanced Performance plan? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 
 set "BAL_GUID=88888888-8888-8888-8888-888888888888"
 
@@ -407,9 +407,9 @@ echo       %GREEN%[OK] Network configured%RESET%
 
 powercfg /setactive !BAL_GUID!
 
-echo.
+echo(
 echo %GREEN%Balanced Performance plan created and activated!%RESET%
-echo.
+echo(
 echo AC (Plugged In):
 echo   CPU scaling:        10-100%%, boost enabled
 echo   Core parking:       50%% cores minimum
@@ -418,7 +418,7 @@ echo   USB suspend:        Disabled
 echo   Disk spin-down:     Never
 echo   Display off:        15 minutes
 echo   Sleep:              Never
-echo.
+echo(
 echo DC (Battery):
 echo   CPU scaling:        5-100%%, moderate boost
 echo   Core parking:       25%% cores minimum
@@ -427,7 +427,7 @@ echo   USB suspend:        Enabled
 echo   Disk spin-down:     20 minutes
 echo   Display off:        5 minutes
 echo   Sleep:              30 minutes
-echo.
+echo(
 
 pause
 goto MainMenu
@@ -436,18 +436,18 @@ goto MainMenu
 :: Option 3: View Current Plan
 :: ============================================================================
 :ViewPlan
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Current Power Plan Details%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 
 echo %WHITE%Available power plans:%RESET%
 powercfg /list 2>nul
-echo.
+echo(
 
 echo %WHITE%Active plan settings:%RESET%
-echo.
+echo(
 
 set "PSPLAN=%TEMP%\powerplan_view.ps1"
 
@@ -455,7 +455,7 @@ set "PSPLAN=%TEMP%\powerplan_view.ps1"
 echo $plan = powercfg /getactivescheme
 echo Write-Host $plan -ForegroundColor Cyan
 echo Write-Host ""
-echo.
+echo(
 echo $settings = @(
 echo     @{ Name='CPU Min State'; Sub='SUB_PROCESSOR'; Setting='PROCTHROTTLEMIN' },
 echo     @{ Name='CPU Max State'; Sub='SUB_PROCESSOR'; Setting='PROCTHROTTLEMAX' },
@@ -466,7 +466,7 @@ echo     @{ Name='Display Timeout'; Sub='SUB_VIDEO'; Setting='VIDEOIDLE' },
 echo     @{ Name='Sleep Timeout'; Sub='SUB_SLEEP'; Setting='STANDBYIDLE' },
 echo     @{ Name='Hibernate Timeout'; Sub='SUB_SLEEP'; Setting='HIBERNATEIDLE' }
 echo ^)
-echo.
+echo(
 echo foreach ^($s in $settings^) {
 echo     $output = powercfg /query SCHEME_CURRENT $s.Sub $s.Setting 2^>$null
 echo     $acLine = $output ^| Select-String 'Current AC Power Setting Index'
@@ -476,7 +476,7 @@ echo     $dcVal = if ^($dcLine^) { ^($dcLine -split ': '^)[1].Trim^(^) } else { 
 echo     $name = $s.Name.PadRight^(25^)
 echo     Write-Host "  $name AC: $acVal    DC: $dcVal"
 echo }
-echo.
+echo(
 echo # Check core parking
 echo Write-Host ""
 echo Write-Host "Core Parking:" -ForegroundColor White
@@ -488,7 +488,7 @@ echo     Write-Host "  Min cores unparked:     $val"
 echo } else {
 echo     Write-Host "  Core parking data not available (may be hidden)"
 echo }
-echo.
+echo(
 echo # USB selective suspend
 echo Write-Host "USB Settings:" -ForegroundColor White
 echo $usbOut = powercfg /query SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 2^>$null
@@ -503,7 +503,7 @@ echo }
 powershell -ExecutionPolicy Bypass -File "!PSPLAN!" 2>nul
 del "!PSPLAN!" 2>nul
 
-echo.
+echo(
 pause
 goto MainMenu
 
@@ -511,19 +511,19 @@ goto MainMenu
 :: Option 4: Unhide All Settings
 :: ============================================================================
 :UnhideSettings
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Unhide Hidden Power Settings%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo Windows hides many power settings by default. This makes them all visible
 echo in the Power Options advanced settings dialog.
-echo.
+echo(
 
 set /p "confirm=Unhide all power settings? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 echo Unhiding power settings in registry...
 
 :: Unhide all power settings by setting Attributes to 2
@@ -545,19 +545,19 @@ echo Write-Host "Unhidden $count power settings." -ForegroundColor Green
 powershell -ExecutionPolicy Bypass -File "!PSUNHIDE!" 2>nul
 del "!PSUNHIDE!" 2>nul
 
-echo.
+echo(
 echo %GREEN%[OK] Hidden power settings are now visible.%RESET%
-echo.
+echo(
 echo To access: Control Panel ^> Power Options ^> Change plan settings ^>
 echo            Change advanced power settings
-echo.
+echo(
 echo You will now see additional options like:
 echo  - Processor performance core parking min/max cores
 echo  - Processor performance boost policy/mode
 echo  - NVMe latency tolerance settings
 echo  - GPU preference policies
 echo  - Network adapter power settings
-echo.
+echo(
 
 pause
 goto MainMenu
@@ -566,18 +566,18 @@ goto MainMenu
 :: Option 5: Restore Defaults
 :: ============================================================================
 :RestoreDefaults
-echo.
+echo(
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Restore Default Power Plans%RESET%
 echo %CYAN%============================================================================%RESET%
-echo.
+echo(
 echo This will restore Windows default power plans and remove custom plans.
-echo.
+echo(
 
 set /p "confirm=Restore defaults? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
-echo.
+echo(
 
 :: Switch to Balanced first
 powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e >nul 2>&1
@@ -593,15 +593,15 @@ echo       - Removed Balanced Performance plan (if it existed)
 powercfg /restoredefaultschemes >nul 2>&1
 echo       - Restored all default power schemes
 
-echo.
+echo(
 echo %GREEN%[OK] Default power plans restored.%RESET%
 echo     Active plan: Balanced
-echo.
+echo(
 
 pause
 goto MainMenu
 
 :Exit
-echo.
+echo(
 echo Goodbye.
 exit /b 0

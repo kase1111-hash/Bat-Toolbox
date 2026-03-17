@@ -13,7 +13,7 @@ color 0B
 echo ============================================================================
 echo  Windows Repair Kit
 echo ============================================================================
-echo.
+echo(
 
 :: Check for admin privileges
 net session >nul 2>&1
@@ -21,7 +21,7 @@ if %errorlevel% neq 0 (
     color 0C
     echo [ERROR] This script requires Administrator privileges.
     echo Please right-click and select "Run as administrator"
-    echo.
+    echo(
     pause
     exit /b 1
 )
@@ -38,16 +38,16 @@ set "RESET=%ESC%[0m"
 set "LOGFILE=%USERPROFILE%\Desktop\RepairKit_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
 
 echo %CYAN%This script will run three system integrity checks:%RESET%
-echo.
+echo(
 echo   [1] SFC /scannow        - Scans and repairs Windows system files
 echo   [2] DISM /RestoreHealth  - Repairs the Windows component store
 echo   [3] CHKDSK              - Checks disk for filesystem errors
-echo.
+echo(
 echo Results will be saved to:
 echo   %LOGFILE%
-echo.
+echo(
 echo %YELLOW%This process can take 15-60 minutes depending on your system.%RESET%
-echo.
+echo(
 
 set /p "CONFIRM=Run all checks? [Y/N]: "
 if /i not "!CONFIRM!"=="Y" (
@@ -56,7 +56,7 @@ if /i not "!CONFIRM!"=="Y" (
     exit /b 0
 )
 
-echo.
+echo(
 echo ============================================================================
 echo  Starting Windows Repair Kit - %DATE% %TIME%
 echo ============================================================================
@@ -72,15 +72,15 @@ for /f "tokens=2 delims=:" %%a in ('systeminfo ^| findstr /c:"OS Name"') do (
     echo   %%a>> "%LOGFILE%"
 )
 echo ============================================================================>> "%LOGFILE%"
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 
 :: ============================================================================
 :: Step 1: System File Checker (SFC)
 :: ============================================================================
-echo.
+echo(
 echo %CYAN%[1/3] Running System File Checker (SFC /scannow)...%RESET%
 echo       This checks Windows system files for corruption.
-echo.
+echo(
 
 echo [1/3] SFC /scannow>> "%LOGFILE%"
 echo ---------------------------------------->> "%LOGFILE%"
@@ -126,7 +126,7 @@ if "!SFC_STATUS!"=="UNKNOWN" (
 )
 
 :: Check CBS log for details
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 echo CBS Log errors (last 50 relevant lines^):>> "%LOGFILE%"
 if exist "%WINDIR%\Logs\CBS\CBS.log" (
     findstr /i /c:"corrupt" /c:"Cannot repair" /c:"repaired" "%WINDIR%\Logs\CBS\CBS.log" 2>nul | more +0 > "%TEMP%\cbs_errors.txt"
@@ -146,7 +146,7 @@ if exist "%WINDIR%\Logs\CBS\CBS.log" (
 ) else (
     echo CBS.log not found.>> "%LOGFILE%"
 )
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 
 del "%TEMP%\sfc_output.txt" 2>nul
 del "%TEMP%\cbs_errors.txt" 2>nul
@@ -154,10 +154,10 @@ del "%TEMP%\cbs_errors.txt" 2>nul
 :: ============================================================================
 :: Step 2: DISM RestoreHealth
 :: ============================================================================
-echo.
+echo(
 echo %CYAN%[2/3] Running DISM /RestoreHealth...%RESET%
 echo       This repairs the Windows component store using Windows Update.
-echo.
+echo(
 
 echo [2/3] DISM /Online /Cleanup-Image /RestoreHealth>> "%LOGFILE%"
 echo ---------------------------------------->> "%LOGFILE%"
@@ -195,24 +195,24 @@ if "!DISM_STATUS!"=="UNKNOWN" (
 )
 
 :: Append full DISM output to log
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 echo Full DISM output:>> "%LOGFILE%"
 type "%TEMP%\dism_output.txt" >> "%LOGFILE%"
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 
 del "%TEMP%\dism_output.txt" 2>nul
 
 :: If SFC found unrepairable files and DISM succeeded, suggest re-running SFC
 if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
-    echo.
+    echo(
     echo %YELLOW%[TIP] SFC found unrepairable files but DISM succeeded.%RESET%
     echo %YELLOW%      Re-running SFC may now be able to fix those files.%RESET%
-    echo.
+    echo(
     set /p "RERUN_SFC=Re-run SFC /scannow now? [Y/N]: "
     if /i "!RERUN_SFC!"=="Y" (
-        echo.
+        echo(
         echo %CYAN%[BONUS] Re-running SFC /scannow after DISM repair...%RESET%
-        echo.
+        echo(
         echo [BONUS] SFC /scannow re-run after DISM>> "%LOGFILE%"
         echo ---------------------------------------->> "%LOGFILE%"
         sfc /scannow > "%TEMP%\sfc2_output.txt" 2>&1
@@ -232,16 +232,16 @@ if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
             )
         )
         del "%TEMP%\sfc2_output.txt" 2>nul
-        echo.>> "%LOGFILE%"
+        echo(>> "%LOGFILE%"
     )
 )
 
 :: ============================================================================
 :: Step 3: CHKDSK
 :: ============================================================================
-echo.
+echo(
 echo %CYAN%[3/3] Checking disk filesystem integrity...%RESET%
-echo.
+echo(
 
 echo [3/3] CHKDSK>> "%LOGFILE%"
 echo ---------------------------------------->> "%LOGFILE%"
@@ -250,7 +250,7 @@ echo ---------------------------------------->> "%LOGFILE%"
 set "SYSDRIVE=%SYSTEMDRIVE%"
 
 echo       Running CHKDSK on %SYSDRIVE% (read-only scan)...
-echo.
+echo(
 
 chkdsk %SYSDRIVE% > "%TEMP%\chkdsk_output.txt" 2>&1
 set "CHKDSK_EXIT=%errorlevel%"
@@ -266,10 +266,10 @@ if %errorlevel% equ 0 (
     if !errorlevel! equ 0 (
         echo %RED%[WARN] CHKDSK: Filesystem errors detected on %SYSDRIVE%.%RESET%
         echo Result: Filesystem errors detected on %SYSDRIVE%.>> "%LOGFILE%"
-        echo.
+        echo(
         echo %YELLOW%       To fix errors, schedule a repair for next reboot:%RESET%
         echo         chkdsk %SYSDRIVE% /F /R
-        echo.
+        echo(
         set /p "SCHEDULE_CHKDSK=Schedule CHKDSK /F /R for next reboot? [Y/N]: "
         if /i "!SCHEDULE_CHKDSK!"=="Y" (
             echo Y | chkdsk %SYSDRIVE% /F /R >nul 2>&1
@@ -283,7 +283,7 @@ if %errorlevel% equ 0 (
 )
 
 :: Extract key stats from CHKDSK
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 echo CHKDSK details:>> "%LOGFILE%"
 findstr /i /c:"KB total disk" /c:"KB available" /c:"bytes in each" /c:"bad sectors" /c:"KB in bad" "%TEMP%\chkdsk_output.txt" >> "%LOGFILE%" 2>nul
 
@@ -292,17 +292,17 @@ for /f "tokens=*" %%a in ('findstr /i "bad sectors" "%TEMP%\chkdsk_output.txt" 2
     echo       %%a
 )
 
-echo.>> "%LOGFILE%"
+echo(>> "%LOGFILE%"
 del "%TEMP%\chkdsk_output.txt" 2>nul
 
 :: ============================================================================
 :: Summary
 :: ============================================================================
-echo.
+echo(
 echo ============================================================================
 echo %CYAN% REPAIR KIT SUMMARY%RESET%
 echo ============================================================================
-echo.
+echo(
 
 :: SFC summary
 if "!SFC_STATUS!"=="CLEAN" (
@@ -335,10 +335,10 @@ if %CHKDSK_EXIT% equ 0 (
     echo   CHKDSK: %YELLOW%CHECK LOG%RESET% - Review log for details
 )
 
-echo.
+echo(
 echo Full log saved to:
 echo   %LOGFILE%
-echo.
+echo(
 
 :: Completion timestamp
 echo ============================================================================>> "%LOGFILE%"
@@ -348,15 +348,15 @@ echo ===========================================================================
 :: Recommend reboot if repairs were made
 if "!SFC_STATUS!"=="REPAIRED" (
     echo %YELLOW%[TIP] System files were repaired. A reboot is recommended.%RESET%
-    echo.
+    echo(
 )
 if "!DISM_STATUS!"=="SUCCESS" (
     echo %YELLOW%[TIP] Component store was repaired. A reboot is recommended.%RESET%
-    echo.
+    echo(
 )
 
 echo ============================================================================
 echo  Repair Kit Complete
 echo ============================================================================
-echo.
+echo(
 pause

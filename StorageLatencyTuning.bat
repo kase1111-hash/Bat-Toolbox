@@ -29,7 +29,7 @@ set "RESET=%ESC%[0m"
 echo %CYAN%============================================================%RESET%
 echo %WHITE%        STORAGE LATENCY TUNING - NVMe/SSD Optimizer%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %YELLOW%This script optimizes:%RESET%
 echo   - NVMe queue depth and submission efficiency
 echo   - AHCI Link Power Management (disable ASPM stalls)
@@ -37,15 +37,15 @@ echo   - Write-back caching for consistent throughput
 echo   - Power state transitions (prevent PS3/PS4 latency)
 echo   - Interrupt coalescing and MSI-X optimization
 echo   - File system and memory manager tuning
-echo.
+echo(
 echo %RED%WARNING:%RESET% These are advanced optimizations for performance systems.
 echo          Some changes increase power consumption.
 echo          Recommended: Create a restore point first.
-echo.
+echo(
 
 choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
-    echo.
+    echo(
     echo %CYAN%Creating restore point...%RESET%
     powershell -Command "Checkpoint-Computer -Description 'Before StorageLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
     if !errorlevel! equ 0 (
@@ -55,7 +55,7 @@ if %errorlevel%==1 (
     )
 )
 
-echo.
+echo(
 choice /c YN /m "Continue with storage latency optimizations"
 if %errorlevel%==2 (
     echo %YELLOW%Cancelled by user.%RESET%
@@ -63,11 +63,11 @@ if %errorlevel%==2 (
     exit /b 0
 )
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 1: NVMe Power State Optimization%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Detect NVMe drives
 echo %YELLOW%Detecting NVMe drives...%RESET%
@@ -102,11 +102,11 @@ powershell -Command "powercfg /setdcvalueindex SCHEME_CURRENT 0012ee47-9041-4b5d
 powercfg /setactive SCHEME_CURRENT >nul 2>&1
 echo %GREEN%   [OK] NVMe latency tolerance set to performance mode%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 2: AHCI Link Power Management (ASPM)%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Disable AHCI Link Power Management
 echo %WHITE%[1/4] Disabling AHCI Link Power Management...%RESET%
@@ -142,11 +142,11 @@ powercfg /setdcvalueindex SCHEME_CURRENT SUB_DISK DISKIDLE 0 >nul 2>&1
 powercfg /setactive SCHEME_CURRENT >nul 2>&1
 echo %GREEN%   [OK] Hard disk never sleeps%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 3: Write Cache Optimization%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Enable write caching on all drives
 echo %WHITE%[1/3] Enabling write-back caching on storage devices...%RESET%
@@ -176,11 +176,11 @@ fsutil behavior set disable8dot3 1 >nul 2>&1
 fsutil behavior set memoryusage 2 >nul 2>&1
 echo %GREEN%   [OK] File system optimizations applied%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 4: Queue Depth and I/O Optimization%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Optimize StorPort miniport queue depth
 echo %WHITE%[1/5] Optimizing storage queue depth settings...%RESET%
@@ -222,11 +222,11 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "IoPageLockLimit" /t REG_DWORD /d 0 /f >nul 2>&1
 echo %GREEN%   [OK] Memory manager optimized for application I/O%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 5: Power Plan Storage Settings%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: Ensure High Performance or Ultimate Performance plan
 echo %WHITE%[1/2] Checking power plan...%RESET%
@@ -258,11 +258,11 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\0012ee47-9041
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\0012ee47-9041-4b5d-9b77-535fba8b1442\d3d55efd-c1ff-424e-9dc3-441be7833010" /v "Attributes" /t REG_DWORD /d 2 /f >nul 2>&1
 echo %GREEN%   [OK] Storage power options now visible in Power Options%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  PHASE 6: Additional Storage Optimizations%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 
 :: TRIM optimization
 echo %WHITE%[1/4] Verifying TRIM is enabled...%RESET%
@@ -304,13 +304,13 @@ echo %WHITE%[4/4] Disabling boot tracing...%RESET%
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableBootTrace" /t REG_DWORD /d 0 /f >nul 2>&1
 echo %GREEN%   [OK] Boot tracing disabled%RESET%
 
-echo.
+echo(
 echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
-echo.
+echo(
 echo %GREEN%Storage latency tuning applied successfully!%RESET%
-echo.
+echo(
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] NVMe power state transitions minimized
 echo   [+] AHCI Link Power Management disabled
@@ -322,29 +322,29 @@ echo   [+] MSI-X enabled for NVMe
 echo   [+] File system optimizations applied
 echo   [+] Power plan set to high performance
 echo   [+] Hidden power options exposed
-echo.
+echo(
 echo %YELLOW%Recommendations:%RESET%
 echo   1. Restart your computer to apply all changes
 echo   2. Run CrystalDiskMark to verify improved latency
 echo   3. For enterprise SSDs, enable write cache in Device Manager
 echo   4. Monitor drive temps - performance mode runs warmer
-echo.
+echo(
 echo %CYAN%Power consumption note:%RESET%
 echo   These settings prioritize performance over power saving.
 echo   Laptop users on battery may want to create a separate profile.
-echo.
+echo(
 echo %WHITE%To access new storage power options:%RESET%
 echo   Control Panel ^> Power Options ^> Change plan settings ^>
 echo   Change advanced power settings ^> Hard disk / NVMe
-echo.
+echo(
 
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
-    echo.
+    echo(
     echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
     shutdown /r /t 10 /c "Restarting to apply storage latency optimizations"
 )
 
-echo.
+echo(
 pause
 exit /b 0
