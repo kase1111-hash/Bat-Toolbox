@@ -55,13 +55,13 @@ REM -- wbengine: Block Level Backup Engine Service --
 REM -- This is the core backup engine that performs the actual backup --
 REM -- operations. It's what was eating your CPU for 6 minutes. --
 sc stop wbengine >nul 2>&1
-sc config wbengine start=disabled >nul 2>&1
+sc config wbengine start= disabled >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\wbengine" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
 echo   wbengine (Block Level Backup Engine) - DISABLED
 
 REM -- SDRSVC: Windows Backup (System Restore/Backup service) --
 sc stop SDRSVC >nul 2>&1
-sc config SDRSVC start=disabled >nul 2>&1
+sc config SDRSVC start= disabled >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\SDRSVC" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
 echo   SDRSVC (Windows Backup) - DISABLED
 
@@ -69,7 +69,7 @@ REM -- fhsvc: File History Service --
 REM -- Automatically backs up files to external drives or network --
 REM -- locations. Also integrates with OneDrive. --
 sc stop fhsvc >nul 2>&1
-sc config fhsvc start=disabled >nul 2>&1
+sc config fhsvc start= disabled >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\fhsvc" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
 echo   fhsvc (File History Service) - DISABLED
 
@@ -80,7 +80,7 @@ REM -- swprv: Microsoft Software Shadow Copy Provider --
 REM -- Used by backup to create shadow copies. Safe to disable --
 REM -- if you're not using any backup software at all. --
 sc stop swprv >nul 2>&1
-sc config swprv start=disabled >nul 2>&1
+sc config swprv start= disabled >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\swprv" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
 echo   swprv (Software Shadow Copy Provider) - DISABLED
 
@@ -90,11 +90,11 @@ REM -- some installers). Disabled here since BlueHammer literally --
 REM -- exploits the VSS pipeline. Uncomment the REM lines below --
 REM -- to re-enable if something breaks. --
 sc stop VSS >nul 2>&1
-sc config VSS start=disabled >nul 2>&1
+sc config VSS start= disabled >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\VSS" /v Start /t REG_DWORD /d 4 /f >nul 2>&1
 echo   VSS (Volume Shadow Copy) - DISABLED
 echo     NOTE: Also closes the BlueHammer exploit vector.
-echo     If installers break, re-enable with: sc config VSS start=demand
+echo     If installers break, re-enable with: sc config VSS start= demand
 
 echo.
 echo [2/5] Disabling backup scheduled tasks...
@@ -189,17 +189,17 @@ echo  NOTE ON VSS:
 echo    Volume Shadow Copy was disabled because it is the exact service
 echo    exploited by BlueHammer. If you use disk imaging software or
 echo    an installer fails, re-enable temporarily with:
-echo      sc config VSS start=demand
+echo      sc config VSS start= demand
 echo      net start VSS
 echo    Then disable again when done:
-echo      sc config VSS start=disabled
+echo      sc config VSS start= disabled
 echo.
 echo  TO REVERSE:
-echo    sc config wbengine start=demand
-echo    sc config SDRSVC start=demand
-echo    sc config fhsvc start=manual
-echo    sc config swprv start=manual
-echo    sc config VSS start=manual
+echo    sc config wbengine start= demand
+echo    sc config SDRSVC start= demand
+echo    sc config fhsvc start= manual
+echo    sc config swprv start= manual
+echo    sc config VSS start= manual
 echo    Delete policy keys under:
 echo      HKLM\SOFTWARE\Policies\Microsoft\Windows\Backup
 echo      HKLM\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore

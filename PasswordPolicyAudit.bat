@@ -92,7 +92,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
         set /a totalChecks+=1
         set "minLen=!val!"
         if "!val!"=="0" (
-            echo   %RED%[FAIL] Minimum password length: !val! (no minimum!)%RESET%
+            echo   %RED%[FAIL] Minimum password length: !val! (no minimum^^!)%RESET%
             (echo [FAIL] Minimum password length: !val! - no minimum set) >> "%REPORT%"
             set /a issues+=1
         ) else (
@@ -167,7 +167,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     if not errorlevel 1 (
         set /a totalChecks+=1
         if "!val!"=="Never" (
-            echo   %RED%[FAIL] Lockout threshold: Never (unlimited login attempts!)%RESET%
+            echo   %RED%[FAIL] Lockout threshold: Never (unlimited login attempts^^!)%RESET%
             (echo [FAIL] Lockout threshold: Never - unlimited login attempts) >> "%REPORT%"
             set /a issues+=1
         ) else (
@@ -251,7 +251,7 @@ if exist "%SECPOL_EXPORT%" (
     set /a totalChecks+=1
     findstr /i "ClearTextPassword" "%SECPOL_EXPORT%" 2>nul | find "1" >nul 2>&1
     if not errorlevel 1 (
-        echo   %RED%[FAIL] Reversible encryption: Enabled (stores passwords insecurely!)%RESET%
+        echo   %RED%[FAIL] Reversible encryption: Enabled (stores passwords insecurely^^!)%RESET%
         (echo [FAIL] Reversible encryption: Enabled - stores passwords insecurely) >> "%REPORT%"
         set /a issues+=1
     ) else (
@@ -478,7 +478,7 @@ if defined uacLevel (
         (echo [PASS] UAC prompt level: Always notify) >> "%REPORT%"
         set /a passScore+=1
     ) else (
-        echo   %YELLOW%[WARN] UAC prompt level: Custom (0x!uacLevel!)%RESET%
+        echo   %YELLOW%[WARN] UAC prompt level: Custom (!uacLevel!)%RESET%
         (echo [WARN] UAC prompt level: Custom) >> "%REPORT%"
         set /a warnings+=1
     )

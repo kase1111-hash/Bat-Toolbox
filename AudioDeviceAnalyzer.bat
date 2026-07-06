@@ -533,7 +533,7 @@ if "!isAdmin!"=="1" (
     echo         $color = if ^($startType -eq 'Automatic'^) { 'Green' } else { 'Yellow' }
     echo         Write-Host ^("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
     echo         if ^($startType -ne 'Automatic'^) {
-    echo             Write-Host "    ^ Should be Automatic!" -ForegroundColor Red
+    echo             Write-Host "    ^^ Should be Automatic^^!" -ForegroundColor Red
     echo         }
     echo     }
     echo }

@@ -190,20 +190,20 @@ if "%has_nvidia%"=="1" (
     echo %CYAN%============================================================%RESET%
     echo/
 
-    :: Find NVIDIA profile registry path
+    REM Find NVIDIA profile registry path
     set "nv_path="
     for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "NVIDIA" 2^>nul ^| findstr /i "0000 0001 0002 0003"') do (
         set "nv_path=%%a"
     )
 
-    :: Global NVIDIA settings via registry
+    REM Global NVIDIA settings via registry
     echo %WHITE%[1/10] Power management mode...%RESET%
     if "%profile%"=="4" (
-        :: Adaptive
+        REM Adaptive
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
         echo %YELLOW%   [SET] Adaptive ^(power saving^)%RESET%
     ) else (
-        :: Prefer maximum performance
+        REM Prefer maximum performance
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PowerMizerEnable" /t REG_DWORD /d 0 /f >nul 2>&1
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PowerMizerLevel" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -212,41 +212,41 @@ if "%has_nvidia%"=="1" (
     )
 
     echo %WHITE%[2/10] Low Latency Mode...%RESET%
-    :: NVIDIA Control Panel Low Latency Mode via profile settings
-    :: Uses NVIDIA Profile Inspector values
+    REM NVIDIA Control Panel Low Latency Mode via profile settings
+    REM Uses NVIDIA Profile Inspector values
     if "%profile%"=="1" (
-        :: Ultra ^(submit frames just-in-time^)
+        REM Ultra ^(submit frames just-in-time^)
         echo %GREEN%   [SET] Ultra ^(competitive - submit just-in-time^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Manage 3D Settings ^> Low Latency Mode ^> Ultra%RESET%
     ) else if "%profile%"=="2" (
-        :: On
+        REM On
         echo %GREEN%   [SET] On ^(balanced^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Low Latency Mode ^> On%RESET%
     ) else (
-        :: Off or Application controlled
+        REM Off or Application controlled
         echo %YELLOW%   [SET] Application controlled%RESET%
     )
 
     echo %WHITE%[3/10] Shader cache...%RESET%
-    :: Shader cache location and size
+    REM Shader cache location and size
     if "%profile%"=="3" (
-        :: Unlimited for content creation ^(more VRAM usage^)
+        REM Unlimited for content creation ^(more VRAM usage^)
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /t REG_DWORD /d 0xFFFFFFFF /f >nul 2>&1
         echo %GREEN%   [SET] Unlimited ^(quality/content creation^)%RESET%
     ) else (
-        :: Default driver controlled
+        REM Default driver controlled
         reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /f >nul 2>&1
         echo %GREEN%   [SET] Driver controlled ^(10GB default^)%RESET%
     )
 
     echo %WHITE%[4/10] Threaded optimization...%RESET%
-    :: 0x00000001 = Auto, 0x00000002 = On, 0x00000000 = Off
+    REM 0x00000001 = Auto, 0x00000002 = On, 0x00000000 = Off
     if "%profile%"=="1" (
-        :: Off for competitive ^(more predictable frametimes^)
+        REM Off for competitive ^(more predictable frametimes^)
         echo %YELLOW%   [SET] Off ^(competitive - predictable frametimes^)%RESET%
         echo %YELLOW%   [INFO] Set via NVIDIA Control Panel if needed%RESET%
     ) else (
-        :: Auto for most use cases
+        REM Auto for most use cases
         echo %GREEN%   [SET] Auto ^(driver decides per-application^)%RESET%
     )
 
@@ -289,12 +289,12 @@ if "%has_nvidia%"=="1" (
     echo %YELLOW%   [INFO] Set via NVIDIA Control Panel: Low Latency Mode handles this%RESET%
 
     echo %WHITE%[10/10] NVIDIA telemetry and background tasks...%RESET%
-    :: Disable NVIDIA telemetry
+    REM Disable NVIDIA telemetry
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\NvControlPanel2\Client" /v "OptInOrOutPreference" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID44231" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID64640" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID66610" /t REG_DWORD /d 0 /f >nul 2>&1
-    :: Disable NVIDIA container telemetry tasks
+    REM Disable NVIDIA container telemetry tasks
     schtasks /change /tn "NvTmRepOnLogon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1
     schtasks /change /tn "NvTmRep_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1
     echo %GREEN%   [OK] Telemetry disabled%RESET%
@@ -664,7 +664,7 @@ if %errorlevel%==1 (
         start "" "C:\Program Files\AMD\CNext\CNext\RadeonSoftware.exe" 2>nul
     )
     if "%has_intel%"=="1" (
-        start "" "C:\Program Files\Intel\Intel^(R^) Graphics Command Center\IntelGraphicsCommandCenter.exe" 2>nul
+        start "" "C:\Program Files\Intel\Intel(R) Graphics Command Center\IntelGraphicsCommandCenter.exe" 2>nul
     )
 )
 

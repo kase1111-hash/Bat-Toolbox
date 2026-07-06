@@ -21,7 +21,7 @@ set "PS_HELPER=%SCRIPT_DIR%BrightnessDiagnostic.ps1"
 :: Check if helper script exists
 if not exist "%PS_HELPER%" (
     color 0C
-    echo [ERROR] BrightnessDiagnostic.ps1 not found!
+    echo [ERROR] BrightnessDiagnostic.ps1 not found^^!
     echo Please ensure BrightnessDiagnostic.ps1 is in the same folder as this batch file.
     echo/
     pause

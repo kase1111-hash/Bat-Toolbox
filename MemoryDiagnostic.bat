@@ -271,7 +271,7 @@ echo     $name = $p.ProcessName
 echo     if ^($name.Length -gt 34^) { $name = $name.Substring^(0, 31^) + '...' }
 echo     $wsMB = [math]::Round^($p.WorkingSet64 / 1MB, 1^)
 echo     $pct = [math]::Round^(^($p.WorkingSet64 / $totalBytes^) * 100, 1^)
-echo     $pid = $p.Id
+echo     $procId = $p.Id
 echo/
 echo     $wsStr = if ^($wsMB -ge 1024^) { "$^([math]::Round^($wsMB / 1024, 1^)^) GB" } else { "$wsMB MB" }
 echo/
@@ -279,7 +279,7 @@ echo     $color = 'White'
 echo     if ^($pct -ge 5^) { $color = 'Yellow' }
 echo     if ^($pct -ge 15^) { $color = 'Red' }
 echo/
-echo     Write-Host ^("  {0,-5} {1,-35} {2,-12} {3,-8} {4}" -f "#$rank", $name, $wsStr, "$pct%%", $pid^) -ForegroundColor $color
+echo     Write-Host ^("  {0,-5} {1,-35} {2,-12} {3,-8} {4}" -f "#$rank", $name, $wsStr, "$pct%%", $procId^) -ForegroundColor $color
 echo }
 echo/
 echo Write-Host ""

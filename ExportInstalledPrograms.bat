@@ -236,7 +236,7 @@ if %errorlevel% equ 0 (
 
 echo/ >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo  MANUAL CHECKLIST - Don't Forget! >> "%EXPORT_FILE%"
+echo  MANUAL CHECKLIST - Don't Forget^! >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo/ >> "%EXPORT_FILE%"
 echo [ ] Browser extensions ^(Chrome: chrome://extensions, Firefox: about:addons^) >> "%EXPORT_FILE%"
@@ -263,7 +263,7 @@ echo ===========================================================================
 
 echo/
 echo ============================================================================
-echo  Export Complete!
+echo  Export Complete^!
 echo ============================================================================
 echo/
 echo Files saved to:

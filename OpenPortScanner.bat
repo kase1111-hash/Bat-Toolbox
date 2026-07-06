@@ -146,13 +146,13 @@ echo $results = @^(^)
 echo/
 echo foreach ^($conn in $listeners^) {
 echo     $totalPorts++
-echo     $port = $conn.LocalPort
+echo     $port = [int]$conn.LocalPort
 echo     $addr = $conn.LocalAddress
-echo     $pid = $conn.OwningProcess
+echo     $procId = $conn.OwningProcess
 echo     $procName = 'Unknown'
 echo/
 echo     try {
-echo         $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+echo         $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
 echo/
@@ -216,13 +216,13 @@ echo Write-Host ""
 echo/
 echo $udpListeners = Get-NetUDPEndpoint -ErrorAction SilentlyContinue ^| Sort-Object LocalPort
 echo foreach ^($udp in $udpListeners^) {
-echo     $port = $udp.LocalPort
+echo     $port = [int]$udp.LocalPort
 echo     $addr = $udp.LocalAddress
-echo     $pid = $udp.OwningProcess
+echo     $procId = $udp.OwningProcess
 echo     $procName = 'Unknown'
 echo/
 echo     try {
-echo         $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+echo         $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
 echo/
@@ -328,7 +328,7 @@ echo/
 (echo  FIREWALL STATUS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 
-for %%P in (Domain Standard Public) do (
+for %%P in (Domain Private Public) do (
     netsh advfirewall show %%Pprofile state 2>nul | find /i "ON" >nul 2>&1
     if not errorlevel 1 (
         echo   %GREEN%[ON]  %%P Profile firewall is enabled%RESET%

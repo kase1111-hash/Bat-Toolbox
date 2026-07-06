@@ -89,20 +89,20 @@ echo $removedCount = 0
 echo $skippedCount = 0
 echo/
 echo foreach ^($app in $bloatware^) {
-echo     $packages = Get-AppxPackage -Name $app -ErrorAction SilentlyContinue
+echo     $packages = Get-AppxPackage -AllUsers -Name $app -ErrorAction SilentlyContinue
 echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $app
 echo/
 echo     if ^($packages -or $provPackages^) {
 echo         Write-Host "Removing $app..." -ForegroundColor Yellow
 echo         $success = $false
 echo/
-echo         # Remove for current user
+echo         # Remove for all users
 echo         foreach ^($pkg in $packages^) {
 echo             try {
-echo                 Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
+echo                 Remove-AppxPackage -Package $pkg.PackageFullName -AllUsers -ErrorAction Stop
 echo                 $success = $true
 echo             } catch {
-echo                 # Try without -AllUsers if it fails
+echo                 # Leave $success false so this package is counted as failed
 echo             }
 echo         }
 echo/

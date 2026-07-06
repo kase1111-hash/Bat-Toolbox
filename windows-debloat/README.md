@@ -72,7 +72,7 @@ These scripts make significant changes to your Windows installation. **Always cr
 - Safe if you don't use Xbox features, location services, or fax
 - Skip Xbox services if you play games on PC
 
-**Reversibility:** Run `sc config "ServiceName" start=auto` to re-enable.
+**Reversibility:** Run `sc config "ServiceName" start= auto` to re-enable.
 
 ---
 
@@ -228,8 +228,8 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **Reversibility:**
 - Hibernation: `powercfg /hibernate on`
-- Superfetch: `sc config SysMain start=auto && net start SysMain`
-- Search: `sc config WSearch start=auto && net start WSearch`
+- Superfetch: `sc config SysMain start= auto && net start SysMain`
+- Search: `sc config WSearch start= auto && net start WSearch`
 
 ---
 
@@ -365,7 +365,7 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **Need to re-enable a service:**
 ```batch
-sc config "ServiceName" start=auto
+sc config "ServiceName" start= auto
 net start "ServiceName"
 ```
 

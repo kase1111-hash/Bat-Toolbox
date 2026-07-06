@@ -67,12 +67,12 @@ for /f "tokens=3" %%a in ('sc query SSDPSRV 2^>nul ^| findstr STATE') do set "SS
 for /f "tokens=3" %%a in ('sc qc SSDPSRV 2^>nul ^| findstr START_TYPE') do set "SSDP_START=%%a"
 
 echo   %BOLD%SSDP Discovery (SSDPSRV):%RESET%
-if "!SSDP_STATE!"=="4" (
+if "!SSDP_STATE!"=="1" (
     echo     State:      %GREEN%STOPPED%RESET%
-) else if "!SSDP_STATE!"=="1" (
-    echo     State:      %GREEN%STOPPED%RESET%
-) else (
+) else if "!SSDP_STATE!"=="4" (
     echo     State:      %RED%RUNNING%RESET%
+) else (
+    echo     State:      %YELLOW%!SSDP_STATE!%RESET%
 )
 if "!SSDP_START!"=="DISABLED" (
     echo     Start type: %GREEN%Disabled%RESET%
@@ -88,12 +88,12 @@ for /f "tokens=3" %%a in ('sc query upnphost 2^>nul ^| findstr STATE') do set "U
 for /f "tokens=3" %%a in ('sc qc upnphost 2^>nul ^| findstr START_TYPE') do set "UPNP_START=%%a"
 
 echo   %BOLD%UPnP Device Host (upnphost):%RESET%
-if "!UPNP_STATE!"=="4" (
+if "!UPNP_STATE!"=="1" (
     echo     State:      %GREEN%STOPPED%RESET%
-) else if "!UPNP_STATE!"=="1" (
-    echo     State:      %GREEN%STOPPED%RESET%
-) else (
+) else if "!UPNP_STATE!"=="4" (
     echo     State:      %RED%RUNNING%RESET%
+) else (
+    echo     State:      %YELLOW%!UPNP_STATE!%RESET%
 )
 if "!UPNP_START!"=="DISABLED" (
     echo     Start type: %GREEN%Disabled%RESET%

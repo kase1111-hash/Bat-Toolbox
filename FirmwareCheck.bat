@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Firmware & Driver Version Checker
+title Firmware ^& Driver Version Checker
 color 0B
 
 :: ============================================================================

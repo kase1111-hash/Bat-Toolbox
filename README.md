@@ -1329,6 +1329,32 @@ DIRECT LINKS
 
 ---
 
+## Privacy, Debloat & Service-Control Utilities
+
+Standalone root-level scripts for removing Microsoft/OEM telemetry and bloat and
+for taking manual control of background services. Each has a matching
+`*_README.txt` with full usage, warnings, and reversal steps. Most are
+opinionated and some are destructive — read the README before running.
+
+| Script | Purpose | Admin | Notes |
+|--------|---------|-------|-------|
+| Add_RecycleBin_to_NavPane.bat | Add Recycle Bin to Explorer's Navigation Pane | Recommended | Cosmetic, per-user, restarts Explorer |
+| remove_telemetry.bat | Disable Microsoft telemetry/diagnostics + block 60+ endpoints via hosts | Yes | Least destructive of the removal set |
+| remove_store.bat | Disable/remove Microsoft Store and Store-dependent bloatware | Yes | Removes many UWP apps; edit list first |
+| remove_backup.bat | Disable Windows Backup/File History/VSS | Yes | **Destructive** — deletes restore points, disables System Protection |
+| remove_defender.bat | Disable Windows Defender | Yes | **Security risk** — requires turning off Tamper Protection first |
+| edge-disable.bat | Disable Microsoft Edge without uninstalling | Self-elevates | Optional aggressive step renames msedge.exe |
+| kill-dosvc.bat | Disable Delivery Optimization P2P + WaaSMedic reverter | Yes | Escalates registry ownership; backs up hosts |
+| muzzle-uso.bat | Keep UsoSvc (Update Orchestrator) disabled across reboots | Yes | Takes switches: `/u`, `/status` |
+| disable-asus-services.bat | Disable 5 ASUS bloat services | Yes | Leaves ASUS Optimization (Fn keys) alone |
+| disable-bloat-services.bat | Two-tier ASUS + extra service cleanup | Yes | Tier 2 asks before disabling Dolby |
+| disable_asus_updatechecker.bat | Neutralize ASUS updater binaries (4 layers, incl. IFEO) | Yes | Blocks the binary by name machine-wide |
+| inventory-asus-staging.bat | Read-only inventory of "observe first" services | Yes | Makes **no changes** |
+| install-process-history-logger.bat | Install SYSTEM boot process-creation logger | Yes | Requires process-history-logger.ps1 |
+| install-tripwire-watcher.bat | Install per-user tripwire toast notifier | Yes | Requires tripwire-watcher.ps1 |
+
+---
+
 ## Windows Debloat Suite
 
 The `windows-debloat/` folder contains a comprehensive set of scripts for stripping Windows 10 down to essentials.

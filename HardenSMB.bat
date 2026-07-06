@@ -163,14 +163,14 @@ echo     Write-Host "  [FAIL] Could not configure SMB encryption: $_" -Foregroun
 echo }
 echo try {
 echo     # Disable insecure guest logons
-echo     Set-SmbServerConfiguration -EnableInsecureGuestLogons $false -Confirm:$false 2>$null
+echo     Set-SmbServerConfiguration -EnableInsecureGuestLogons $false -Confirm:$false 2^>$null
 echo     Write-Host "  [OK] Insecure guest logons disabled ^(server^)" -ForegroundColor Green
 echo } catch {
 echo     Write-Host "  [SKIP] EnableInsecureGuestLogons not available on server config" -ForegroundColor DarkGray
 echo }
 echo # Disable SMB compression ^(SMBGhost mitigation^)
 echo try {
-echo     Set-SmbServerConfiguration -DisableCompression $true -Confirm:$false 2>$null
+echo     Set-SmbServerConfiguration -DisableCompression $true -Confirm:$false 2^>$null
 echo     Write-Host "  [OK] SMB compression disabled ^(SMBGhost mitigation^)" -ForegroundColor Green
 echo } catch {
 echo     Write-Host "  [SKIP] SMB compression setting not available on this version" -ForegroundColor DarkGray

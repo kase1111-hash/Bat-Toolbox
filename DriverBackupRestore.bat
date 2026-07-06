@@ -103,8 +103,8 @@ echo/
 
 :: Count third-party drivers first
 set "driverCount=0"
-for /f "tokens=1,2 delims=:" %%a in ('pnputil /enum-drivers 2^>nul ^| findstr /i "Published Name Original Name Class Name Provider Name"') do (
-    echo %%a | findstr /i "Published Name" >nul 2>&1
+for /f "tokens=1,2 delims=:" %%a in ('pnputil /enum-drivers 2^>nul ^| findstr /i /c:"Published Name"') do (
+    echo %%a | findstr /i /c:"Published Name" >nul 2>&1
     if not errorlevel 1 (
         set /a driverCount+=1
     )
@@ -124,7 +124,7 @@ if %errorlevel% equ 0 (
     echo/
 
     :: Fallback: use pnputil to export each driver
-    for /f "tokens=2 delims=:" %%d in ('pnputil /enum-drivers 2^>nul ^| findstr /i "Published Name"') do (
+    for /f "tokens=2 delims=:" %%d in ('pnputil /enum-drivers 2^>nul ^| findstr /i /c:"Published Name"') do (
         set "drvName=%%d"
         set "drvName=!drvName: =!"
         pnputil /export-driver "!drvName!" "!BACKUP_PATH!" >nul 2>&1
@@ -367,7 +367,7 @@ for /r "!RESTORE_PATH!" %%f in (*.inf) do (
     echo   %WHITE%%%~nxf%RESET%
 
     :: Try to show driver provider/description from the INF
-    for /f "tokens=1,* delims==" %%a in ('findstr /i "^Provider\b ^DriverVer\b ^CatalogFile\b" "%%f" 2^>nul') do (
+    for /f "tokens=1,* delims==" %%a in ('findstr /i /r "^Provider ^DriverVer ^CatalogFile" "%%f" 2^>nul') do (
         set "infoKey=%%a"
         set "infoVal=%%b"
         echo     !infoKey!= !infoVal!
