@@ -84,8 +84,11 @@ echo %GREEN%   [OK] NVMe power state latency tolerance configured%RESET%
 :: Disable Autonomous Power State Transition (APST)
 echo %WHITE%[2/6] Disabling NVMe Autonomous Power State Transition (APST)...%RESET%
 :: This prevents the drive from autonomously entering low power states
-for /f "tokens=*" %%i in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum" /s /f "StorPort" 2^>nul ^| findstr /i "HKEY"') do (
-    reg add "%%i\Device Parameters\StorPort" /v "EnableIdlePowerManagement" /t REG_DWORD /d 0 /f >nul 2>&1
+:: reg query already returns the full path of each matching ...\StorPort key,
+:: so filter to lines that END in StorPort and write to that key directly -
+:: appending \Device Parameters\StorPort again produced a nonexistent path.
+for /f "tokens=*" %%i in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum" /s /f "StorPort" 2^>nul ^| findstr /i /e "StorPort"') do (
+    reg add "%%i" /v "EnableIdlePowerManagement" /t REG_DWORD /d 0 /f >nul 2>&1
 )
 :: Global storage idle power management
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Storage" /v "StorageD3InModernStandby" /t REG_DWORD /d 0 /f >nul 2>&1
@@ -151,7 +154,7 @@ echo/
 :: Enable write caching on all drives
 echo %WHITE%[1/3] Enabling write-back caching on storage devices...%RESET%
 :: Enable write caching via device settings
-for /f "tokens=*" %%d in ('wmic diskdrive get DeviceID 2^>nul ^| findstr /i "PHYSICALDRIVE"') do (
+for /f "delims=" %%d in ('powershell -NoProfile -Command "(Get-CimInstance Win32_DiskDrive).DeviceID" 2^>nul ^| findstr /i "PHYSICALDRIVE"') do (
     set "drive=%%d"
     set "drive=!drive: =!"
     if not "!drive!"=="" (
@@ -201,8 +204,11 @@ echo %GREEN%   [OK] Interrupt coalescing disabled for minimum latency%RESET%
 :: MSI/MSI-X optimization
 echo %WHITE%[3/5] Enabling MSI-X for storage controllers...%RESET%
 :: Enable Message Signaled Interrupts for better CPU efficiency
-for /f "tokens=2 delims=\" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /f "stornvme" 2^>nul ^| findstr /i "HKEY"') do (
-    reg add "HKLM\SYSTEM\CurrentControlSet\Enum\PCI\%%a\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties" /v "MSISupported" /t REG_DWORD /d 1 /f >nul 2>&1
+:: reg query returns the full device instance key path; write MSI-X support
+:: under that key directly. The old "tokens=2 delims=\" extracted "SYSTEM" (the
+:: second path element) and wrote to a nonexistent PCI\SYSTEM key.
+for /f "tokens=*" %%i in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /f "stornvme" 2^>nul ^| findstr /i "HKEY"') do (
+    reg add "%%i\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties" /v "MSISupported" /t REG_DWORD /d 1 /f >nul 2>&1
 )
 echo %GREEN%   [OK] MSI-X enabled for NVMe controllers%RESET%
 

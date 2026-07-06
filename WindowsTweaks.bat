@@ -479,11 +479,12 @@ echo/
 
 :: Disable Nagle's algorithm (reduces latency)
 echo   - Disabling Nagle's Algorithm [reduces latency]...
-for /f "tokens=3*" %%i in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /s /v IPAddress 2^>nul ^| findstr /i "IPAddress"') do (
-    for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /s 2^>nul ^| findstr /i "HKEY"') do (
-        reg add "%%k" /v "TcpAckFrequency" /t REG_DWORD /d 1 /f >nul 2>&1
-        reg add "%%k" /v "TCPNoDelay" /t REG_DWORD /d 1 /f >nul 2>&1
-    )
+:: Query IPAddress with /s so reg prints the key path of each interface that
+:: actually has an address (i.e. a real adapter); apply the tweak only to those
+:: keys. The previous nested loop wrote to EVERY interface, N times over.
+for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /s /v IPAddress 2^>nul ^| findstr /i "HKEY"') do (
+    reg add "%%k" /v "TcpAckFrequency" /t REG_DWORD /d 1 /f >nul 2>&1
+    reg add "%%k" /v "TCPNoDelay" /t REG_DWORD /d 1 /f >nul 2>&1
 )
 
 :: Disable network throttling

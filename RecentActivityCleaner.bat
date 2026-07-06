@@ -328,9 +328,10 @@ if "!isAdmin!"=="1" (
     set /a skipped+=1
 )
 
-:: Windows temp files
+:: Windows temp files. "rd" does not accept wildcards, so removing subfolders
+:: needs a loop over each directory under %TEMP%.
 del /f /q "%TEMP%\*" >nul 2>&1
-rd /s /q "%TEMP%\*" >nul 2>&1
+for /d %%d in ("%TEMP%\*") do rd /s /q "%%d" >nul 2>&1
 echo       %GREEN%- Cleared user temp folder%RESET%
 set /a success+=1
 

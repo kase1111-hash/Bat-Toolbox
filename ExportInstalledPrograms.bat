@@ -27,8 +27,9 @@ echo/
 
 :: Set output directory and filename
 set "EXPORT_DIR=%USERPROFILE%\Desktop"
-set "TIMESTAMP=%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%_%TIME:~0,2%-%TIME:~3,2%"
-set "TIMESTAMP=%TIMESTAMP: =0%"
+:: Locale-independent timestamp via PowerShell. %DATE%/%TIME% slicing assumes US
+:: formatting and breaks (invalid "/" in the name) on other locales.
+for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm"') do set "TIMESTAMP=%%T"
 set "EXPORT_FILE=%EXPORT_DIR%\InstalledPrograms_%COMPUTERNAME%_%TIMESTAMP%.txt"
 
 echo Output will be saved to:

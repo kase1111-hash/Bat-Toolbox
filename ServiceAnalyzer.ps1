@@ -98,7 +98,10 @@ $telemetryServices = @{
     'wercplsupport' = 'Error Reporting Support - Related to WerSvc'
     'Wecsvc' = 'Windows Event Collector - Often not needed'
     'PcaSvc' = 'Program Compatibility Assistant - Can be disabled'
-    'BITS' = 'Background Intelligent Transfer - Used by Windows Update (careful)'
+    # NOTE: BITS (Background Intelligent Transfer Service) is intentionally NOT
+    # listed here. It is required by Windows Update, the Microsoft Store, and
+    # many app installers - it is not telemetry. This script bulk-disables every
+    # service in this list, so including BITS would break Windows Update.
 }
 
 # Bloatware/Third-party services that often auto-start unnecessarily
@@ -131,7 +134,9 @@ $bloatwareServices = @{
     'vgc' = 'Vanguard (Valorant) - Only when gaming (security concern)'
     # NVIDIA
     'NvTelemetryContainer' = 'NVIDIA Telemetry - Data collection, disable'
-    'NVDisplay.ContainerLocalSystem' = 'NVIDIA Container - Can cause issues'
+    # NOTE: NVDisplay.ContainerLocalSystem is intentionally NOT listed. It hosts
+    # the display-driver helper and the NVIDIA Control Panel; bulk-disabling it
+    # breaks Control Panel and driver features after a reboot.
     # AMD
     'AMD External Events Utility' = 'AMD Events - Usually not needed'
     # Third-party antivirus

@@ -49,6 +49,7 @@ echo   [4] Schedule Windows Memory Diagnostic (requires admin)
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto HardwareInfo

@@ -48,7 +48,7 @@ if /i not "%confirm%"=="Y" (
 )
 
 :: Set up report file
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "REPORT=%USERPROFILE%\Desktop\PortScan_%COMPUTERNAME%_%dt:~0,8%.txt"
 
 echo/
@@ -189,7 +189,7 @@ echo     $obj = [PSCustomObject]@{
 echo         Proto = 'TCP'
 echo         Address = $fullAddr
 echo         Port = $port
-echo         PID = $pid
+echo         PID = $procId
 echo         Process = $procName
 echo         Status = $status
 echo         Color = $color
@@ -198,7 +198,7 @@ echo     $results += $obj
 echo/
 echo     # Console output with color
 echo     $portStr = $port.ToString^(^).PadRight^(8^)
-echo     $pidStr = $pid.ToString^(^).PadRight^(8^)
+echo     $pidStr = $procId.ToString^(^).PadRight^(8^)
 echo     $procStr = $procName.PadRight^(21^)
 echo     $addrStr = $fullAddr.PadRight^(29^)
 echo/
@@ -244,7 +244,7 @@ echo/
 echo     $addrDisplay = if ^($addr -eq '::'^) { '[::]' } else { $addr }
 echo     $fullAddr = "${addrDisplay}:${port}"
 echo     $portStr = $port.ToString^(^).PadRight^(8^)
-echo     $pidStr = $pid.ToString^(^).PadRight^(8^)
+echo     $pidStr = $procId.ToString^(^).PadRight^(8^)
 echo     $procStr = $procName.PadRight^(21^)
 echo     $addrStr = $fullAddr.PadRight^(29^)
 echo/
@@ -260,7 +260,7 @@ echo     $obj = [PSCustomObject]@{
 echo         Proto = 'UDP'
 echo         Address = $fullAddr
 echo         Port = $port
-echo         PID = $pid
+echo         PID = $procId
 echo         Process = $procName
 echo         Status = $status
 echo         Color = $color

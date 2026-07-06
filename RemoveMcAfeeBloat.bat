@@ -348,7 +348,9 @@ echo       - Removing startup entries...
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "McAfee Remediation" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "mcpltui_exe" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "McAfeeUpdaterUI" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "SecurityHealth" /f >nul 2>&1
+:: NOTE: The "SecurityHealth" Run value is Windows' own Security tray icon
+:: (SecurityHealthSystray.exe), NOT McAfee - deleting it removes the Windows
+:: Security notification icon, so it is deliberately left alone.
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "WebAdvisor" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "TrueKey" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "McAfee WebAdvisor" /f >nul 2>&1
@@ -367,14 +369,22 @@ reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfee" /f >nul 2
 reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfeeAntiSpyware" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfeeFirewall" /f >nul 2>&1
 
-:: Remove McAfee browser extension policies
-echo       - Removing browser extension policies...
-:: Chrome
-reg delete "HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" /f >nul 2>&1
-:: Edge
-reg delete "HKLM\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist" /f >nul 2>&1
-:: Firefox
-reg delete "HKLM\SOFTWARE\Policies\Mozilla\Firefox\Extensions\Install" /f >nul 2>&1
+:: Remove McAfee browser extension policies.
+:: IMPORTANT: Only the McAfee WebAdvisor entries are removed - the whole
+:: ExtensionInstallForcelist / Extensions\Install key is NOT deleted, because on
+:: managed machines it may force-install unrelated (legitimate) extensions.
+:: McAfee WebAdvisor Chrome/Edge extension IDs are matched in each value's data.
+echo       - Removing McAfee WebAdvisor browser extension policies...
+for %%K in (
+    "HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist"
+    "HKLM\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
+    "HKLM\SOFTWARE\Policies\Mozilla\Firefox\Extensions\Install"
+) do (
+    for /f "tokens=1,2,*" %%a in ('reg query "%%~K" 2^>nul ^| findstr /i /r "REG_SZ REG_EXPAND_SZ"') do (
+        echo %%c | findstr /i "fheoggkfdfchfphceeifdbepaooicaho mfhcjcpoiamplklklblkbcndbppbnamn webadvisor mcafee" >nul 2>&1
+        if not errorlevel 1 reg delete "%%~K" /v "%%a" /f >nul 2>&1
+    )
+)
 
 :: Remove McAfee context menu handlers
 echo       - Removing context menu handlers...

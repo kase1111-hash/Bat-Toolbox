@@ -42,13 +42,15 @@ set "has_nvidia=0"
 set "has_amd=0"
 set "has_intel=0"
 
-:: Check for NVIDIA
-wmic path win32_videocontroller get name 2>nul | findstr /i "NVIDIA" >nul && set "has_nvidia=1"
-:: Check for AMD
-wmic path win32_videocontroller get name 2>nul | findstr /i "AMD Radeon" >nul && set "has_amd=1"
-wmic path win32_videocontroller get name 2>nul | findstr /i "ATI Radeon" >nul && set "has_amd=1"
-:: Check for Intel
-wmic path win32_videocontroller get name 2>nul | findstr /i "Intel" >nul && set "has_intel=1"
+:: Query GPU names once via CIM (wmic is removed on Windows 11 24H2+, where the
+:: old wmic query returned nothing and the script wrongly reported "No GPU").
+set "GPU_NAMES="
+for /f "delims=" %%g in ('powershell -NoProfile -Command "(Get-CimInstance Win32_VideoController).Name" 2^>nul') do set "GPU_NAMES=!GPU_NAMES! %%g"
+
+echo !GPU_NAMES! | findstr /i "NVIDIA" >nul && set "has_nvidia=1"
+echo !GPU_NAMES! | findstr /i "AMD Radeon" >nul && set "has_amd=1"
+echo !GPU_NAMES! | findstr /i "ATI Radeon" >nul && set "has_amd=1"
+echo !GPU_NAMES! | findstr /i "Intel" >nul && set "has_intel=1"
 
 echo %WHITE%Detected GPUs:%RESET%
 powershell -Command "Get-WmiObject Win32_VideoController | Select-Object Name, DriverVersion | Format-Table -AutoSize"
@@ -78,11 +80,13 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    powershell -Command "Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
+    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    :: off, or the 24h frequency limit), so verify a point was actually added.
+    powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
     ) else (
-        echo %YELLOW%[WARN] Could not create restore point%RESET%
+        echo %YELLOW%[WARN] Could not create restore point ^(System Protection off or created recently^)%RESET%
     )
 )
 
@@ -499,9 +503,9 @@ if "%has_intel%"=="1" (
     echo %CYAN%============================================================%RESET%
     echo/
 
-    :: Check if it's Intel Arc or integrated
+    :: Check if it's Intel Arc or integrated (reuse the CIM-derived GPU names)
     set "is_arc=0"
-    wmic path win32_videocontroller get name 2>nul | findstr /i "Arc" >nul && set "is_arc=1"
+    echo !GPU_NAMES! | findstr /i "Arc" >nul && set "is_arc=1"
 
     if "%is_arc%"=="1" (
         echo %WHITE%Intel Arc GPU detected%RESET%

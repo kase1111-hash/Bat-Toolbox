@@ -143,7 +143,7 @@ echo ===========================================================================
 echo/ >> "%EXPORT_FILE%"
 
 :: Get physical network adapters (exclude virtual)
-powershell -Command "Get-NetAdapter -Physical | ForEach-Object { $driver = Get-WmiObject Win32_PnPSignedDriver | Where-Object { $_.DeviceName -eq $_.InterfaceDescription }; Write-Output ('  ' + $_.InterfaceDescription) }" >> "%EXPORT_FILE%" 2>nul
+powershell -Command "Get-NetAdapter -Physical | ForEach-Object { Write-Output ('  ' + $_.InterfaceDescription) }" >> "%EXPORT_FILE%" 2>nul
 
 :: Get network adapter details with PowerShell
 powershell -Command "$adapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue; foreach ($a in $adapters) { $d = Get-WmiObject Win32_PnPSignedDriver -ErrorAction SilentlyContinue | Where-Object { $_.DeviceName -like ('*' + $a.InterfaceDescription.Substring(0, [Math]::Min(20, $a.InterfaceDescription.Length)) + '*') } | Select-Object -First 1; if ($d) { Write-Output ('  ' + $a.InterfaceDescription); Write-Output ('    Driver: ' + $d.DriverVersion + ' [' + $d.DriverDate.Substring(0,10) + ']'); Write-Output ('    [SEARCH] ' + $a.InterfaceDescription + ' driver download'); Write-Output '' } }" >> "%EXPORT_FILE%" 2>nul

@@ -50,6 +50,7 @@ echo   [4] Backup and create restore script
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto BackupDrivers
@@ -83,7 +84,7 @@ set /p "BACKUP_PATH=Press Enter to use default, or type a custom path: "
 if "!BACKUP_PATH!"=="" set "BACKUP_PATH=%DEFAULT_BACKUP%"
 
 :: Add date to folder name
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "BACKUP_PATH=!BACKUP_PATH!_%dt:~0,8%"
 
 echo/
@@ -407,7 +408,7 @@ echo/
 
 :: Set backup location
 set "DEFAULT_BACKUP=%USERPROFILE%\Desktop\DriverBackup_%COMPUTERNAME%"
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "BACKUP_PATH=!DEFAULT_BACKUP!_%dt:~0,8%"
 
 echo Backup will be saved to: !BACKUP_PATH!

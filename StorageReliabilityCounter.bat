@@ -101,7 +101,7 @@ echo %CYAN% Export Report to Desktop%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
 
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "REPORT=%USERPROFILE%\Desktop\StorageReliability_%COMPUTERNAME%_%dt:~0,8%.txt"
 
 powershell -ExecutionPolicy Bypass -File "%~dp0StorageReliabilityCounter.ps1" -Mode Export -ReportPath "!REPORT!" 2>nul

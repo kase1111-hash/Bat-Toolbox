@@ -73,6 +73,7 @@ echo   %WHITE%[0]%RESET% Exit
 echo/
 echo %CYAN%============================================================================%RESET%
 echo/
+set "choice="
 set /p "choice=Select an option [0-6]: "
 
 if "%choice%"=="1" (

@@ -49,6 +49,7 @@ echo   [5] Apply common fixes
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto ListDevices

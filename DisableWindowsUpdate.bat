@@ -52,6 +52,7 @@ echo  [2] Restore Windows Update (Undo All Changes)
 echo  [0] Exit
 echo/
 echo ============================================================================
+set "choice="
 set /p "choice=Select an option [0-2]: "
 
 if "%choice%"=="1" goto DISABLE
