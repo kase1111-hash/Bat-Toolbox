@@ -226,9 +226,9 @@ echo  Will removing break anything? %BREAKS%
 echo/
 
 if /i "%DEFAULT%"=="Y" (
-    set /p "CHOICE=  Remove this app? [y/N]: "
-) else (
     set /p "CHOICE=  Remove this app? [Y/n]: "
+) else (
+    set /p "CHOICE=  Remove this app? [y/N]: "
 )
 
 if "%CHOICE%"=="" set "CHOICE=%DEFAULT%"
@@ -316,9 +316,9 @@ echo  Will removing break anything? %BREAKS%
 echo/
 
 if /i "%DEFAULT%"=="Y" (
-    set /p "CHOICE=  Remove this feature? [y/N]: "
-) else (
     set /p "CHOICE=  Remove this feature? [Y/n]: "
+) else (
+    set /p "CHOICE=  Remove this feature? [y/N]: "
 )
 
 if "%CHOICE%"=="" set "CHOICE=%DEFAULT%"

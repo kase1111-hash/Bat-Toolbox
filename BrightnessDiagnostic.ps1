@@ -241,7 +241,9 @@ public class GammaRampReset {
     $ramp.Blue = New-Object UInt16[] 256
 
     for ($i = 0; $i -lt 256; $i++) {
-        $value = $i * 256
+        # 257 (not 256) gives the true identity ramp: 255 * 257 = 65535 (full
+        # white). 256 tops out at 65280, leaving the screen fractionally dark.
+        $value = $i * 257
         $ramp.Red[$i] = [UInt16]$value
         $ramp.Green[$i] = [UInt16]$value
         $ramp.Blue[$i] = [UInt16]$value
@@ -264,11 +266,13 @@ function Reset-DisplayAdapter {
 }
 
 function Restart-DisplayDriver {
-    try {
-        pnputil /restart-device "DISPLAY\*" 2>$null
+    # pnputil is a native command - a failure does not raise a catchable
+    # PowerShell exception, so check $LASTEXITCODE instead of using try/catch.
+    pnputil /restart-device "DISPLAY\*" 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
         Write-Host "[OK] Display driver restart requested" -ForegroundColor Green
-    } catch {
-        Write-Host "[INFO] Could not restart display driver - may require restart" -ForegroundColor Yellow
+    } else {
+        Write-Host "[INFO] Could not restart display driver - may require a manual restart" -ForegroundColor Yellow
     }
 }
 

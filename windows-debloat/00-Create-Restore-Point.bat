@@ -29,8 +29,16 @@ echo/
 :: Enable System Restore if disabled
 powershell -Command "Enable-ComputerRestore -Drive 'C:\'" 2>nul
 
-:: Create the restore point
-powershell -Command "Checkpoint-Computer -Description 'Before Windows 10 Debloat' -RestorePointType 'MODIFY_SETTINGS'"
+:: Remove the 24-hour throttle. By default Windows refuses to create a second
+:: restore point within 24 hours (SystemRestorePointCreationFrequency) and
+:: Checkpoint-Computer reports that as a *warning* while still exiting 0 - which
+:: would make this script claim success with no restore point actually created.
+:: Setting the frequency to 0 forces creation every time this safety-net runs.
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" /v SystemRestorePointCreationFrequency /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: Create the restore point, then verify one was actually added (do not trust
+:: the exit code, which is 0 even when creation is skipped).
+powershell -NoProfile -Command "$before = @(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before Windows 10 Debloat' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $before) { exit 0 } else { exit 1 }"
 
 if %errorlevel% equ 0 (
     echo/

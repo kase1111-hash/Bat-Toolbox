@@ -73,6 +73,7 @@ echo   %WHITE%[0]%RESET% Exit
 echo/
 echo %CYAN%============================================================================%RESET%
 echo/
+set "choice="
 set /p "choice=Select an option [0-6]: "
 
 if "%choice%"=="1" (
@@ -243,7 +244,7 @@ if "%limit%"=="100" (
 ) else (
     reg add "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "EnableBatteryLimit" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "BatteryLimitPercent" /t REG_DWORD /d %limit% /f >nul 2>&1
-    if %errorlevel%==0 (
+    if !errorlevel!==0 (
         echo %GREEN%[OK] Charge limit set to %limit%%% via Surface registry%RESET%
         echo %YELLOW%[NOTE] Surface UEFI Battery Limit feature must be supported.%RESET%
         echo %YELLOW%[NOTE] Default Surface limit is 50%%. Custom values require newer firmware.%RESET%
@@ -338,9 +339,9 @@ if %errorlevel%==0 (
         cctk --PrimaryBattChargeCfg=Standard >nul 2>&1
     ) else (
         set /a "startVal=%limit%-5"
-        cctk --PrimaryBattChargeCfg=Custom:%startVal%-%limit% >nul 2>&1
+        cctk --PrimaryBattChargeCfg=Custom:!startVal!-%limit% >nul 2>&1
     )
-    if %errorlevel%==0 (
+    if !errorlevel!==0 (
         echo %GREEN%[OK] Charge limit set to %limit%%% via Dell CCTK%RESET%
         goto SET_SUCCESS
     )

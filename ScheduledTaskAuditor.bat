@@ -35,8 +35,10 @@ set "CYAN=%ESC%[96m"
 set "MAGENTA=%ESC%[95m"
 set "RESET=%ESC%[0m"
 
-:: Output file
-set "OUTFILE=%USERPROFILE%\Desktop\TaskAudit_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
+:: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
+:: assumes US format and yields a "/"-containing, invalid path elsewhere).
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
+set "OUTFILE=%USERPROFILE%\Desktop\TaskAudit_%COMPUTERNAME%_%TODAY%.txt"
 
 echo Scanning scheduled tasks and categorizing them...
 echo Results will be saved to your Desktop.
@@ -60,6 +62,7 @@ echo     '*Proxy*', '*QueueReporting*', '*SmartScreenSpecific*',
 echo     '*WinSAT*', '*MapsToastTask*', '*MapsUpdateTask*',
 echo     '*Sqm-Tasks*', '*DiagTrack*', '*dmwappushservice*',
 echo     '*AitAgent*', '*CEIP*', '*Customer Experience*',
+echo     '*BthSQM*',
 echo     '*OfficeTelemetry*', '*Telemetry*'
 echo ^)
 echo/
@@ -87,7 +90,7 @@ echo     '*ServerManager*', '*Maintenance*',
 echo     '*Plug and Play*', '*SystemSoundsService*',
 echo     '*Time Synchronization*', '*TimeZone*',
 echo     '*CacheTask*', '*StartupAppTask*',
-echo     '*CreateObjectTask*', '*BthSQM*',
+echo     '*CreateObjectTask*',
 echo     '*AnalyzeSystem*', '*WdiServiceHost*'
 echo ^)
 echo/

@@ -11,7 +11,7 @@ set "logfile=%logdir%IntruderLog.txt"
 :: ============================================
 
 :: Timestamp
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set "datetime=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "datetime=%%I"
 set "timestamp=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2% %datetime:~8,2%:%datetime:~10,2%:%datetime:~12,2%"
 
 :: Collect intel
@@ -36,19 +36,11 @@ echo/ >> "%logfile%"
 
 :: Try to take webcam photo (if available)
 :: This requires PowerShell and may not work on all systems
-echo --- ATTEMPTING WEBCAM CAPTURE --- >> "%logfile%"
-powershell -windowstyle hidden -command ^
-    "try { ^
-        Add-Type -AssemblyName System.Windows.Forms; ^
-        $outputPath = '%logdir%intruder_%datetime%.jpg'; ^
-        $webcamScript = @' ^
-        using System; ^
-        using System.Runtime.InteropServices; ^
-        using System.Drawing; ^
-        using System.Drawing.Imaging; ^
-'@; ^
-        echo 'Webcam capture attempted' >> '%logfile%'; ^
-    } catch { echo 'Webcam capture failed' >> '%logfile%' }" >nul 2>&1
+echo --- WEBCAM CAPTURE --- >> "%logfile%"
+:: Windows has no built-in, dependency-free way to grab a webcam frame from a
+:: script, so this is logged as a note rather than attempted. Install a small
+:: CLI tool (e.g. ffmpeg with dshow) and call it here if you want real capture.
+echo Webcam capture not implemented (no built-in Windows capability). >> "%logfile%"
 
 :: ============================================
 :: PHASE 2: THE SHOW BEGINS

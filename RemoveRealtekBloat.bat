@@ -76,7 +76,6 @@ for %%P in (
     "RtkNGUI64.exe"
     "RTCOM64.exe"
     "RtkAudUService64.exe"
-    "RtkBtManServ.exe"
     "Nahimic3.exe"
     "NahimicService.exe"
     "NahimicSvc32.exe"
@@ -111,7 +110,6 @@ echo [2/7] Stopping and disabling audio bloatware services...
 for %%S in (
     "RtkAudioUniversalService"
     "RtkAudUService64"
-    "RtkBtManServ"
     "NahimicService"
     "A-VolUteSvc"
     "A-Volute.Nahimic.Svc"

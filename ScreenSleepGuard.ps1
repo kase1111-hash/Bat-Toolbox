@@ -14,10 +14,26 @@ public class ScreenGuard {
     const int HWND_BROADCAST = 0xFFFF;
     const int WM_SYSCOMMAND = 0x0112;
     const int SC_MONITORPOWER = 0xF170;
-    const int VK_MENU = 0x12;    // Alt key
+    const int VK_MENU = 0x12;    // Alt key (either)
     const int VK_TAB = 0x09;     // Tab key
-    const int VK_SHIFT = 0x10;   // Shift key
-    const int VK_CONTROL = 0x11; // Ctrl key
+    const int VK_SHIFT = 0x10;   // Shift key (either)
+    const int VK_CONTROL = 0x11; // Ctrl key (either)
+    const int VK_LSHIFT = 0xA0;
+    const int VK_RSHIFT = 0xA1;
+    const int VK_LCONTROL = 0xA2;
+    const int VK_RCONTROL = 0xA3;
+    const int VK_LMENU = 0xA4;   // Left Alt
+    const int VK_RMENU = 0xA5;   // Right Alt
+
+    // Keys that must NOT count as "unauthorized input" on their own. Alt/Tab
+    // are the safe combo; the L/R modifier variants are set alongside the
+    // generic VK_MENU/VK_SHIFT/VK_CONTROL when a modifier is held, so they must
+    // be skipped too or a legitimate Alt+Tab trips the intruder branch.
+    static bool IsModifierKey(int key) {
+        return key == VK_TAB || key == VK_SHIFT || key == VK_CONTROL || key == VK_MENU
+            || key == VK_LSHIFT || key == VK_RSHIFT || key == VK_LCONTROL || key == VK_RCONTROL
+            || key == VK_LMENU || key == VK_RMENU;
+    }
 
     public static void Main() {
         Console.WriteLine("Screen Sleep Guard Active");
@@ -35,9 +51,12 @@ public class ScreenGuard {
         // Small delay to let monitor actually turn off
         Thread.Sleep(500);
 
-        // Clear any existing key states
-        GetAsyncKeyState(VK_MENU);
-        GetAsyncKeyState(VK_TAB);
+        // Drain the "pressed since last call" (LSB) state for every key so the
+        // keystrokes used to launch this script (e.g. Enter) are not mistaken
+        // for intruder input on the first sweep.
+        for (int key = 8; key < 255; key++) {
+            GetAsyncKeyState(key);
+        }
 
         // Monitor for input
         bool waiting = true;
@@ -54,12 +73,16 @@ public class ScreenGuard {
                 return; // Exit normally
             }
 
-            // Check for any other key press
+            // Check for any other key that is physically down right now. Use the
+            // high bit (0x8000 = currently pressed) only - not 0x0001, which
+            // reports keys pressed at any point since the previous poll.
             for (int key = 8; key < 255; key++) {
-                // Skip Alt and Tab themselves when checking individually
-                if (key == VK_MENU || key == VK_TAB) continue;
+                // Skip modifier keys (Alt/Tab/Shift/Ctrl and their L/R variants)
+                // so holding a modifier alone - or the Alt of Alt+Tab landing a
+                // tick before Tab - does not trigger a logout.
+                if (IsModifierKey(key)) continue;
 
-                if ((GetAsyncKeyState(key) & 0x8001) != 0) {
+                if ((GetAsyncKeyState(key) & 0x8000) != 0) {
                     // Some other key was pressed - INTRUDER!
                     Console.WriteLine("Unauthorized input detected! Logging out...");
                     Thread.Sleep(500);

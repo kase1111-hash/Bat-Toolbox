@@ -417,7 +417,9 @@ function Show-DetailedReport {
 function Export-Report {
     param([string]$Path)
 
-    $report = @()
+    # Must be script-scoped: Add-Line appends to $script:report, so a local
+    # $report would stay empty and Export would write a blank file.
+    $script:report = @()
 
     function Add-Line($text) { $script:report += $text; Write-Host $text }
 
@@ -469,7 +471,7 @@ function Export-Report {
     }
     Add-Line ""
 
-    $report | Out-File -FilePath $Path -Encoding UTF8
+    $script:report | Out-File -FilePath $Path -Encoding UTF8
     Write-Host ""
     Write-Host "Report saved to: $Path" -ForegroundColor Green
 }

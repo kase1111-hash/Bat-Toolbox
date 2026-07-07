@@ -33,8 +33,11 @@ if %errorlevel% neq 0 (
     echo/
 )
 
-:: Output file
-set "OUTFILE=%USERPROFILE%\Desktop\WifiPasswords_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
+:: Output file. Derive the date via PowerShell so it works on every locale -
+:: %DATE% slicing assumes the US "Ddd MM/DD/YYYY" format and produces a name
+:: containing "/" (an invalid path) elsewhere.
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
+set "OUTFILE=%USERPROFILE%\Desktop\WifiPasswords_%COMPUTERNAME%_%TODAY%.txt"
 
 echo %YELLOW%WARNING: The output file will contain passwords in plain text.%RESET%
 echo          Delete it after use or store it securely.

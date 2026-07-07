@@ -134,7 +134,7 @@ echo     # Social/Communication ^(optional to autostart^)
 echo     'Spotify', 'Discord', 'Steam', 'EpicGames', 'Origin', 'Uplay', 'GOG',
 echo     'Zoom', 'Teams Installer', 'Slack', 'WhatsApp', 'Telegram', 'Skype',
 echo     # Cloud sync ^(often unnecessary at startup^)
-echo     'OneDrive', 'Dropbox', 'Google Drive', 'iCloud', 'Box',
+echo     'OneDrive', 'Dropbox', 'Google Drive', 'iCloud', 'Box Sync',
 echo     # Updaters
 echo     'Google Update', 'Chrome Update', 'Edge Update', 'Opera Update', 'Brave Update',
 echo     'Adobe Updater', 'AdobeGC', 'Creative Cloud', 'CCLibrary', 'CCXProcess',
@@ -149,8 +149,8 @@ echo     'ExpressVPN', 'NordVPN', 'CyberGhost', 'HMA', 'Hotspot Shield',
 echo     'uTorrent', 'BitTorrent', 'qBittorrent',
 echo     'CyberLink', 'Corel', 'Roxio',
 echo     'HP ', 'Dell ', 'Lenovo ', 'Acer ', 'ASUS GiftBox', 'MyASUS',
-echo     'Energy Manager', 'Power Manager', 'Battery', 'Dolby',
-echo     'Candy', 'Game', 'Netflix', 'Amazon', 'eBay', 'Booking',
+echo     'Energy Manager', 'Power Manager', 'Dolby',
+echo     'Candy', 'Netflix', 'Amazon', 'eBay', 'Booking',
 echo     'Facebook', 'Instagram', 'TikTok', 'Twitter',
 echo     'Weather', 'News',
 echo     # Known bad actors
@@ -259,9 +259,13 @@ echo         }
 echo     }
 echo     if ^($categorized^) { continue }
 echo/
-echo     # Check REMOVE patterns
+echo     # Check REMOVE patterns. Match the entry NAME only, never the install
+echo     # path - matching short tokens ^('Box', 'Game', 'HP '^) against the path
+echo     # produced false positives ^(e.g. C:\...\VirtualBox\VBoxTray.exe^) and got
+echo     # legitimate startup entries flagged as bloatware. Name-only keeps unknown
+echo     # items in the safe 'research before disabling' bucket instead.
 echo     foreach ^($pattern in $removePatterns^) {
-echo         if ^($name -match [regex]::Escape^($pattern^) -or $path -match [regex]::Escape^($pattern^)^) {
+echo         if ^($name -match [regex]::Escape^($pattern^)^) {
 echo             $reason = 'Bloatware/Unnecessary'
 echo             foreach ^($key in $removeDescriptions.Keys^) {
 echo                 if ^($name -match $key -or $path -match $key^) {

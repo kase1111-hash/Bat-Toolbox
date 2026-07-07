@@ -81,13 +81,13 @@ REM -- This is THE main telemetry pipeline in Windows. It collects --
 REM -- diagnostic data and sends it to Microsoft. Kill it. --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\DiagTrack" /v Start /t REG_DWORD /d 4 /f
 sc stop DiagTrack >nul 2>&1
-sc config DiagTrack start=disabled >nul 2>&1
+sc config DiagTrack start= disabled >nul 2>&1
 
 REM -- dmwappushservice: Device Management WAP Push Message Routing --
 REM -- Routes telemetry data collected by DiagTrack. Servant of DiagTrack. --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\dmwappushservice" /v Start /t REG_DWORD /d 4 /f
 sc stop dmwappushservice >nul 2>&1
-sc config dmwappushservice start=disabled >nul 2>&1
+sc config dmwappushservice start= disabled >nul 2>&1
 
 REM -- diagsvc: Diagnostic Execution Service --
 REM -- Executes diagnostic actions for troubleshooting. Also phones home. --

@@ -25,7 +25,9 @@ echo/
 :: Get the active adapter name
 :: tokens=4* puts first word in %%a, remaining words in %%b
 :: We need both parts to handle multi-word adapter names
-for /f "tokens=4*" %%a in ('netsh interface show interface ^| findstr /i "Connected"') do (
+:: "Connected" is a substring of "Disconnected", so a plain findstr for
+:: "Connected" also matches disconnected adapters. Filter those out first.
+for /f "tokens=4*" %%a in ('netsh interface show interface ^| findstr /i "Connected" ^| findstr /v /i "Disconnected"') do (
     set "adapter=%%a"
     if not "%%b"=="" set "adapter=%%a %%b"
 )

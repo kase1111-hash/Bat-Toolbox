@@ -34,8 +34,10 @@ set "YELLOW=%ESC%[93m"
 set "CYAN=%ESC%[96m"
 set "RESET=%ESC%[0m"
 
-:: Setup log file
-set "LOGFILE=%USERPROFILE%\Desktop\RepairKit_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
+:: Setup log file. Use PowerShell for a locale-independent date (%DATE% slicing
+:: assumes US format and yields a "/"-containing, invalid path elsewhere).
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
+set "LOGFILE=%USERPROFILE%\Desktop\RepairKit_%COMPUTERNAME%_%TODAY%.txt"
 
 echo %CYAN%This script will run three system integrity checks:%RESET%
 echo/
@@ -88,23 +90,28 @@ echo ---------------------------------------->> "%LOGFILE%"
 sfc /scannow > "%TEMP%\sfc_output.txt" 2>&1
 set "SFC_EXIT=%errorlevel%"
 
-:: Parse SFC results
+:: sfc writes UTF-16 (NUL-interleaved) output, which findstr cannot match
+:: reliably. Re-encode to ASCII first so the phrase checks below work.
+powershell -NoProfile -Command "Get-Content -LiteralPath '%TEMP%\sfc_output.txt' | Set-Content -LiteralPath '%TEMP%\sfc_ascii.txt' -Encoding ascii" 2>nul
+
+:: Parse SFC results. Use /c: so the whole phrase must match - without it,
+:: findstr treats each space-separated word as a separate OR pattern.
 set "SFC_STATUS=UNKNOWN"
-findstr /i "did not find any integrity violations" "%TEMP%\sfc_output.txt" >nul 2>&1
+findstr /i /c:"did not find any integrity violations" "%TEMP%\sfc_ascii.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "SFC_STATUS=CLEAN"
     echo %GREEN%[OK] SFC: No integrity violations found.%RESET%
     echo Result: No integrity violations found.>> "%LOGFILE%"
 )
 
-findstr /i "found corrupt files and successfully repaired" "%TEMP%\sfc_output.txt" >nul 2>&1
+findstr /i /c:"found corrupt files and successfully repaired" "%TEMP%\sfc_ascii.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "SFC_STATUS=REPAIRED"
     echo %GREEN%[FIXED] SFC: Found corrupt files and repaired them.%RESET%
     echo Result: Found and repaired corrupt files.>> "%LOGFILE%"
 )
 
-findstr /i "found corrupt files but was unable to fix" "%TEMP%\sfc_output.txt" >nul 2>&1
+findstr /i /c:"found corrupt files but was unable to fix" "%TEMP%\sfc_ascii.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "SFC_STATUS=FAILED"
     echo %RED%[WARN] SFC: Found corrupt files but could NOT repair them.%RESET%
@@ -112,7 +119,7 @@ if %errorlevel% equ 0 (
     echo Result: Found corrupt files but UNABLE to repair.>> "%LOGFILE%"
 )
 
-findstr /i "could not perform the requested operation" "%TEMP%\sfc_output.txt" >nul 2>&1
+findstr /i /c:"could not perform the requested operation" "%TEMP%\sfc_ascii.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "SFC_STATUS=BLOCKED"
     echo %RED%[WARN] SFC: Could not perform scan. Pending repairs may exist.%RESET%
@@ -130,10 +137,10 @@ echo/>> "%LOGFILE%"
 echo CBS Log errors (last 50 relevant lines^):>> "%LOGFILE%"
 if exist "%WINDIR%\Logs\CBS\CBS.log" (
     findstr /i /c:"corrupt" /c:"Cannot repair" /c:"repaired" "%WINDIR%\Logs\CBS\CBS.log" 2>nul | more +0 > "%TEMP%\cbs_errors.txt"
-    :: Get last 50 lines using PowerShell
+    REM Get last 50 lines using PowerShell
     powershell -Command "Get-Content '%TEMP%\cbs_errors.txt' -Tail 50" >> "%LOGFILE%" 2>nul
 
-    :: Count issues for display
+    REM Count issues for display
     for /f %%a in ('findstr /i /c:"Cannot repair" "%TEMP%\cbs_errors.txt" 2^>nul ^| find /c /v ""') do set "CBS_FAILURES=%%a"
     for /f %%a in ('findstr /i /c:"repaired" "%TEMP%\cbs_errors.txt" 2^>nul ^| find /c /v ""') do set "CBS_REPAIRS=%%a"
 
@@ -149,6 +156,7 @@ if exist "%WINDIR%\Logs\CBS\CBS.log" (
 echo/>> "%LOGFILE%"
 
 del "%TEMP%\sfc_output.txt" 2>nul
+del "%TEMP%\sfc_ascii.txt" 2>nul
 del "%TEMP%\cbs_errors.txt" 2>nul
 
 :: ============================================================================
@@ -168,14 +176,14 @@ set "DISM_EXIT=%errorlevel%"
 :: Parse DISM results
 set "DISM_STATUS=UNKNOWN"
 
-findstr /i "The restore operation completed successfully" "%TEMP%\dism_output.txt" >nul 2>&1
+findstr /i /c:"The restore operation completed successfully" "%TEMP%\dism_output.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "DISM_STATUS=SUCCESS"
     echo %GREEN%[OK] DISM: Restore operation completed successfully.%RESET%
     echo Result: Restore operation completed successfully.>> "%LOGFILE%"
 )
 
-findstr /i "No component store corruption detected" "%TEMP%\dism_output.txt" >nul 2>&1
+findstr /i /c:"No component store corruption detected" "%TEMP%\dism_output.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "DISM_STATUS=CLEAN"
     echo %GREEN%[OK] DISM: No component store corruption detected.%RESET%
@@ -216,13 +224,14 @@ if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
         echo [BONUS] SFC /scannow re-run after DISM>> "%LOGFILE%"
         echo ---------------------------------------->> "%LOGFILE%"
         sfc /scannow > "%TEMP%\sfc2_output.txt" 2>&1
+        powershell -NoProfile -Command "Get-Content -LiteralPath '%TEMP%\sfc2_output.txt' | Set-Content -LiteralPath '%TEMP%\sfc2_ascii.txt' -Encoding ascii" 2>nul
 
-        findstr /i "did not find any integrity violations" "%TEMP%\sfc2_output.txt" >nul 2>&1
+        findstr /i /c:"did not find any integrity violations" "%TEMP%\sfc2_ascii.txt" >nul 2>&1
         if !errorlevel! equ 0 (
             echo %GREEN%[OK] SFC re-run: All files are now intact.%RESET%
             echo Result: All files intact after DISM repair.>> "%LOGFILE%"
         ) else (
-            findstr /i "found corrupt files and successfully repaired" "%TEMP%\sfc2_output.txt" >nul 2>&1
+            findstr /i /c:"found corrupt files and successfully repaired" "%TEMP%\sfc2_ascii.txt" >nul 2>&1
             if !errorlevel! equ 0 (
                 echo %GREEN%[FIXED] SFC re-run: Additional files repaired.%RESET%
                 echo Result: Additional files repaired.>> "%LOGFILE%"
@@ -232,6 +241,7 @@ if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
             )
         )
         del "%TEMP%\sfc2_output.txt" 2>nul
+        del "%TEMP%\sfc2_ascii.txt" 2>nul
         echo/>> "%LOGFILE%"
     )
 )
@@ -256,12 +266,12 @@ chkdsk %SYSDRIVE% > "%TEMP%\chkdsk_output.txt" 2>&1
 set "CHKDSK_EXIT=%errorlevel%"
 
 :: Parse CHKDSK results
-findstr /i "Windows has scanned the file system and found no problems" "%TEMP%\chkdsk_output.txt" >nul 2>&1
+findstr /i /c:"found no problems" "%TEMP%\chkdsk_output.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     echo %GREEN%[OK] CHKDSK: No filesystem problems found on %SYSDRIVE%.%RESET%
     echo Result: No filesystem problems found on %SYSDRIVE%.>> "%LOGFILE%"
 ) else (
-    :: Check for errors that need fixing
+    REM Check for errors that need fixing
     findstr /i "errors" "%TEMP%\chkdsk_output.txt" >nul 2>&1
     if !errorlevel! equ 0 (
         echo %RED%[WARN] CHKDSK: Filesystem errors detected on %SYSDRIVE%.%RESET%

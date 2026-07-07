@@ -55,7 +55,9 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    powershell -Command "Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
+    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    :: off, or the 24h frequency limit), so verify a point was actually added.
+    powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
     ) else (

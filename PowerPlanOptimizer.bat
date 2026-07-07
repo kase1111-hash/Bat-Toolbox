@@ -36,16 +36,20 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Detect current power plan
-for /f "tokens=3,4 delims=()" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPlan=%%a"
-for /f "tokens=4,*" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPlanName=%%a %%b"
+:: Detect current power plan. Output looks like:
+::   Power Scheme GUID: 381b4222-... (Balanced)
+:: token 4 = the GUID; the text inside parentheses = the friendly name.
+for /f "tokens=4" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPlan=%%a"
+for /f "tokens=2 delims=()" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPlanName=%%a"
 
-:: Detect if laptop or desktop
+:: Detect if laptop or desktop via CIM (wmic is removed on Windows 11 24H2+).
+:: Chassis types 8=Portable, 9=Laptop, 10=Notebook, 14=Sub-Notebook.
 set "isLaptop=0"
-for /f "tokens=2 delims==" %%c in ('wmic systemenclosure get chassistypes /value 2^>nul ^| find "="') do (
-    echo %%c | findstr /r "{[89]" >nul 2>&1 && set "isLaptop=1"
-    echo %%c | findstr /r "{10}" >nul 2>&1 && set "isLaptop=1"
-    echo %%c | findstr /r "{14}" >nul 2>&1 && set "isLaptop=1"
+for /f %%c in ('powershell -NoProfile -Command "(Get-CimInstance Win32_SystemEnclosure).ChassisTypes" 2^>nul') do (
+    if "%%c"=="8" set "isLaptop=1"
+    if "%%c"=="9" set "isLaptop=1"
+    if "%%c"=="10" set "isLaptop=1"
+    if "%%c"=="14" set "isLaptop=1"
 )
 
 echo %WHITE%Current plan:%RESET%  !currentPlanName!
@@ -126,7 +130,7 @@ if not errorlevel 1 (
 
     :: First try to get the High Performance GUID
     set "HP_GUID="
-    for /f "tokens=4" %%g in ('powercfg /list 2^>nul ^| findstr /i "High Performance"') do set "HP_GUID=%%g"
+    for /f "tokens=4" %%g in ('powercfg /list 2^>nul ^| findstr /i /c:"High Performance"') do set "HP_GUID=%%g"
 
     if not defined HP_GUID (
         :: High Performance might not be visible, use its known GUID
@@ -230,8 +234,8 @@ powercfg /setacvalueindex !PLAN_GUID! SUB_DISK DISKIDLE 0
 powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK DISKIDLE 0
 
 :: NVMe power state transition latency tolerance
-powercfg /setacvalueindex !PLAN_GUID! SUB_DISK {dab60367-53fe-4fbc-825e-521d069d2456} 0 >nul 2>&1
-powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK {dab60367-53fe-4fbc-825e-521d069d2456} 0 >nul 2>&1
+powercfg /setacvalueindex !PLAN_GUID! SUB_DISK dab60367-53fe-4fbc-825e-521d069d2456 0 >nul 2>&1
+powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK dab60367-53fe-4fbc-825e-521d069d2456 0 >nul 2>&1
 
 echo       %GREEN%[OK] Disk always-on configured%RESET%
 
@@ -267,9 +271,11 @@ echo/
 echo [9/10] Configuring system timer resolution...
 echo       %CYAN%(Higher resolution = more precise scheduling, lower latency)%RESET%
 
-:: Platform timer resolution: 1 = maximum resolution
-powercfg /setacvalueindex !PLAN_GUID! SUB_SLEEP RTCWAKE 1 >nul 2>&1
-powercfg /setdcvalueindex !PLAN_GUID! SUB_SLEEP RTCWAKE 1 >nul 2>&1
+:: Timer resolution is a BOOT setting, not a power-plan value. The old code set
+:: SUB_SLEEP RTCWAKE (which is "allow wake timers", unrelated - and it actually
+:: enabled them). Disabling the dynamic tick keeps the platform timer at a fixed
+:: high rate for lower scheduling latency. Takes effect after a reboot.
+bcdedit /set disabledynamictick yes >nul 2>&1
 
 :: Disable power throttling
 powercfg /setacvalueindex !PLAN_GUID! SUB_PROCESSOR THROTTLING 0 >nul 2>&1
@@ -308,7 +314,7 @@ echo   USB selective suspend:      Disabled
 echo   Hard disk spin-down:        Never
 echo   Display timeout (AC):       Never
 echo   Sleep/hibernate:            Never
-echo   Timer resolution:           Maximum
+echo   Timer resolution:           Fixed tick (after reboot)
 echo   Network adapter power:      Maximum Performance
 echo/
 

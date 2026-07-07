@@ -44,8 +44,10 @@ echo   %CYAN%╚═════════════════════�
 echo/
 title [1/2] Disk Health Check - Scanning drives...
 
-:: Output file
-set "OUTFILE=%USERPROFILE%\Desktop\DiskHealth_%COMPUTERNAME%_%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.txt"
+:: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
+:: assumes US format and yields a "/"-containing, invalid path elsewhere).
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
+set "OUTFILE=%USERPROFILE%\Desktop\DiskHealth_%COMPUTERNAME%_%TODAY%.txt"
 
 echo   Results will be saved to your Desktop.
 echo/

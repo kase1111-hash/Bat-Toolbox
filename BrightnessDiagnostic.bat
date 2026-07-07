@@ -21,7 +21,7 @@ set "PS_HELPER=%SCRIPT_DIR%BrightnessDiagnostic.ps1"
 :: Check if helper script exists
 if not exist "%PS_HELPER%" (
     color 0C
-    echo [ERROR] BrightnessDiagnostic.ps1 not found!
+    echo [ERROR] BrightnessDiagnostic.ps1 not found^^!
     echo Please ensure BrightnessDiagnostic.ps1 is in the same folder as this batch file.
     echo/
     pause
@@ -172,20 +172,27 @@ if %errorlevel%==0 (
 )
 
 echo %YELLOW%[2/6]%RESET% Disabling Adaptive Brightness in active power plan...
-:: Get active power plan GUID
-for /f "tokens=4" %%a in ('powercfg /getactivescheme 2^>nul') do set "PLAN_GUID=%%a"
-:: Disable adaptive brightness (GUID: 7516b95f-f776-4464-8c53-06167f40cc99, sub: fbd9aa66-9553-4097-ba44-ed6e9d65eab8)
-powercfg /setacvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
-powercfg /setdcvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
-powercfg /setactive %PLAN_GUID% >nul 2>&1
-echo   %GREEN%[OK]%RESET% Power plan adaptive brightness disabled
+:: Get active power plan GUID. The label before the GUID is localized, so parse
+:: after the ':' rather than by word position (tokens=4 only works in English).
+set "PLAN_GUID="
+for /f "tokens=2 delims=:" %%a in ('powercfg /getactivescheme 2^>nul') do for /f "tokens=1" %%b in ("%%a") do set "PLAN_GUID=%%b"
 
-echo %YELLOW%[3/6]%RESET% Setting display dim brightness to 100%%...
-:: Set display dim brightness to 100% (won't dim when idle)
-powercfg /setacvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
-powercfg /setdcvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
-powercfg /setactive %PLAN_GUID% >nul 2>&1
-echo   %GREEN%[OK]%RESET% Display dim brightness set to 100%%
+if not defined PLAN_GUID (
+    echo   %RED%[WARN]%RESET% Could not determine the active power plan GUID - skipping plan tweaks.
+) else (
+    REM Disable adaptive brightness (GUID 7516b95f-...-06167f40cc99, sub fbd9aa66-...)
+    powercfg /setacvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
+    powercfg /setdcvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
+    powercfg /setactive !PLAN_GUID! >nul 2>&1
+    echo   %GREEN%[OK]%RESET% Power plan adaptive brightness disabled
+
+    echo %YELLOW%[3/6]%RESET% Setting display dim brightness to 100%%...
+    REM Set display dim brightness to 100%% (won't dim when idle)
+    powercfg /setacvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
+    powercfg /setdcvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
+    powercfg /setactive !PLAN_GUID! >nul 2>&1
+    echo   %GREEN%[OK]%RESET% Display dim brightness set to 100%%
+)
 
 echo %YELLOW%[4/6]%RESET% Stopping Sensor Monitoring Service...
 net stop SensrSvc >nul 2>&1
@@ -501,7 +508,8 @@ cls
 echo %CYAN%Exporting Diagnostic Report...%RESET%
 echo/
 
-set "REPORT_FILE=%USERPROFILE%\Desktop\BrightnessReport_%DATE:~-4%%DATE:~4,2%%DATE:~7,2%.txt"
+for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd"') do set "TODAY=%%D"
+set "REPORT_FILE=%USERPROFILE%\Desktop\BrightnessReport_%TODAY%.txt"
 
 (
 echo ============================================================================

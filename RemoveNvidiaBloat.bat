@@ -62,8 +62,10 @@ set "errors=0"
 :: Kill NVIDIA processes
 echo [1/6] Terminating NVIDIA bloatware processes...
 
+:: NOTE: NVDisplay.Container.exe is deliberately NOT killed - it hosts the
+:: NVIDIA Control Panel and display-driver features, which this script promises
+:: to keep. Only bloat (GeForce Experience, Share/ShadowPlay, telemetry) below.
 for %%P in (
-    "NVDisplay.Container.exe"
     "NVIDIA Web Helper.exe"
     "NVIDIA Share.exe"
     "NVIDIA Notification.exe"
@@ -87,9 +89,10 @@ set /a success+=1
 echo/
 echo [2/6] Stopping and disabling NVIDIA telemetry/container services...
 
+:: NVDisplay.ContainerLocalSystem is deliberately excluded - it drives the
+:: NVIDIA Control Panel and display features that this script keeps intact.
 for %%S in (
     "NvTelemetryContainer"
-    "NVDisplay.ContainerLocalSystem"
     "NvContainerLocalSystem"
     "NvContainerNetworkService"
 ) do (

@@ -50,6 +50,7 @@ echo   [4] Backup and create restore script
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto BackupDrivers
@@ -83,7 +84,7 @@ set /p "BACKUP_PATH=Press Enter to use default, or type a custom path: "
 if "!BACKUP_PATH!"=="" set "BACKUP_PATH=%DEFAULT_BACKUP%"
 
 :: Add date to folder name
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "BACKUP_PATH=!BACKUP_PATH!_%dt:~0,8%"
 
 echo/
@@ -103,8 +104,8 @@ echo/
 
 :: Count third-party drivers first
 set "driverCount=0"
-for /f "tokens=1,2 delims=:" %%a in ('pnputil /enum-drivers 2^>nul ^| findstr /i "Published Name Original Name Class Name Provider Name"') do (
-    echo %%a | findstr /i "Published Name" >nul 2>&1
+for /f "tokens=1,2 delims=:" %%a in ('pnputil /enum-drivers 2^>nul ^| findstr /i /c:"Published Name"') do (
+    echo %%a | findstr /i /c:"Published Name" >nul 2>&1
     if not errorlevel 1 (
         set /a driverCount+=1
     )
@@ -124,7 +125,7 @@ if %errorlevel% equ 0 (
     echo/
 
     :: Fallback: use pnputil to export each driver
-    for /f "tokens=2 delims=:" %%d in ('pnputil /enum-drivers 2^>nul ^| findstr /i "Published Name"') do (
+    for /f "tokens=2 delims=:" %%d in ('pnputil /enum-drivers 2^>nul ^| findstr /i /c:"Published Name"') do (
         set "drvName=%%d"
         set "drvName=!drvName: =!"
         pnputil /export-driver "!drvName!" "!BACKUP_PATH!" >nul 2>&1
@@ -367,7 +368,7 @@ for /r "!RESTORE_PATH!" %%f in (*.inf) do (
     echo   %WHITE%%%~nxf%RESET%
 
     :: Try to show driver provider/description from the INF
-    for /f "tokens=1,* delims==" %%a in ('findstr /i "^Provider\b ^DriverVer\b ^CatalogFile\b" "%%f" 2^>nul') do (
+    for /f "tokens=1,* delims==" %%a in ('findstr /i /r "^Provider ^DriverVer ^CatalogFile" "%%f" 2^>nul') do (
         set "infoKey=%%a"
         set "infoVal=%%b"
         echo     !infoKey!= !infoVal!
@@ -407,7 +408,7 @@ echo/
 
 :: Set backup location
 set "DEFAULT_BACKUP=%USERPROFILE%\Desktop\DriverBackup_%COMPUTERNAME%"
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value ^| find "="') do set "dt=%%I"
+for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
 set "BACKUP_PATH=!DEFAULT_BACKUP!_%dt:~0,8%"
 
 echo Backup will be saved to: !BACKUP_PATH!

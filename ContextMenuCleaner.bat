@@ -126,8 +126,8 @@ echo $keepCount = 0
 echo $unknownCount = 0
 echo/
 echo foreach ^($path in $contextMenuPaths^) {
-echo     if ^(Test-Path $path^) {
-echo         $subkeys = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
+echo     if ^(Test-Path -LiteralPath $path^) {
+echo         $subkeys = Get-ChildItem -LiteralPath $path -ErrorAction SilentlyContinue
 echo         foreach ^($key in $subkeys^) {
 echo             $name = $key.PSChildName
 echo             $displayName = $name
@@ -247,7 +247,7 @@ echo     if ^($answer -eq 'Y'^) {
 echo         foreach ^($e in $bloat^) {
 echo             try {
 echo                 $regPath = "Registry::$^($e.Path^)"
-echo                 New-ItemProperty -Path $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
+echo                 New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
 echo                 Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
 echo             } catch {
 echo                 Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red
@@ -269,7 +269,7 @@ echo             if ^($choice -eq 'Q'^) { break }
 echo             if ^($choice -eq 'Y'^) {
 echo                 try {
 echo                     $regPath = "Registry::$^($e.Path^)"
-echo                     New-ItemProperty -Path $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
+echo                     New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
 echo                     Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
 echo                 } catch {
 echo                     Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red

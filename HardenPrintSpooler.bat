@@ -60,12 +60,12 @@ echo/
 for /f "tokens=3" %%a in ('sc query Spooler ^| findstr STATE') do set "SPOOLER_STATE=%%a"
 for /f "tokens=3" %%a in ('sc qc Spooler ^| findstr START_TYPE') do set "SPOOLER_START=%%a"
 
-if "!SPOOLER_STATE!"=="4" (
+if "!SPOOLER_STATE!"=="1" (
     echo   Service state:  %GREEN%STOPPED%RESET%
-) else if "!SPOOLER_STATE!"=="1" (
-    echo   Service state:  %GREEN%STOPPED%RESET%
-) else (
+) else if "!SPOOLER_STATE!"=="4" (
     echo   Service state:  %RED%RUNNING%RESET%
+) else (
+    echo   Service state:  %YELLOW%!SPOOLER_STATE!%RESET%
 )
 
 if "!SPOOLER_START!"=="DISABLED" (

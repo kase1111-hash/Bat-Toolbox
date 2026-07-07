@@ -35,15 +35,14 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Detect total RAM
-set "totalRAM=0"
-for /f "tokens=2 delims==" %%m in ('wmic computersystem get TotalPhysicalMemory /value 2^>nul ^| find "="') do (
-    set "totalBytes=%%m"
-)
-
-:: Convert to GB using PowerShell (batch can't handle large numbers)
-for /f %%g in ('powershell -Command "[math]::Round(%totalBytes% / 1GB, 1)"') do set "totalGB=%%g"
-for /f %%g in ('powershell -Command "[math]::Floor(%totalBytes% / 1GB)"') do set "totalGBint=%%g"
+:: Detect total RAM via CIM (wmic is removed on Windows 11 24H2+). Default the
+:: results to 0 so an empty value can never turn the "if LSS 16" check below
+:: into a syntax error that kills the script at startup.
+set "totalGB=0"
+set "totalGBint=0"
+for /f %%g in ('powershell -NoProfile -Command "[math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1)" 2^>nul') do set "totalGB=%%g"
+for /f %%g in ('powershell -NoProfile -Command "[math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)" 2^>nul') do set "totalGBint=%%g"
+if not defined totalGBint set "totalGBint=0"
 
 :: Get available RAM
 for /f %%g in ('powershell -Command "[math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)"') do set "freeGB=%%g"
@@ -201,15 +200,21 @@ if "!hasImDisk!"=="1" (
 )
 
 :BuiltinCreate
-:: Built-in method using a VHD in memory (Windows 10+)
+:: Built-in fallback using a VHDX (Windows 10+). IMPORTANT: this is a DISK-backed
+:: virtual disk stored in %TEMP% on the system drive - Windows has no built-in
+:: memory-backed RAM disk. It provides RAM-disk-like semantics (a separate,
+:: reboot-cleared volume) but NOT RAM speed. For a true RAM-backed disk, install
+:: ImDisk. Redirecting TEMP here will not make temp I/O faster than the SSD.
 echo/
-echo [1/3] Creating RAM disk using built-in VHD method...
+echo [1/3] Creating virtual disk using built-in VHDX method...
+echo       %YELLOW%Note: this is disk-backed, not a true RAM disk. Install ImDisk%RESET%
+echo       %YELLOW%      for a real memory-backed RAM disk.%RESET%
 
 :: Create a PowerShell-based RAM disk
 set "PSRAMDISK=%TEMP%\create_ramdisk.ps1"
 
 (
-echo # Create a VHD in memory and mount it
+echo # Create a VHDX on disk and mount it (disk-backed, not true RAM)
 echo $vhdPath = "$env:TEMP\ramdisk.vhdx"
 echo $sizeBytes = !diskSize!GB
 echo/
@@ -242,7 +247,7 @@ powershell -ExecutionPolicy Bypass -File "!PSRAMDISK!" 2>nul
 del "!PSRAMDISK!" 2>nul
 
 if exist "!driveLetter!:\" (
-    echo       %GREEN%[OK] VHD-based RAM disk created on !driveLetter!:%RESET%
+    echo       %GREEN%[OK] VHDX virtual disk (disk-backed) created on !driveLetter!:%RESET%
 ) else (
     echo       %RED%[ERROR] Could not create RAM disk.%RESET%
     echo       %RED%        Install ImDisk for reliable RAM disk support.%RESET%
@@ -322,14 +327,18 @@ set /p "tempChoice=Select option: "
 if "%tempChoice%"=="0" goto MainMenu
 
 if "%tempChoice%"=="1" (
-    :: Session-only redirect
+    :: Session-only redirect. Use plain "set" ONLY - it changes TEMP/TMP for
+    :: this console session and its children, and is gone when the window
+    :: closes. Do NOT use setx here: setx writes HKCU\Environment permanently,
+    :: so after a reboot (RAM disk gone) new processes would get a nonexistent
+    :: TEMP and installers/apps would start failing. That is what option [2] is
+    :: for, with the accompanying auto-create-at-boot warning.
     set "TEMP=!driveLetter!:\Temp"
     set "TMP=!driveLetter!:\Temp"
-    setx TEMP "!driveLetter!:\Temp" >nul 2>&1
-    setx TMP "!driveLetter!:\Temp" >nul 2>&1
     echo/
-    echo %GREEN%[OK] TEMP/TMP redirected to !driveLetter!:\Temp for new processes%RESET%
-    echo %YELLOW%     Note: Already-running programs will use the old path.%RESET%
+    echo %GREEN%[OK] TEMP/TMP redirected to !driveLetter!:\Temp for this session%RESET%
+    echo %YELLOW%     Only programs launched from this window are affected, and%RESET%
+    echo %YELLOW%     the change is discarded when this window closes.%RESET%
 )
 
 if "%tempChoice%"=="2" (

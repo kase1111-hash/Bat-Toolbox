@@ -49,6 +49,7 @@ echo   [5] Apply common fixes
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto ListDevices
@@ -533,7 +534,7 @@ if "!isAdmin!"=="1" (
     echo         $color = if ^($startType -eq 'Automatic'^) { 'Green' } else { 'Yellow' }
     echo         Write-Host ^("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
     echo         if ^($startType -ne 'Automatic'^) {
-    echo             Write-Host "    ^ Should be Automatic!" -ForegroundColor Red
+    echo             Write-Host "    ^^ Should be Automatic^^!" -ForegroundColor Red
     echo         }
     echo     }
     echo }

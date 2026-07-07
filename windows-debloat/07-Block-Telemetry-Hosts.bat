@@ -38,11 +38,6 @@ pause >nul
 set HOSTS_FILE=%SystemRoot%\System32\drivers\etc\hosts
 
 echo/
-echo Creating backup of hosts file...
-copy "%HOSTS_FILE%" "%HOSTS_FILE%.backup" >nul 2>&1
-
-echo Adding telemetry blocks to hosts file...
-echo/
 
 :: Check if we've already added our blocks
 findstr /C:"# Windows 10 Debloat - Telemetry Blocks" "%HOSTS_FILE%" >nul 2>&1
@@ -51,6 +46,16 @@ if %errorlevel% equ 0 (
     echo Skipping to avoid duplicates.
     goto :done
 )
+
+:: Back up the hosts file only once, and only before the first modification,
+:: so re-runs never overwrite the pristine backup with an already-edited file.
+if not exist "%HOSTS_FILE%.backup" (
+    echo Creating backup of hosts file...
+    copy "%HOSTS_FILE%" "%HOSTS_FILE%.backup" >nul 2>&1
+)
+
+echo Adding telemetry blocks to hosts file...
+echo/
 
 :: Add the telemetry blocks
 (
