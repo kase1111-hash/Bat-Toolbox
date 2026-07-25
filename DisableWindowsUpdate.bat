@@ -473,7 +473,7 @@ goto MENU
 :: ============================================================================
 :EXIT
 echo/
-echo Thank you for using Disable Windows Update!
+echo Thank you for using Disable Windows Update^!
 echo/
 pause
 exit /b 0

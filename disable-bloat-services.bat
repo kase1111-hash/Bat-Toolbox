@@ -44,11 +44,11 @@ set /a DISABLED=0
 set /a NOT_FOUND=0
 set /a SKIPPED=0
 
-echo.
+echo/
 echo ==========================================================
 echo  Tier 1 - Silent disable
 echo ==========================================================
-echo.
+echo/
 
 call :process "ASUS Software Manager"
 call :process "ASUS Switch"
@@ -58,15 +58,15 @@ call :process "ASUS App Service"
 call :process "Connected Devices Platform Service"
 call :process "Connected Devices Platform User Service*"
 
-echo.
+echo/
 echo ==========================================================
 echo  Tier 2 - Hardware-dependent (you decide)
 echo ==========================================================
-echo.
+echo/
 
 call :process_interactive "Dolby DAX API Service" "dolby"
 
-echo.
+echo/
 echo ==========================================================
 echo  Summary
 echo ==========================================================
@@ -74,10 +74,10 @@ echo   Services stopped this run:   !STOPPED!
 echo   Services disabled:           !DISABLED!
 echo   Services not on this system: !NOT_FOUND!
 echo   Services skipped (n^):        !SKIPPED!
-echo.
+echo/
 echo  Watcher should now be quiet for ASUS-branded events forever.
 echo  ASUS Optimization remains running ^(Fn key handler^).
-echo.
+echo/
 
 endlocal
 pause
@@ -100,7 +100,7 @@ if !FOUND! EQU 0 (
     echo       Not found on this system.
     set /a NOT_FOUND+=1
 )
-echo.
+echo/
 goto :eof
 
 
@@ -117,7 +117,7 @@ for /f "delims=" %%N in ('powershell -NoProfile -Command "(Get-Service -DisplayN
 if not defined SVCNAME (
     echo       Not found on this system.
     set /a NOT_FOUND+=1
-    echo.
+    echo/
     goto :eof
 )
 
@@ -131,7 +131,7 @@ if exist "%PROC_LOG%" (
 ) else (
     echo          ^(process-history.log not present^)
 )
-echo.
+echo/
 
 set "DECISION="
 set /p "DECISION=       Disable this service? (y/n): "
@@ -141,7 +141,7 @@ if /I "!DECISION!"=="y" (
     echo         -^> skipped.
     set /a SKIPPED+=1
 )
-echo.
+echo/
 goto :eof
 
 

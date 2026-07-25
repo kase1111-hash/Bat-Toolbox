@@ -511,7 +511,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Disable Pagefile%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %RED%WARNING: Disabling the pagefile is NOT recommended for most users!%RESET%
+echo %RED%WARNING: Disabling the pagefile is NOT recommended for most users^!%RESET%
 echo/
 echo Consequences:
 echo  - Programs may crash with out-of-memory errors

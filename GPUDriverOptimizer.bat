@@ -507,7 +507,7 @@ if "%has_intel%"=="1" (
     set "is_arc=0"
     echo !GPU_NAMES! | findstr /i "Arc" >nul && set "is_arc=1"
 
-    if "%is_arc%"=="1" (
+    if "!is_arc!"=="1" (
         echo %WHITE%Intel Arc GPU detected%RESET%
         echo/
 
@@ -639,7 +639,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%GPU driver profile "%profile_name%" applied!%RESET%
+echo %GREEN%GPU driver profile "%profile_name%" applied^!%RESET%
 echo/
 echo %WHITE%Changes applied:%RESET%
 echo   [+] Windows GPU scheduling configured

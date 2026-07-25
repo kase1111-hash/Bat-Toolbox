@@ -22,11 +22,11 @@ if %errorLevel% neq 0 (
 
 setlocal enabledelayedexpansion
 
-echo.
+echo/
 echo ============================================================
 echo  Edge Disable  -  Bat-Toolbox
 echo ============================================================
-echo.
+echo/
 
 :: --- 1. Kill any running Edge processes ----------------------
 echo [1/6] Killing running Edge processes...
@@ -71,13 +71,13 @@ for /f "tokens=1" %%a in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVer
 echo       done.
 
 :: --- 6. Optional: rename msedge.exe so nothing can launch it -
-echo.
+echo/
 echo [6/6] OPTIONAL: rename msedge.exe to prevent accidental launches?
 echo       Most aggressive step. Edge stays on disk, but nothing
 echo       can execute it (including system features like Widgets
 echo       that try to force-launch via microsoft-edge:// protocol).
 echo       Reversible by renaming msedge_disabled.exe back.
-echo.
+echo/
 set /p RENAME_CHOICE="       Rename msedge.exe? (y/N): "
 if /I "!RENAME_CHOICE!"=="y" (
     set "EDGE_DIR=C:\Program Files (x86)\Microsoft\Edge\Application"
@@ -99,12 +99,12 @@ if /I "!RENAME_CHOICE!"=="y" (
     echo       Skipped rename.
 )
 
-echo.
+echo/
 echo ============================================================
 echo  Done. Edge is disabled.
 echo  Reboot recommended.
 echo ============================================================
-echo.
+echo/
 echo  TO REVERSE:
 echo    sc config edgeupdate   start= demand
 echo    sc config edgeupdatem  start= demand
@@ -113,7 +113,7 @@ echo    schtasks /Change /TN "MicrosoftEdgeUpdateTaskMachineUA"   /Enable
 echo    reg delete "HKLM\SOFTWARE\Policies\Microsoft\EdgeUpdate" /f
 echo    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Edge"       /f
 echo    (rename msedge_disabled.exe back to msedge.exe if you ran step 6)
-echo.
+echo/
 
 endlocal
 pause

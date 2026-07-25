@@ -86,7 +86,7 @@ call :DO_INPUT
 
 echo/
 echo ============================================================================
-echo  All tweaks applied! Restart recommended.
+echo  All tweaks applied^! Restart recommended.
 echo ============================================================================
 pause
 goto MENU
@@ -645,7 +645,7 @@ netsh int tcp set global autotuninglevel=normal >nul 2>&1
 
 echo/
 echo ============================================================================
-echo  Defaults restored! Restart recommended.
+echo  Defaults restored^! Restart recommended.
 echo ============================================================================
 pause
 goto MENU
@@ -660,7 +660,7 @@ taskkill /f /im explorer.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 start explorer.exe
 echo/
-echo Thank you for using Windows Power User Tweaks!
+echo Thank you for using Windows Power User Tweaks^!
 echo A restart is recommended to apply all changes.
 echo/
 pause

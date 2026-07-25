@@ -41,11 +41,11 @@ if not exist "%PS1_SOURCE%" (
     exit /b 1
 )
 
-echo.
+echo/
 echo ==========================================================
 echo  Installing Sovereign Shell Tripwire Watcher
 echo ==========================================================
-echo.
+echo/
 
 :: --- 0. Stop any existing watcher (task instance + detached process) ---
 echo [0/4] Stopping any existing watcher ...
@@ -56,7 +56,7 @@ powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'Name=''po
 :: Give the mutex a moment to release.
 powershell -NoProfile -Command "Start-Sleep -Milliseconds 800"
 echo       OK.
-echo.
+echo/
 
 :: --- 1. Copy .ps1 into install dir ---
 echo [1/4] Copying watcher to %INSTALL_DIR% ...
@@ -68,7 +68,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo       OK.
-echo.
+echo/
 
 :: --- 2. Register AUMID for branded toasts ---
 echo [2/4] Registering AppUserModelID for branded toasts ...
@@ -79,7 +79,7 @@ if errorlevel 1 (
 ) else (
     echo       OK.
 )
-echo.
+echo/
 
 :: --- 3. Create the scheduled task ---
 echo [3/4] Creating logon-triggered scheduled task ...
@@ -97,34 +97,34 @@ if errorlevel 1 (
     exit /b 1
 )
 echo       OK.
-echo.
+echo/
 
 :: --- 4. Start the watcher right now ---
 echo [4/4] Starting the watcher ...
 powershell -NoProfile -Command ^
   "Start-Process powershell -ArgumentList '-NoProfile','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File','%PS1_TARGET%' -WindowStyle Hidden"
 echo       OK.
-echo.
+echo/
 
 echo ==========================================================
 echo  Install complete.
 echo ==========================================================
-echo.
+echo/
 echo  Within a few seconds you should see up to 3 toasts marked
 echo  "Tripwire (replay)" - those are your last events from the
 echo  log, confirming the pipeline is live. After that, the v2
 echo  watcher will be silent for known-fingerprint repeats and
 echo  will only toast for NEW, returned, or daily-summary events.
-echo.
+echo/
 echo  State files:
 echo    Watcher diagnostics:  %%LOCALAPPDATA%%\sovereign-shell\watcher.log
 echo    Cursor:               %%LOCALAPPDATA%%\sovereign-shell\tripwire.log.cursor
 echo    Fingerprint store:    %%LOCALAPPDATA%%\sovereign-shell\fingerprints.json
-echo.
+echo/
 echo  To reset dedup state (force everything to look new again):
 echo    del "%%LOCALAPPDATA%%\sovereign-shell\fingerprints.json"
 echo    del "%%LOCALAPPDATA%%\sovereign-shell\tripwire.log.cursor"
-echo.
+echo/
 
 endlocal
 pause

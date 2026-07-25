@@ -443,7 +443,7 @@ echo Write-Host ""
 echo/
 echo if ^($issues.Count -gt 0^) {
 echo     Write-Host "  ISSUES ^($^($issues.Count^)^):" -ForegroundColor Red
-echo     foreach ^($i in $issues^) { Write-Host "    [!] $i" -ForegroundColor Red }
+echo     foreach ^($i in $issues^) { Write-Host "    [^^!] $i" -ForegroundColor Red }
 echo     Write-Host ""
 echo }
 echo if ^($warnings.Count -gt 0^) {

@@ -552,6 +552,6 @@ goto ADVANCED_MENU
 :: ============================================================================
 :EXIT
 echo/
-echo Goodbye!
+echo Goodbye^!
 endlocal
 exit /b 0

@@ -315,7 +315,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%Storage latency tuning applied successfully!%RESET%
+echo %GREEN%Storage latency tuning applied successfully^!%RESET%
 echo/
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] NVMe power state transitions minimized

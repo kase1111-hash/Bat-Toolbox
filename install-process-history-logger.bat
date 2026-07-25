@@ -45,11 +45,11 @@ if not exist "%PS1_SOURCE%" (
     exit /b 1
 )
 
-echo.
+echo/
 echo ==========================================================
 echo  Installing Sovereign Shell Process History Logger
 echo ==========================================================
-echo.
+echo/
 
 :: --- 0. Stop any existing logger ---
 echo [0/3] Stopping any existing logger ...
@@ -57,7 +57,7 @@ schtasks /End "%TASK_NAME%" >nul 2>&1
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'Name=''powershell.exe''' -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'process-history-logger\.ps1' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
 powershell -NoProfile -Command "Start-Sleep -Milliseconds 800"
 echo       OK.
-echo.
+echo/
 
 :: --- 1. Copy ps1 ---
 echo [1/3] Copying logger to %INSTALL_DIR% ...
@@ -69,7 +69,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo       OK.
-echo.
+echo/
 
 :: --- 2. Create boot-triggered SYSTEM scheduled task ---
 echo [2/3] Creating boot-triggered SYSTEM scheduled task ...
@@ -88,7 +88,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo       OK.
-echo.
+echo/
 
 :: --- 3. Run it now ---
 echo [3/3] Starting the logger ...
@@ -98,22 +98,22 @@ if errorlevel 1 (
 ) else (
     echo       OK.
 )
-echo.
+echo/
 
 echo ==========================================================
 echo  Install complete.
 echo ==========================================================
-echo.
+echo/
 echo  The logger is running as SYSTEM. Within a few seconds you
 echo  should see %INSTALL_DIR%\process-history.log
 echo  populated with a snapshot of currently running processes.
-echo.
+echo/
 echo  Verify:
 echo    type "%INSTALL_DIR%\process-history.log" ^| more
-echo.
+echo/
 echo  Diagnostics:
 echo    type "%INSTALL_DIR%\process-history-logger.log"
-echo.
+echo/
 
 endlocal
 pause

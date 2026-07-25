@@ -30,17 +30,17 @@ if errorlevel 1 (
 set "PROC_LOG=C:\ProgramData\sovereign-shell\process-history.log"
 set "PROC_LOG_OLD=C:\ProgramData\sovereign-shell\process-history.old.log"
 
-echo.
+echo/
 echo ==========================================================
 echo  Staging Inventory (read-only)
 echo ==========================================================
-echo.
+echo/
 
 if not exist "%PROC_LOG%" (
     echo [WARN] %PROC_LOG% not found.
     echo        Service binaries will be reported, but recent-process
     echo        analysis will be empty.
-    echo.
+    echo/
 )
 
 call :inspect "ASUS App Service"                 asus
@@ -56,7 +56,7 @@ echo                                ^(add binaries to your existing
 echo                                tripwire installer's target list^)
 echo   Running, hardware ties   -^> leave alone
 echo                                ^(Fn keys, fan curves, RGB, etc.^)
-echo.
+echo/
 
 endlocal
 pause
@@ -78,7 +78,7 @@ for /f "delims=" %%N in ('powershell -NoProfile -Command "(Get-Service -DisplayN
 
 if not defined SVCNAME (
     echo   Not found on this system.
-    echo.
+    echo/
     goto :eof
 )
 echo   Service name : !SVCNAME!
@@ -111,5 +111,5 @@ if exist "%PROC_LOG%" (
     echo      ^(process-history.log not present^)
 )
 
-echo.
+echo/
 goto :eof

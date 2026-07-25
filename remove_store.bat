@@ -46,12 +46,12 @@ if %errorlevel% neq 0 (
 echo ============================================================================
 echo  REMOVE_STORE.BAT - Microsoft Store Removal Script
 echo ============================================================================
-echo.
+echo/
 echo  This will disable and remove the Microsoft Store and related services.
 echo  Press Ctrl+C to abort, or...
 pause
 
-echo.
+echo/
 echo [1/7] Disabling Microsoft Store via policy...
 echo ----------------------------------------------
 
@@ -69,7 +69,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v AutoDownload /t REG_D
 REM -- Disable Store offer to update to latest OS --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v DisableOSUpgrade /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [2/7] Disabling silent app installs and content delivery...
 echo -----------------------------------------------------------
 
@@ -94,7 +94,7 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v SubscribedContent-353694Enabled /t REG_DWORD /d 0 /f
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [3/7] Disabling Store services...
 echo ----------------------------------
 
@@ -126,7 +126,7 @@ REM -- ClipSVC: Client License Service --
 REM -- Manages Store-bought app licenses. Safe to disable if no Store apps. --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\ClipSVC" /v Start /t REG_DWORD /d 4 /f
 
-echo.
+echo/
 echo [4/7] Disabling Store-related scheduled tasks...
 echo -------------------------------------------------
 
@@ -136,7 +136,7 @@ schtasks /Change /TN "Microsoft\Windows\InstallService\ScanForUpdates" /Disable 
 schtasks /Change /TN "Microsoft\Windows\InstallService\ScanForUpdatesAsUser" /Disable >nul 2>&1
 schtasks /Change /TN "Microsoft\Windows\InstallService\SmartRetry" /Disable >nul 2>&1
 
-echo.
+echo/
 echo [5/7] Removing Microsoft Store app packages...
 echo -----------------------------------------------
 
@@ -153,7 +153,7 @@ echo   Removing Store Purchase App...
 PowerShell -NoProfile -Command "Get-AppxPackage *StorePurchaseApp* | Remove-AppxPackage -ErrorAction SilentlyContinue" >nul 2>&1
 PowerShell -NoProfile -Command "Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -like '*StorePurchaseApp*'} | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue" >nul 2>&1
 
-echo.
+echo/
 echo [6/7] Removing Store-dependent bloatware...
 echo ---------------------------------------------
 
@@ -206,7 +206,7 @@ PowerShell -NoProfile -Command "Get-AppxPackage *Getstarted* | Remove-AppxPackag
 echo   Removing Microsoft Copilot...
 PowerShell -NoProfile -Command "Get-AppxPackage *Copilot* | Remove-AppxPackage -ErrorAction SilentlyContinue" >nul 2>&1
 
-echo.
+echo/
 echo [7/7] Blocking Store reinstallation via Windows Update...
 echo ----------------------------------------------------------
 
@@ -218,26 +218,26 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableCloudO
 REM -- Disable app suggestions and "tips" --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo ============================================================================
 echo  DONE. Microsoft Store and related components have been removed/disabled.
 echo ============================================================================
-echo.
+echo/
 echo  NEXT STEPS:
 echo    1. REBOOT your machine.
 echo    2. After reboot, verify Store is gone:
 echo       - Search for "Microsoft Store" in Start - should not appear
 echo       - Check Services (services.msc) for disabled Store services
 echo    3. If bloatware returns after a feature update, re-run this script.
-echo.
+echo/
 echo  TO SEE WHAT UWP APPS REMAIN (run in PowerShell):
 echo    Get-AppxPackage ^| Select Name ^| Sort Name
-echo.
+echo/
 echo  TO REVERSE:
 echo    Run in PowerShell as Admin:
 echo      Get-AppxPackage -AllUsers Microsoft.WindowsStore ^| ForEach
 echo        {Add-AppxPackage -Register "$($_.InstallLocation)\AppxManifest.xml"
 echo         -DisableDevelopmentMode}
 echo    Then run: wsreset.exe
-echo.
+echo/
 pause

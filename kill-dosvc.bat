@@ -37,19 +37,19 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo.
+echo/
 echo === PHASE 1 / RECON =======================================================
 echo DoSvc:
 sc qc DoSvc 2>nul | findstr /i "START_TYPE"
 sc query DoSvc 2>nul | findstr /i "STATE"
-echo.
+echo/
 echo WaaSMedicSvc ^(the auto-reverter^):
 sc qc WaaSMedicSvc 2>nul | findstr /i "START_TYPE"
 sc query WaaSMedicSvc 2>nul | findstr /i "STATE"
-echo.
+echo/
 echo Current DODownloadMode:
 reg query "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" /v DODownloadMode 2>nul
-echo.
+echo/
 
 echo === PHASE 2 / DISABLE WAASMEDICSVC FIRST ==================================
 REM This must be first. If WaaSMedic is alive when we disable DoSvc, it will
@@ -76,7 +76,7 @@ if errorlevel 1 (
 :PostMedic
 REM Also disable the WaaSMedicPS triggered task that can resurrect things
 sc stop WaaSMedicSvc >nul 2>&1
-echo.
+echo/
 
 echo === PHASE 3 / DISABLE DOSVC ===============================================
 sc stop DoSvc >nul 2>&1
@@ -86,7 +86,7 @@ if errorlevel 1 (
 ) else (
     echo DoSvc: Start=4 ^(Disabled^).
 )
-echo.
+echo/
 
 echo === PHASE 4 / SET DELIVERY OPTIMIZATION POLICY ============================
 REM DODownloadMode values:
@@ -101,13 +101,13 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Con
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" /v DOMaxBackgroundDownloadBandwidth /t REG_DWORD /d 1 /f >nul
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" /v DOMaxForegroundDownloadBandwidth /t REG_DWORD /d 1 /f >nul
 echo Policy: DODownloadMode=0 ^(HTTP only, no peering^).
-echo.
+echo/
 
 echo === PHASE 5 / DISABLE WAASMEDIC SCHEDULED TASKS ===========================
 call :KillTask "\Microsoft\Windows\WaaSMedic\PerformRemediation"
 call :KillTask "\Microsoft\Windows\UpdateOrchestrator\USO_BootRebootTask"
 call :KillTask "\Microsoft\Windows\WindowsUpdate\Scheduled Start"
-echo.
+echo/
 
 echo === PHASE 6 / NULL-ROUTE DELIVERY OPTIMIZATION ENDPOINTS ==================
 REM HOSTS file does not support wildcards. These are the most common static
@@ -129,7 +129,7 @@ call :AddHostsBlock "v10.delivery.mp.microsoft.com"
 call :AddHostsBlock "v20.delivery.mp.microsoft.com"
 call :AddHostsBlock "tlu.dl.delivery.mp.microsoft.com"
 call :AddHostsBlock "ctldl.windowsupdate.com.delivery.mp.microsoft.com"
-echo.
+echo/
 
 echo === PHASE 7 / FIREWALL RULES ==============================================
 netsh advfirewall firewall delete rule name="BLOCK DoSvc service" >nul 2>&1
@@ -140,21 +140,21 @@ netsh advfirewall firewall add rule name="BLOCK DoSvc service" dir=out action=bl
 netsh advfirewall firewall add rule name="BLOCK DO P2P port 7680 in" dir=in action=block protocol=TCP localport=7680 enable=yes profile=any >nul
 netsh advfirewall firewall add rule name="BLOCK DO P2P port 7680 out" dir=out action=block protocol=TCP remoteport=7680 enable=yes profile=any >nul
 echo Firewall rules added: service=DoSvc and TCP 7680 in/out blocked.
-echo.
+echo/
 
 echo === PHASE 8 / VERIFY ======================================================
 echo DoSvc:
 sc qc DoSvc | findstr /i "START_TYPE"
 sc query DoSvc | findstr /i "STATE"
-echo.
+echo/
 echo WaaSMedicSvc:
 sc qc WaaSMedicSvc | findstr /i "START_TYPE"
 sc query WaaSMedicSvc | findstr /i "STATE"
-echo.
+echo/
 echo DODownloadMode policy:
 reg query "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" /v DODownloadMode
 
-echo.
+echo/
 echo ===========================================================================
 echo  DONE. Reboot recommended to clear in-flight DO uploads/downloads and
 echo  ensure WaaSMedic doesn't get one last remediation pass.

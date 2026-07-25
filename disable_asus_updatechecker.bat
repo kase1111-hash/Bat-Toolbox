@@ -36,11 +36,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo.
+echo/
 echo ==========================================================
 echo  Disabling %TARGET% via four layers
 echo ==========================================================
-echo.
+echo/
 
 set /a KILLED=0
 set /a TASKS_DISABLED=0
@@ -63,7 +63,7 @@ for %%E in ("%TARGET%" "%SECONDARY%") do (
         echo       %%~E not currently running.
     )
 )
-echo.
+echo/
 
 :: ===== Layer 2: disable scheduled tasks =====
 echo [2/4] Scanning scheduled tasks for references to %TARGET%...
@@ -86,7 +86,7 @@ for /f "skip=1 tokens=1 delims=," %%T in ('schtasks /Query /FO CSV /NH 2^>nul') 
     )
 )
 if !TASKS_DISABLED! EQU 0 echo       No scheduled tasks reference the targets.
-echo.
+echo/
 
 :: ===== Layer 3: IFEO debugger redirect =====
 echo [3/4] Installing IFEO redirect for %TARGET%...
@@ -103,7 +103,7 @@ for %%E in ("%TARGET%" "%SECONDARY%") do (
         echo       FAILED to install IFEO key for %%~E.
     )
 )
-echo.
+echo/
 
 :: ===== Layer 4: disable services that launch the binary =====
 echo [4/4] Scanning services for references to %TARGET%...
@@ -122,7 +122,7 @@ for /f "tokens=2" %%S in ('sc query state^= all 2^>nul ^| findstr /I "SERVICE_NA
     )
 )
 if !SERVICES_DISABLED! EQU 0 echo       No services reference the targets.
-echo.
+echo/
 
 :: ===== Report =====
 echo ==========================================================
@@ -132,11 +132,11 @@ echo   Running instances killed:   !KILLED!
 echo   Scheduled tasks disabled:   !TASKS_DISABLED!
 echo   IFEO redirects installed:   !IFEO_INSTALLED!  (out of 2)
 echo   Services disabled:          !SERVICES_DISABLED!
-echo.
+echo/
 echo  Watch tripwire.log over the next 24 hours. New firings should
 echo  drop to zero. If anything still appears, the new entries will
 echo  reveal the launcher we missed - share them and we'll pinpoint it.
-echo.
+echo/
 
 endlocal
 pause

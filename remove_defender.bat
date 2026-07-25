@@ -43,15 +43,15 @@ if %errorlevel% neq 0 (
 echo ============================================================================
 echo  REMOVE_DEFENDER.BAT - Windows Defender Removal Script
 echo ============================================================================
-echo.
+echo/
 echo  WARNING: This will disable Windows Defender entirely.
 echo  Make sure Tamper Protection is OFF before proceeding.
 echo  (Settings ^> Windows Security ^> Virus ^& Threat Protection ^> Manage Settings)
-echo.
+echo/
 echo  Press Ctrl+C to abort, or...
 pause
 
-echo.
+echo/
 echo [1/8] Disabling Defender via registry policies...
 echo -----------------------------------------------
 
@@ -65,7 +65,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableAntiVirus 
 REM ServiceKeepAlive: Prevent Defender from restarting itself.
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v ServiceKeepAlive /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [2/8] Disabling real-time protection, cloud, and sample submission...
 echo --------------------------------------------------------------------
 
@@ -86,7 +86,7 @@ REM -- Cloud delivery / block-at-first-sight --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine" /v MpCloudBlockLevel /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine" /v MpEnablePus /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [3/8] Disabling Exploit Guard and Network Protection...
 echo -------------------------------------------------------
 
@@ -97,7 +97,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Expl
 REM -- Controlled Folder Access (Ransomware protection - also causes false blocks) --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access" /v EnableControlledFolderAccess /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [4/8] Disabling SmartScreen...
 echo ------------------------------
 
@@ -110,7 +110,7 @@ reg add "HKCU\SOFTWARE\Microsoft\Edge\SmartScreenEnabled" /v "" /t REG_DWORD /d 
 REM -- SmartScreen for Store apps --
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" /v EnableWebContentEvaluation /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [5/8] Disabling Defender services...
 echo ------------------------------------
 
@@ -141,7 +141,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Services\SgrmBroker" /v Start /t REG_DWOR
 REM -- Sense: Microsoft Defender for Endpoint (enterprise telemetry) --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\Sense" /v Start /t REG_DWORD /d 4 /f
 
-echo.
+echo/
 echo [6/8] Disabling Defender scheduled tasks...
 echo --------------------------------------------
 
@@ -155,7 +155,7 @@ schtasks /Change /TN "Microsoft\Windows\Windows Defender\Windows Defender Verifi
 REM -- ExploitGuard MDM policy refresh task --
 schtasks /Change /TN "Microsoft\Windows\ExploitGuard\ExploitGuard MDM policy Refresh" /Disable >nul 2>&1
 
-echo.
+echo/
 echo [7/8] Removing Windows Security notification icon...
 echo ----------------------------------------------------
 
@@ -166,7 +166,7 @@ REM -- Disable Security Center notifications entirely --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender Security Center\Notifications" /v DisableNotifications /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender Security Center\Notifications" /v DisableEnhancedNotifications /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [8/8] Cleaning up Defender scan history and cached data...
 echo ----------------------------------------------------------
 
@@ -192,11 +192,11 @@ if exist "%ProgramData%\Microsoft\Windows Defender\Definition Updates" (
     echo   No definition cache found.
 )
 
-echo.
+echo/
 echo ============================================================================
 echo  DONE. Windows Defender has been disabled.
 echo ============================================================================
-echo.
+echo/
 echo  NEXT STEPS:
 echo    1. REBOOT your machine for all changes to take effect.
 echo    2. After reboot, verify Defender is gone:
@@ -204,17 +204,17 @@ echo       - Open Task Manager, check no MsMpEng.exe is running
 echo       - Open Services (services.msc), confirm WinDefend is disabled
 echo       - Run: sc query WinDefend
 echo    3. If Defender resurrects after a Windows Update, re-run this script.
-echo.
+echo/
 echo  OPTIONAL NUCLEAR STEP (run manually if needed):
 echo    To attempt removal of the Defender platform package via DISM:
 echo      DISM /Online /Remove-Feature /FeatureName:Windows-Defender /NoRestart
 echo    Note: This may not work on all Windows editions but is worth trying.
-echo.
+echo/
 echo  TO REVERSE THIS:
 echo    Delete the registry keys under:
 echo      HKLM\SOFTWARE\Policies\Microsoft\Windows Defender
 echo    Set all service Start values back to 2 or 3
 echo    Re-enable Tamper Protection in Windows Security
 echo    Run Windows Update
-echo.
+echo/
 pause

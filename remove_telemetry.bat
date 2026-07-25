@@ -46,12 +46,12 @@ if %errorlevel% neq 0 (
 echo ============================================================================
 echo  REMOVE_TELEMETRY.BAT - Microsoft Telemetry Removal Script
 echo ============================================================================
-echo.
+echo/
 echo  This will disable all Microsoft telemetry and data collection.
 echo  Press Ctrl+C to abort, or...
 pause
 
-echo.
+echo/
 echo [1/12] Setting telemetry level to zero...
 echo ------------------------------------------
 
@@ -72,7 +72,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v DisableOneS
 REM -- Disable sending browsing data to Microsoft --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v MicrosoftEdgeDataOptIn /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [2/12] Disabling Connected User Experiences and Telemetry service...
 echo --------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ REM -- WdiServiceHost / WdiSystemHost: Diagnostic infrastructure hosts --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdiServiceHost" /v Start /t REG_DWORD /d 4 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdiSystemHost" /v Start /t REG_DWORD /d 4 /f
 
-echo.
+echo/
 echo [3/12] Disabling Compatibility Telemetry...
 echo ---------------------------------------------
 
@@ -119,7 +119,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisablePCA /t RE
 REM -- Disable Steps Recorder (psr.exe) - records screen steps, sends data --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableEngine /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [4/12] Disabling Customer Experience Improvement Program (CEIP)...
 echo ------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Internet Explorer\SQM" /v DisableCusto
 REM -- Disable Messenger CEIP --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Messenger\Client" /v CEIP /t REG_DWORD /d 2 /f
 
-echo.
+echo/
 echo [5/12] Disabling Windows Error Reporting...
 echo ----------------------------------------------
 
@@ -154,7 +154,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" /v Do
 REM -- Disable the "Check for solutions" prompts --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" /v DontShowUI /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [6/12] Disabling advertising ID, tracking, and input personalization...
 echo -----------------------------------------------------------------------
 
@@ -178,7 +178,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\HandwritingErrorReports" /v Pr
 REM -- Disable Tablet PC input panel personalization --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\TabletPC" /v PreventHandwritingDataSharing /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [7/12] Disabling location tracking...
 echo ---------------------------------------
 
@@ -193,7 +193,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" /v Disable
 REM -- Disable location service --
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\lfsvc" /v Start /t REG_DWORD /d 4 /f
 
-echo.
+echo/
 echo [8/12] Disabling Activity History and Timeline...
 echo --------------------------------------------------
 
@@ -204,7 +204,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [9/12] Disabling Cortana and search telemetry...
 echo --------------------------------------------------
 
@@ -225,7 +225,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortan
 REM -- Disable search indexer cloud integration --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCloudSearch /t REG_DWORD /d 0 /f
 
-echo.
+echo/
 echo [10/12] Disabling feedback, Wi-Fi Sense, and Copilot telemetry...
 echo ------------------------------------------------------------------
 
@@ -246,7 +246,7 @@ REM -- Recall takes screenshots of everything you do and indexes them. --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
 reg add "HKCU\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
 
-echo.
+echo/
 echo [11/12] Disabling telemetry scheduled tasks...
 echo ------------------------------------------------
 
@@ -291,7 +291,7 @@ schtasks /Change /TN "Microsoft\Windows\NetTrace\GatherNetworkInfo" /Disable >nu
 REM -- Windows Error Reporting tasks --
 schtasks /Change /TN "Microsoft\Windows\Windows Error Reporting\QueueReporting" /Disable >nul 2>&1
 
-echo.
+echo/
 echo [12/12] Blocking telemetry endpoints via hosts file...
 echo -------------------------------------------------------
 
@@ -319,7 +319,7 @@ REM -- Create backup first --
 copy "%HOSTS%" "%HOSTS%.bak.%date:~-4%%date:~4,2%%date:~7,2%" >nul 2>&1
 
 (
-    echo.
+    echo/
     echo %MARKER%
     echo # Core telemetry endpoints
     echo 0.0.0.0 vortex.data.microsoft.com
@@ -395,11 +395,11 @@ echo   Hosts file updated. Backup saved as %HOSTS%.bak.*
 
 :skip_hosts
 
-echo.
+echo/
 echo ============================================================================
 echo  DONE. Microsoft telemetry has been disabled.
 echo ============================================================================
-echo.
+echo/
 echo  NEXT STEPS:
 echo    1. REBOOT your machine for all changes to take effect.
 echo    2. After reboot, verify:
@@ -407,7 +407,7 @@ echo       - Open Services (services.msc), confirm DiagTrack is disabled
 echo       - Open Task Manager, confirm no CompatTelRunner.exe running
 echo       - Run: sc query DiagTrack (should show STOPPED / DISABLED)
 echo    3. If telemetry returns after a Windows feature update, re-run this.
-echo.
+echo/
 echo  WHAT WAS DISABLED:
 echo    Services:  DiagTrack, dmwappushservice, diagsvc, DPS, WerSvc,
 echo               WdiServiceHost, WdiSystemHost, lfsvc
@@ -417,17 +417,17 @@ echo               Cortana, Web Search, Wi-Fi Sense, Copilot, Recall
 echo    Tasks:     Compatibility Appraiser, Device Census, CEIP,
 echo               DiskDiagnostic, Feedback, Maps, NetTrace, WER
 echo    Network:   60+ telemetry domains blocked via hosts file
-echo.
+echo/
 echo  TO REVERSE:
 echo    - Delete policy keys under HKLM\SOFTWARE\Policies\Microsoft
 echo    - Set service Start values back to 2 or 3
 echo    - Remove the telemetry block section from:
 echo      %SystemRoot%\System32\drivers\etc\hosts
 echo    - Re-enable scheduled tasks via Task Scheduler
-echo.
+echo/
 echo  OPTIONAL - VERIFY NOTHING IS PHONING HOME:
 echo    Open PowerShell and run:
 echo      netstat -b -n ^| findstr /i "microsoft"
 echo    Or use Wireshark/TCPView to monitor outbound connections.
-echo.
+echo/
 pause
