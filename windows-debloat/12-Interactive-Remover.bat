@@ -324,9 +324,9 @@ if /i "%DEFAULT%"=="Y" (
 if "%CHOICE%"=="" set "CHOICE=%DEFAULT%"
 
 if /i "%CHOICE%"=="Y" (
-    echo  Removing %NAME%... (this may take a moment^)
+    echo  Removing %NAME%... ^(this may take a moment^)
     dism /online /Disable-Feature /FeatureName:%FEAT% /NoRestart >nul 2>&1
-    echo  Removed (restart required to complete^).
+    echo  Removed ^(restart required to complete^).
     set /a "REMOVED_COUNT+=1"
 ) else (
     echo  Skipped.

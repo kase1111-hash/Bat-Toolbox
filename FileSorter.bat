@@ -33,37 +33,37 @@ set "errors=0"
 
 :: Process all files recursively
 for /r "%basedir%" %%F in (*) do (
-    :: Get file info
+    REM Get file info
     set "filepath=%%F"
     set "filename=%%~nxF"
     set "fileext=%%~xF"
     set "filedir=%%~dpF"
 
-    :: Skip this script
+    REM Skip this script
     if /i "!filename!"=="%scriptname%" (
         echo [SKIP] !filename! ^(this script^)
         set /a skipped+=1
     ) else (
-        :: Handle files with no extension
+        REM Handle files with no extension
         if "!fileext!"=="" (
             set "typename=NO_EXTENSION"
         ) else (
-            :: Remove the dot and convert to uppercase
+            REM Remove the dot and convert to uppercase
             set "typename=!fileext:~1!"
             for %%U in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
                 set "typename=!typename:%%U=%%U!"
             )
         )
 
-        :: Set target folder
+        REM Set target folder
         set "targetdir=%basedir%!typename!"
 
-        :: Check if file is already in a type folder
+        REM Check if file is already in a type folder
         if /i "!filedir!"=="!targetdir!\" (
             echo [SKIP] !filename! ^(already sorted^)
             set /a skipped+=1
         ) else (
-            :: Create folder if it doesn't exist
+            REM Create folder if it doesn't exist
             if not exist "!targetdir!" (
                 mkdir "!targetdir!" 2>nul
                 if !errorlevel! neq 0 (
@@ -74,12 +74,12 @@ for /r "%basedir%" %%F in (*) do (
                 )
             )
 
-            :: Check if file with same name exists in target
+            REM Check if file with same name exists in target
             if exist "!targetdir!\!filename!" (
                 echo [SKIP] !filename! ^(duplicate name in !typename!^)
                 set /a skipped+=1
             ) else (
-                :: Move the file
+                REM Move the file
                 move "!filepath!" "!targetdir!\" >nul 2>&1
                 if !errorlevel! neq 0 (
                     echo [ERROR] !filename!

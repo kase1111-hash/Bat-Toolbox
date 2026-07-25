@@ -389,9 +389,9 @@ if not errorlevel 1 (
 :: Check Telnet
 sc query TlntSvr 2>nul | find "RUNNING" >nul 2>&1
 if not errorlevel 1 (
-    echo   %RED%[ALERT] Telnet Server is RUNNING ^(insecure!^)%RESET%
+    echo   %RED%[ALERT] Telnet Server is RUNNING ^(insecure^^!^)%RESET%
     echo   %RED%         Telnet transmits in plaintext. Disable immediately.%RESET%
-    echo [ALERT] Telnet Server is RUNNING - insecure!>> "%REPORT%"
+    echo [ALERT] Telnet Server is RUNNING - insecure^^!>> "%REPORT%"
 ) else (
     echo   %GREEN%[OK] Telnet Server is not running%RESET%
     echo [OK] Telnet Server is not running>> "%REPORT%"
@@ -466,7 +466,7 @@ echo/
 set "assessment=CLEAN"
 
 if not "!highRiskPorts!"=="0" (
-    echo %RED%[CRITICAL] High-risk ports detected! These are commonly used by malware.%RESET%
+    echo %RED%[CRITICAL] High-risk ports detected^^! These are commonly used by malware.%RESET%
     echo %RED%           Investigate the processes immediately.%RESET%
     set "assessment=CRITICAL"
     echo/>> "%REPORT%"

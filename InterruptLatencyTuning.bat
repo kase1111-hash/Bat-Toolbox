@@ -400,7 +400,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%Interrupt and DPC latency tuning applied successfully!%RESET%
+echo %GREEN%Interrupt and DPC latency tuning applied successfully^!%RESET%
 echo/
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] MSI mode enabled for GPU, NIC, Storage, USB

@@ -62,7 +62,7 @@ echo       - Explorer restarted
 
 echo/
 echo ============================================================================
-echo  Recycle Bin Restored!
+echo  Recycle Bin Restored^!
 echo ============================================================================
 echo/
 echo The Recycle Bin should now be visible on your desktop.

@@ -302,7 +302,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Maximum Performance Plan Applied%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%All settings applied successfully!%RESET%
+echo %GREEN%All settings applied successfully^!%RESET%
 echo/
 echo Settings summary:
 echo   CPU min/max state:          100%% / 100%%
@@ -414,7 +414,7 @@ echo       %GREEN%[OK] Network configured%RESET%
 powercfg /setactive !BAL_GUID!
 
 echo/
-echo %GREEN%Balanced Performance plan created and activated!%RESET%
+echo %GREEN%Balanced Performance plan created and activated^!%RESET%
 echo/
 echo AC (Plugged In):
 echo   CPU scaling:        10-100%%, boost enabled

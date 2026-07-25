@@ -194,7 +194,7 @@ findstr /i "Error" "%TEMP%\dism_output.txt" >nul 2>&1
 if %errorlevel% equ 0 if "!DISM_STATUS!"=="UNKNOWN" (
     set "DISM_STATUS=ERROR"
     echo %RED%[ERROR] DISM encountered errors. Check log for details.%RESET%
-    echo Result: Errors encountered (exit code %DISM_EXIT%^).>> "%LOGFILE%"
+    echo Result: Errors encountered ^(exit code %DISM_EXIT%^).>> "%LOGFILE%"
 )
 
 if "!DISM_STATUS!"=="UNKNOWN" (
@@ -287,8 +287,8 @@ if %errorlevel% equ 0 (
             echo CHKDSK /F /R scheduled for next reboot.>> "%LOGFILE%"
         )
     ) else (
-        echo %GREEN%[OK] CHKDSK completed on %SYSDRIVE% (exit code %CHKDSK_EXIT%).%RESET%
-        echo Result: Completed on %SYSDRIVE% (exit code %CHKDSK_EXIT%^).>> "%LOGFILE%"
+        echo %GREEN%[OK] CHKDSK completed on %SYSDRIVE% ^(exit code %CHKDSK_EXIT%^).%RESET%
+        echo Result: Completed on %SYSDRIVE% ^(exit code %CHKDSK_EXIT%^).>> "%LOGFILE%"
     )
 )
 

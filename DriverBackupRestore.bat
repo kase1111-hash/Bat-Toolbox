@@ -367,7 +367,7 @@ set "skippedDrv=0"
 for /r "!RESTORE_PATH!" %%f in (*.inf) do (
     echo   %WHITE%%%~nxf%RESET%
 
-    :: Try to show driver provider/description from the INF
+    REM Try to show driver provider/description from the INF
     for /f "tokens=1,* delims==" %%a in ('findstr /i /r "^Provider ^DriverVer ^CatalogFile" "%%f" 2^>nul') do (
         set "infoKey=%%a"
         set "infoVal=%%b"

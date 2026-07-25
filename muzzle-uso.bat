@@ -18,7 +18,7 @@ set "SVC=UsoSvc"
 :: --- elevation check ----------------------------------------
 net session >nul 2>&1
 if errorlevel 1 (
-    echo [!] Administrator privileges required.
+    echo [^^!] Administrator privileges required.
     echo     Right-click this file and choose "Run as administrator".
     pause
     exit /b 1
@@ -50,16 +50,16 @@ schtasks /Create /TN "%TASKNAME%" /SC ONSTART /RU "SYSTEM" /RL HIGHEST /F ^
     /TR "cmd.exe /c sc stop %SVC% & sc config %SVC% start= disabled"
 
 if errorlevel 1 (
-    echo [!] Failed to create scheduled task.
+    echo [^^!] Failed to create scheduled task.
     exit /b 1
 )
 
-echo.
+echo/
 echo [+] Done.
 echo     %SVC% is now disabled and will be re-disabled at every boot.
 echo     Remove with: %~nx0 /u
 echo     Inspect with: %~nx0 /status
-echo.
+echo/
 echo     Note: Windows Update cumulative installs occasionally re-enable
 echo     UsoSvc and reset its start type. The boot task corrects that on
 echo     the next reboot. If Microsoft also re-enables WaaSMedicSvc
@@ -73,7 +73,7 @@ exit /b 0
 echo [*] Removing boot task: %TASKNAME%
 schtasks /Delete /TN "%TASKNAME%" /F
 if errorlevel 1 (
-    echo [!] Task not found or removal failed.
+    echo [^^!] Task not found or removal failed.
     exit /b 1
 )
 echo [+] Task removed.
@@ -87,7 +87,7 @@ exit /b 0
 echo --- Scheduled task ---
 schtasks /Query /TN "%TASKNAME%" /FO LIST 2>nul
 if errorlevel 1 echo (no task installed)
-echo.
+echo/
 echo --- Service state ---
 sc qc     %SVC% | findstr /i "START_TYPE"
 sc query  %SVC% | findstr /i "STATE"

@@ -77,13 +77,13 @@ set "PASSWORD_COUNT=0"
 set "OPEN_COUNT=0"
 
 for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /c:"All User Profile"') do (
-    :: Trim leading space
+    REM Trim leading space
     set "PROFILE=%%a"
     set "PROFILE=!PROFILE:~1!"
 
     set /a PROFILE_COUNT+=1
 
-    :: Get password for this profile
+    REM Get password for this profile
     set "PASSWORD="
     set "AUTH="
     set "CIPHER="
@@ -109,7 +109,7 @@ for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /
         set "CONNECTION_MODE=!CONNECTION_MODE:~1!"
     )
 
-    :: Display and log
+    REM Display and log
     if defined PASSWORD (
         set /a PASSWORD_COUNT+=1
         echo %GREEN%  [!PROFILE_COUNT!] !PROFILE!%RESET%

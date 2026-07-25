@@ -275,7 +275,7 @@ echo   Size:       !diskSize! GB
 echo   Format:     NTFS
 echo   Folders:    !driveLetter!:\Temp, !driveLetter!:\Cache, !driveLetter!:\ShaderCache
 echo/
-echo %YELLOW%IMPORTANT: RAM disk contents are LOST on reboot!%RESET%
+echo %YELLOW%IMPORTANT: RAM disk contents are LOST on reboot^!%RESET%
 echo/
 echo %WHITE%Next steps:%RESET%
 echo  - Use option [2] to redirect %%TEMP%% to the RAM disk
@@ -532,7 +532,7 @@ echo %WHITE%  AMD shader cache:%RESET%
 echo     AMD Software ^> Performance ^> Tuning ^>
 echo     Set Reset Shader Cache location
 echo/
-echo %YELLOW%  REMEMBER: RAM disk data is LOST on every reboot!%RESET%
+echo %YELLOW%  REMEMBER: RAM disk data is LOST on every reboot^!%RESET%
 echo %YELLOW%  Only use for temporary/cache data that rebuilds automatically.%RESET%
 echo/
 

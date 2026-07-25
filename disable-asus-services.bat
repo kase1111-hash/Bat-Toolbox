@@ -32,11 +32,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo.
+echo/
 echo ==========================================================
 echo  Disabling 5 ASUS bloat services
 echo ==========================================================
-echo.
+echo/
 
 set /a STOPPED=0
 set /a DISABLED=0
@@ -54,9 +54,9 @@ echo ==========================================================
 echo   Services disabled:           !DISABLED! / 5
 echo   Services stopped this run:   !STOPPED!
 echo   Services not on this system: !NOT_FOUND!
-echo.
+echo/
 echo  ASUS Optimization left running ^(handles Fn keys via AsusHotkey.exe^).
-echo.
+echo/
 
 endlocal
 pause
@@ -74,7 +74,7 @@ for /f "delims=" %%N in ('powershell -NoProfile -Command "(Get-Service -DisplayN
 if not defined SVCNAME (
     echo       Not found on this system.
     set /a NOT_FOUND+=1
-    echo.
+    echo/
     goto :eof
 )
 echo       Service name: !SVCNAME!
@@ -100,5 +100,5 @@ if !ERRORLEVEL! EQU 0 (
     echo         -^> disable FAILED.
 )
 
-echo.
+echo/
 goto :eof

@@ -84,7 +84,7 @@ echo/
 for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     set "key=%%a"
     set "val=%%b"
-    :: Trim leading spaces from value
+    REM Trim leading spaces from value
     for /f "tokens=*" %%v in ("!val!") do set "val=%%v"
 
     echo !key! | find /i "Minimum password length" >nul 2>&1
@@ -106,7 +106,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
                 (echo [WARN] Minimum password length: !val! - recommend 12+) >> "%REPORT%"
                 set /a warnings+=1
             ) else (
-                echo   %RED%[FAIL] Minimum password length: !val! (too short!)%RESET%
+                echo   %RED%[FAIL] Minimum password length: !val! (too short^^!)%RESET%
                 (echo [FAIL] Minimum password length: !val! - too short) >> "%REPORT%"
                 set /a issues+=1
             )

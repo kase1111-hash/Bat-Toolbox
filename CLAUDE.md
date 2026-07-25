@@ -18,9 +18,9 @@ Bat-Toolbox is a collection of Windows batch scripts and PowerShell utilities fo
 
 ```
 /
-├── *.bat                    # Root-level scripts (23 main scripts)
-├── *.ps1                    # PowerShell helper scripts (2 files)
-├── *_README.txt             # Individual documentation per script (23 files)
+├── *.bat                    # Root-level scripts (56 main scripts)
+├── *.ps1                    # PowerShell helper scripts (6 files)
+├── *_README.txt             # Individual documentation per script (56 files)
 ├── windows-debloat/         # Windows debloat suite (13 numbered scripts 00-12)
 ├── README.md                # Main documentation
 ├── CHANGELOG.md             # Version history
@@ -45,9 +45,14 @@ No compilation needed. Scripts are run directly:
 2. Select "Run as administrator" (most scripts require admin)
 3. Follow the confirmation prompts
 
-Scripts that do NOT require admin: `ExportInstalledPrograms.bat`, `FileSorter.bat`, `FirmwareCheck.bat`, `Honeypot.bat`, `RestoreRecycleBin.bat`, `ScreenSleepGuard.bat`, `WifiPasswordExporter.bat`
+Scripts that do NOT require admin (no admin gate in the script): `Add_RecycleBin_to_NavPane.bat`, `ExportInstalledPrograms.bat`, `FileSorter.bat`, `FirmwareCheck.bat`, `Honeypot.bat`, `ProcessScanner.bat`, `RestoreRecycleBin.bat`, `ScreenSleepGuard.bat`, `StartupAnalyzer.bat`
 
-Scripts with partial admin requirements: `BrightnessDiagnostic.bat` (diagnostic features work without admin, but fixes require admin)
+Scripts with partial admin requirements (they run without admin but warn and offer reduced functionality):
+- `BrightnessDiagnostic.bat` - diagnostic features work without admin, but fixes require admin
+- `WifiPasswordExporter.bat` - warns when not elevated; some profiles may not reveal passwords
+- `ProcessScanner.bat` / `StartupAnalyzer.bat` - analysis works unelevated; termination and removal of system-owned entries need admin
+
+Every other script hard-exits with an error when launched without elevation.
 
 ## Code Conventions
 

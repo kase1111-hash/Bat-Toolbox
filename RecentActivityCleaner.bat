@@ -368,7 +368,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%Cleanup complete!%RESET%
+echo %GREEN%Cleanup complete^!%RESET%
 echo/
 echo   Items cleared:  !success!
 echo   Items skipped:  !skipped!

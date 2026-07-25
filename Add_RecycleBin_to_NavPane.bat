@@ -13,6 +13,6 @@ taskkill /f /im explorer.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 start explorer.exe
 
-echo.
+echo/
 echo Recycle Bin should now appear in the Navigation Pane.
 pause
