@@ -243,7 +243,7 @@ netsh advfirewall firewall delete rule name="Block SSDP outbound (UDP 1900)" >nu
 :: Block inbound SSDP
 netsh advfirewall firewall add rule name="Block SSDP (UDP 1900)" dir=in action=block protocol=UDP localport=1900 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 1900 %DIM%(SSDP)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 1900 %DIM%^(SSDP^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add inbound rule for UDP 1900
 )
@@ -251,7 +251,7 @@ if %errorlevel% equ 0 (
 :: Block outbound SSDP (prevents this machine from discovering)
 netsh advfirewall firewall add rule name="Block SSDP outbound (UDP 1900)" dir=out action=block protocol=UDP remoteport=1900 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 1900 %DIM%(SSDP discovery)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 1900 %DIM%^(SSDP discovery^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add outbound rule for UDP 1900
 )

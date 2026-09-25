@@ -458,7 +458,7 @@ del "%TEMP_REMOVE%" 2>nul
 title [2/2] Startup Analyzer - Complete
 echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
-echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %GREEN%Complete^^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Use Task Manager %DIM%[Ctrl+Shift+Esc]%RESET% ^> Startup tab for manual control %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Disabled programs can be re-enabled in Task Manager               %CYAN%║%RESET%

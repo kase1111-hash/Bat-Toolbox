@@ -443,7 +443,7 @@ echo Write-Host ""
 echo/
 echo if ^($issues.Count -gt 0^) {
 echo     Write-Host "  ISSUES ^($^($issues.Count^)^):" -ForegroundColor Red
-echo     foreach ^($i in $issues^) { Write-Host "    [^^!] $i" -ForegroundColor Red }
+echo     foreach ^($i in $issues^) { Write-Host "    [^!] $i" -ForegroundColor Red }
 echo     Write-Host ""
 echo }
 echo if ^($warnings.Count -gt 0^) {
@@ -534,7 +534,7 @@ if "!isAdmin!"=="1" (
     echo         $color = if ^($startType -eq 'Automatic'^) { 'Green' } else { 'Yellow' }
     echo         Write-Host ^("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
     echo         if ^($startType -ne 'Automatic'^) {
-    echo             Write-Host "    ^^ Should be Automatic^^!" -ForegroundColor Red
+    echo             Write-Host "    ^^^^ Should be Automatic^!" -ForegroundColor Red
     echo         }
     echo     }
     echo }
@@ -586,7 +586,7 @@ if "%fixChoice%"=="1" (
     net start AudioEndpointBuilder >nul 2>&1
     net start Audiosrv >nul 2>&1
 
-    :: Verify
+    REM Verify
     for /f "tokens=3" %%t in ('sc query "Audiosrv" 2^>nul ^| findstr "STATE"') do (
         if "%%t"=="4" (
             echo   %GREEN%[OK] Windows Audio Service restarted%RESET%
@@ -664,7 +664,7 @@ if "%fixChoice%"=="3" (
     echo %YELLOW%In the settings dialog:%RESET%
     echo   1. Click on your output device
     echo   2. Go to Properties ^> Advanced
-    echo   3. Set format to: 24 bit, 48000 Hz (Studio Quality)
+    echo   3. Set format to: 24 bit, 48000 Hz ^(Studio Quality^)
     echo   4. Uncheck both "Exclusive Mode" checkboxes if having issues
     echo/
 
@@ -690,12 +690,12 @@ if "%fixChoice%"=="4" (
     echo Re-registering audio components...
     echo/
 
-    :: Re-register audio DLLs
+    REM Re-register audio DLLs
     regsvr32 /s audiosrv.dll 2>nul
     regsvr32 /s AudioSes.dll 2>nul
     regsvr32 /s AudioEng.dll 2>nul
 
-    :: Restart services
+    REM Restart services
     net stop Audiosrv /y >nul 2>&1
     net stop AudioEndpointBuilder /y >nul 2>&1
     timeout /t 2 /nobreak >nul
@@ -706,7 +706,7 @@ if "%fixChoice%"=="4" (
     echo   %GREEN%[OK] Audio services restarted%RESET%
     echo/
     echo If problems persist, try updating your audio driver or running
-    echo the Windows audio troubleshooter (Settings ^> Troubleshoot).
+    echo the Windows audio troubleshooter ^(Settings ^> Troubleshoot^).
     echo/
     pause
     goto ApplyFixes

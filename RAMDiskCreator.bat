@@ -167,7 +167,7 @@ if /i not "%confirm%"=="Y" goto MainMenu
 set /a diskSizeMB=diskSize*1024
 
 if "!hasImDisk!"=="1" (
-    :: ImDisk method - creates a real block device
+    REM ImDisk method - creates a real block device
     echo/
     echo [1/3] Creating RAM disk with ImDisk...
 
@@ -175,7 +175,7 @@ if "!hasImDisk!"=="1" (
     if !errorlevel! equ 0 (
         echo       %GREEN%[OK] ImDisk RAM disk created on !driveLetter!:%RESET%
     ) else (
-        :: Try with the full path
+        REM Try with the full path
         "%ProgramFiles%\ImDisk\imdisk.exe" -a -s !diskSizeMB!M -m !driveLetter!: -p "/fs:ntfs /q /y" >nul 2>&1
         if !errorlevel! equ 0 (
             echo       %GREEN%[OK] ImDisk RAM disk created on !driveLetter!:%RESET%
@@ -214,7 +214,7 @@ echo       %YELLOW%      for a real memory-backed RAM disk.%RESET%
 set "PSRAMDISK=%TEMP%\create_ramdisk.ps1"
 
 (
-echo # Create a VHDX on disk and mount it (disk-backed, not true RAM)
+echo # Create a VHDX on disk and mount it ^(disk-backed, not true RAM^)
 echo $vhdPath = "$env:TEMP\ramdisk.vhdx"
 echo $sizeBytes = !diskSize!GB
 echo/
@@ -247,7 +247,7 @@ powershell -ExecutionPolicy Bypass -File "!PSRAMDISK!" 2>nul
 del "!PSRAMDISK!" 2>nul
 
 if exist "!driveLetter!:\" (
-    echo       %GREEN%[OK] VHDX virtual disk (disk-backed) created on !driveLetter!:%RESET%
+    echo       %GREEN%[OK] VHDX virtual disk ^(disk-backed^) created on !driveLetter!:%RESET%
 ) else (
     echo       %RED%[ERROR] Could not create RAM disk.%RESET%
     echo       %RED%        Install ImDisk for reliable RAM disk support.%RESET%
@@ -275,7 +275,7 @@ echo   Size:       !diskSize! GB
 echo   Format:     NTFS
 echo   Folders:    !driveLetter!:\Temp, !driveLetter!:\Cache, !driveLetter!:\ShaderCache
 echo/
-echo %YELLOW%IMPORTANT: RAM disk contents are LOST on reboot^!%RESET%
+echo %YELLOW%IMPORTANT: RAM disk contents are LOST on reboot^^!%RESET%
 echo/
 echo %WHITE%Next steps:%RESET%
 echo  - Use option [2] to redirect %%TEMP%% to the RAM disk
@@ -327,12 +327,12 @@ set /p "tempChoice=Select option: "
 if "%tempChoice%"=="0" goto MainMenu
 
 if "%tempChoice%"=="1" (
-    :: Session-only redirect. Use plain "set" ONLY - it changes TEMP/TMP for
-    :: this console session and its children, and is gone when the window
-    :: closes. Do NOT use setx here: setx writes HKCU\Environment permanently,
-    :: so after a reboot (RAM disk gone) new processes would get a nonexistent
-    :: TEMP and installers/apps would start failing. That is what option [2] is
-    :: for, with the accompanying auto-create-at-boot warning.
+    REM Session-only redirect. Use plain "set" ONLY - it changes TEMP/TMP for
+    REM this console session and its children, and is gone when the window
+    REM closes. Do NOT use setx here: setx writes HKCU\Environment permanently,
+    REM so after a reboot (RAM disk gone) new processes would get a nonexistent
+    REM TEMP and installers/apps would start failing. That is what option [2] is
+    REM for, with the accompanying auto-create-at-boot warning.
     set "TEMP=!driveLetter!:\Temp"
     set "TMP=!driveLetter!:\Temp"
     echo/
@@ -342,7 +342,7 @@ if "%tempChoice%"=="1" (
 )
 
 if "%tempChoice%"=="2" (
-    :: Permanent redirect via registry
+    REM Permanent redirect via registry
     reg add "HKCU\Environment" /v TEMP /t REG_EXPAND_SZ /d "!driveLetter!:\Temp" /f >nul 2>&1
     reg add "HKCU\Environment" /v TMP /t REG_EXPAND_SZ /d "!driveLetter!:\Temp" /f >nul 2>&1
     echo/
@@ -532,7 +532,7 @@ echo %WHITE%  AMD shader cache:%RESET%
 echo     AMD Software ^> Performance ^> Tuning ^>
 echo     Set Reset Shader Cache location
 echo/
-echo %YELLOW%  REMEMBER: RAM disk data is LOST on every reboot^!%RESET%
+echo %YELLOW%  REMEMBER: RAM disk data is LOST on every reboot^^!%RESET%
 echo %YELLOW%  Only use for temporary/cache data that rebuilds automatically.%RESET%
 echo/
 

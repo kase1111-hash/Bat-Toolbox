@@ -124,10 +124,10 @@ for /f "tokens=2 delims=:" %%a in ('netsh wlan show profiles 2^>nul ^| findstr /
         ) >> "%OUTFILE%"
     ) else (
         set /a OPEN_COUNT+=1
-        echo %YELLOW%  [!PROFILE_COUNT!] !PROFILE! (open / no password)%RESET%
+        echo %YELLOW%  [!PROFILE_COUNT!] !PROFILE! ^(open / no password^)%RESET%
         (
         echo   Network:    !PROFILE!
-        echo   Password:   (none - open network)
+        echo   Password:   ^(none - open network^)
         echo   Security:   !AUTH!
         echo/
         ) >> "%OUTFILE%"

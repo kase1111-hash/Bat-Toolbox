@@ -55,8 +55,8 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
-    :: off, or the 24h frequency limit), so verify a point was actually added.
+    REM Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    REM off, or the 24h frequency limit), so verify a point was actually added.
     powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
@@ -301,11 +301,11 @@ echo/
 echo %WHITE%[1/4] Checking NVIDIA driver settings...%RESET%
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" >nul 2>&1
 if %errorlevel%==0 (
-    :: Disable NVIDIA telemetry that causes DPC spikes
+    REM Disable NVIDIA telemetry that causes DPC spikes
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm\Global\Startup" /v "SendTelemetryData" /t REG_DWORD /d 0 /f >nul 2>&1
-    :: Disable HDCP ^(can cause latency^)
+    REM Disable HDCP ^(can cause latency^)
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "DisableHDCP" /t REG_DWORD /d 1 /f >nul 2>&1
-    :: Optimize interrupt handling
+    REM Optimize interrupt handling
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "RmDisableHdcp22" /t REG_DWORD /d 1 /f >nul 2>&1
     echo %GREEN%   [OK] NVIDIA optimizations applied%RESET%
 ) else (
@@ -316,7 +316,7 @@ if %errorlevel%==0 (
 echo %WHITE%[2/4] Checking AMD driver settings...%RESET%
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" >nul 2>&1
 if %errorlevel%==0 (
-    :: AMD interrupt coalescing
+    REM AMD interrupt coalescing
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" /v "EnableUlps" /t REG_DWORD /d 0 /f >nul 2>&1
     echo %GREEN%   [OK] AMD ULPS disabled ^(reduces wake latency^)%RESET%
 ) else (
@@ -400,7 +400,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%Interrupt and DPC latency tuning applied successfully^!%RESET%
+echo %GREEN%Interrupt and DPC latency tuning applied successfully^^!%RESET%
 echo/
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] MSI mode enabled for GPU, NIC, Storage, USB

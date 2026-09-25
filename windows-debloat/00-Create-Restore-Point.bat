@@ -58,7 +58,7 @@ if %errorlevel% equ 0 (
     echo This might happen if:
     echo  - System Restore is disabled
     echo  - Not enough disk space
-    echo  - A restore point was created recently (Windows limits frequency)
+    echo  - A restore point was created recently ^(Windows limits frequency^)
     echo/
     echo Proceed with caution or try again later.
     echo/

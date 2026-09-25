@@ -80,8 +80,8 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
-    :: off, or the 24h frequency limit), so verify a point was actually added.
+    REM Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    REM off, or the 24h frequency limit), so verify a point was actually added.
     powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
@@ -150,7 +150,7 @@ if "%profile%"=="4" (
 :: Variable Refresh Rate
 echo %WHITE%[2/4] Variable Refresh Rate (VRR)...%RESET%
 if "%profile%"=="1" (
-    :: Competitive - disable VRR for lowest latency ^(controversial, user preference^)
+    REM Competitive - disable VRR for lowest latency ^(controversial, user preference^)
     reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /t REG_SZ /d "VRROptimizeEnable=0;" /f >nul 2>&1
     echo %YELLOW%   [SET] VRR optimization disabled ^(raw latency^)%RESET%
 ) else (
@@ -173,7 +173,7 @@ if "%profile%"=="3" (
 :: Fullscreen optimizations
 echo %WHITE%[4/4] Fullscreen optimizations...%RESET%
 if "%profile%"=="1" (
-    :: Disable FSO for competitive ^(true exclusive fullscreen^)
+    REM Disable FSO for competitive ^(true exclusive fullscreen^)
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /t REG_DWORD /d 2 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehavior" /t REG_DWORD /d 2 /f >nul 2>&1
@@ -389,9 +389,9 @@ if "%has_amd%"=="1" (
     )
 
     echo %WHITE%[6/12] Shader cache...%RESET%
-    :: AMD Shader Cache registry
+    REM AMD Shader Cache registry
     if "%profile%"=="3" (
-        :: Reset shader cache location for content creation ^(use default^)
+        REM Reset shader cache location for content creation ^(use default^)
         echo %GREEN%   [SET] Default location ^(content creation^)%RESET%
     ) else (
         echo %GREEN%   [SET] Driver controlled%RESET%
@@ -433,7 +433,7 @@ if "%has_amd%"=="1" (
     echo %YELLOW%   [INFO] Set via AMD Software: Performance ^> Tuning%RESET%
 
     echo %WHITE%[11/12] ULPS ^(Ultra Low Power State^)...%RESET%
-    :: Disable ULPS for lower latency ^(wake-up delay^)
+    REM Disable ULPS for lower latency ^(wake-up delay^)
     for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "EnableULPS" 2^>nul ^| findstr /i "HKEY"') do (
         if "%profile%"=="4" (
             reg add "%%a" /v "EnableULPS" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -448,7 +448,7 @@ if "%has_amd%"=="1" (
     )
 
     echo %WHITE%[12/12] AMD telemetry...%RESET%
-    :: Disable AMD telemetry tasks
+    REM Disable AMD telemetry tasks
     schtasks /change /tn "AMDInstallLauncher" /disable >nul 2>&1
     schtasks /change /tn "AMDLinkUpdate" /disable >nul 2>&1
     schtasks /change /tn "StartCN" /disable >nul 2>&1
@@ -503,7 +503,7 @@ if "%has_intel%"=="1" (
     echo %CYAN%============================================================%RESET%
     echo/
 
-    :: Check if it's Intel Arc or integrated (reuse the CIM-derived GPU names)
+    REM Check if it's Intel Arc or integrated (reuse the CIM-derived GPU names)
     set "is_arc=0"
     echo !GPU_NAMES! | findstr /i "Arc" >nul && set "is_arc=1"
 
@@ -545,7 +545,7 @@ if "%has_intel%"=="1" (
         echo/
 
         echo %WHITE%[1/4] Graphics Power Plan...%RESET%
-        :: Intel graphics power settings
+        REM Intel graphics power settings
         for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "Intel" 2^>nul ^| findstr /i "0000 0001 0002"') do (
             if "%profile%"=="4" (
                 reg add "%%a" /v "FeatureTestControl" /t REG_DWORD /d 0 /f >nul 2>&1
@@ -639,7 +639,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%GPU driver profile "%profile_name%" applied^!%RESET%
+echo %GREEN%GPU driver profile "%profile_name%" applied^^!%RESET%
 echo/
 echo %WHITE%Changes applied:%RESET%
 echo   [+] Windows GPU scheduling configured

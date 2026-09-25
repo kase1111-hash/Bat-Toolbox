@@ -272,7 +272,7 @@ if /i "%remove_armoury%"=="Y" (
     wmic product where "name like '%%Aura Sync%%'" call uninstall /nointeractive >nul 2>&1
     wmic product where "name like '%%LightingService%%'" call uninstall /nointeractive >nul 2>&1
 
-    :: Remove Armoury Crate via its uninstaller
+    REM Remove Armoury Crate via its uninstaller
     if exist "%ProgramFiles%\ASUS\ARMOURY CRATE Lite Service\Uninstall.exe" (
         start /wait "" "%ProgramFiles%\ASUS\ARMOURY CRATE Lite Service\Uninstall.exe" /silent >nul 2>&1
     )
@@ -283,7 +283,7 @@ if /i "%remove_armoury%"=="Y" (
         start /wait "" "%ProgramFiles(x86)%\ASUS\ArmouryCrate\Uninstall.exe" /silent >nul 2>&1
     )
 
-    :: Armoury Crate Uninstall Tool (official ASUS removal tool location)
+    REM Armoury Crate Uninstall Tool (official ASUS removal tool location)
     if exist "%ProgramFiles%\ASUS\Armoury Crate Uninstall Tool\ArmouryCrateUninstallTool.exe" (
         start /wait "" "%ProgramFiles%\ASUS\Armoury Crate Uninstall Tool\ArmouryCrateUninstallTool.exe" /silent >nul 2>&1
     )
@@ -401,7 +401,7 @@ if exist "%ProgramFiles%\ASUS\AsusDownloadAgent" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\AsusDownloadAgent" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\AsusDownloadAgent" >nul 2>&1
-    echo       %GREEN%- Removed AsusDownloadAgent (x86) directory%RESET%
+    echo       %GREEN%- Removed AsusDownloadAgent ^(x86^) directory%RESET%
 )
 
 echo       - Removing ASUS Software Manager files...
@@ -411,7 +411,7 @@ if exist "%ProgramFiles%\ASUS\AsusSoftwareManager" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\AsusSoftwareManager" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\AsusSoftwareManager" >nul 2>&1
-    echo       %GREEN%- Removed AsusSoftwareManager (x86) directory%RESET%
+    echo       %GREEN%- Removed AsusSoftwareManager ^(x86^) directory%RESET%
 )
 
 :: Remove ASUS Live Update files
@@ -422,7 +422,7 @@ if exist "%ProgramFiles%\ASUS\ASUS Live Update" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\ASUS Live Update" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\ASUS Live Update" >nul 2>&1
-    echo       %GREEN%- Removed ASUS Live Update (x86) directory%RESET%
+    echo       %GREEN%- Removed ASUS Live Update ^(x86^) directory%RESET%
 )
 
 :: Remove ASUS installer staging/cache directories
@@ -535,7 +535,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%Removal process complete^!%RESET%
+echo %GREEN%Removal process complete^^!%RESET%
 echo/
 echo What was removed:
 echo  - ASUS utility software and services

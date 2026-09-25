@@ -207,7 +207,7 @@ if %errorlevel% equ 0 (
     echo       - Winget found, exporting programs...
     winget export -o "%WINGET_FILE%" --accept-source-agreements >nul 2>&1
     if exist "%WINGET_FILE%" (
-        :: Count packages in JSON
+        REM Count packages in JSON
         set "winget_count=0"
         for /f %%a in ('powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages.Count" 2^>nul') do set "winget_count=%%a"
         echo       - Exported !winget_count! programs to Winget JSON
@@ -237,7 +237,7 @@ if %errorlevel% equ 0 (
 
 echo/ >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
-echo  MANUAL CHECKLIST - Don't Forget^! >> "%EXPORT_FILE%"
+echo  MANUAL CHECKLIST - Don't Forget^^! >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo/ >> "%EXPORT_FILE%"
 echo [ ] Browser extensions ^(Chrome: chrome://extensions, Firefox: about:addons^) >> "%EXPORT_FILE%"
@@ -264,7 +264,7 @@ echo ===========================================================================
 
 echo/
 echo ============================================================================
-echo  Export Complete^!
+echo  Export Complete^^!
 echo ============================================================================
 echo/
 echo Files saved to:

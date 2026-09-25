@@ -124,7 +124,7 @@ if %errorlevel% equ 0 (
     echo       %YELLOW%[WARN] DISM export had issues, falling back to pnputil...%RESET%
     echo/
 
-    :: Fallback: use pnputil to export each driver
+    REM Fallback: use pnputil to export each driver
     for /f "tokens=2 delims=:" %%d in ('pnputil /enum-drivers 2^>nul ^| findstr /i /c:"Published Name"') do (
         set "drvName=%%d"
         set "drvName=!drvName: =!"
@@ -298,7 +298,7 @@ for /f %%c in ('dir /s /b "!RESTORE_PATH!\*.inf" 2^>nul ^| find /c /v ""') do se
 
 if !infCount! equ 0 (
     echo/
-    echo %RED%[ERROR] No driver packages (.inf) found in !RESTORE_PATH!%RESET%
+    echo %RED%[ERROR] No driver packages ^(.inf^) found in !RESTORE_PATH!%RESET%
     echo/
     pause
     goto MainMenu

@@ -134,7 +134,7 @@ del "%TEMP%\manual_services.txt" 2>nul
 title [2/2] Service Analyzer - Complete
 echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
-echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %GREEN%Complete^^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Use %WHITE%services.msc%RESET% for manual service management                     %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Disabled services can be re-enabled anytime                        %CYAN%║%RESET%

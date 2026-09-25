@@ -304,7 +304,7 @@ REM -- NOTE: This appends to your hosts file. It will not duplicate --
 REM -- entries if you run this script more than once (we check first). --
 
 set HOSTS=%SystemRoot%\System32\drivers\etc\hosts
-set MARKER=# --- TELEMETRY BLOCK (REMOVE_TELEMETRY.BAT) ---
+set "MARKER=# --- TELEMETRY BLOCK - REMOVE_TELEMETRY.BAT ---"
 
 REM -- Check if we've already added our block --
 findstr /C:"%MARKER%" "%HOSTS%" >nul 2>&1

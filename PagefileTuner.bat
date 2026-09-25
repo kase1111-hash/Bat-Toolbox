@@ -118,7 +118,7 @@ echo         Write-Host "  Current Usage:     $usedGB GB ^($usedMB MB^) ^($usePc
 echo         Write-Host "  Peak Usage:        $peakGB GB ^($peakMB MB^)"
 echo     }
 echo } else {
-echo     Write-Host "  No pagefile detected^^!" -ForegroundColor Red
+echo     Write-Host "  No pagefile detected^!" -ForegroundColor Red
 echo }
 echo Write-Host ""
 echo/
@@ -329,9 +329,9 @@ wmic pagefileset create name="C:\pagefile.sys" >nul 2>&1
 wmic pagefileset where "name='C:\\pagefile.sys'" set InitialSize=!recSizeMB!,MaximumSize=!recSizeMB! >nul 2>&1
 
 if not errorlevel 1 (
-    echo       %GREEN%- Set C:\pagefile.sys to !recSizeMB! MB (fixed)%RESET%
+    echo       %GREEN%- Set C:\pagefile.sys to !recSizeMB! MB ^(fixed^)%RESET%
 ) else (
-    echo       %YELLOW%- Applied via registry (WMIC fallback)%RESET%
+    echo       %YELLOW%- Applied via registry ^(WMIC fallback^)%RESET%
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "PagingFiles" /t REG_MULTI_SZ /d "C:\pagefile.sys !recSizeMB! !recSizeMB!" /f >nul 2>&1
 )
 
@@ -483,10 +483,10 @@ wmic pagefileset where "name='!targetDrive!:\\pagefile.sys'" set InitialSize=!mo
 echo       %GREEN%- Created !targetDrive!:\pagefile.sys (!moveSizeMB! MB)%RESET%
 
 if /i "%keepOnC%"=="Y" (
-    :: Small pagefile on C: for crash dumps (800 MB is enough for minidump)
+    REM Small pagefile on C: for crash dumps (800 MB is enough for minidump)
     wmic pagefileset create name="C:\pagefile.sys" >nul 2>&1
     wmic pagefileset where "name='C:\\pagefile.sys'" set InitialSize=800,MaximumSize=800 >nul 2>&1
-    echo       %GREEN%- Created C:\pagefile.sys (800 MB, crash dump support)%RESET%
+    echo       %GREEN%- Created C:\pagefile.sys ^(800 MB, crash dump support^)%RESET%
 )
 
 echo/
@@ -511,7 +511,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Disable Pagefile%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %RED%WARNING: Disabling the pagefile is NOT recommended for most users^!%RESET%
+echo %RED%WARNING: Disabling the pagefile is NOT recommended for most users^^!%RESET%
 echo/
 echo Consequences:
 echo  - Programs may crash with out-of-memory errors

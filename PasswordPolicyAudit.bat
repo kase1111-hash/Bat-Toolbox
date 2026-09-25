@@ -92,7 +92,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
         set /a totalChecks+=1
         set "minLen=!val!"
         if "!val!"=="0" (
-            echo   %RED%[FAIL] Minimum password length: !val! (no minimum^^!)%RESET%
+            echo   %RED%[FAIL] Minimum password length: !val! ^(no minimum^^!^)%RESET%
             (echo [FAIL] Minimum password length: !val! - no minimum set) >> "%REPORT%"
             set /a issues+=1
         ) else (
@@ -102,11 +102,11 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
                 (echo [PASS] Minimum password length: !val!) >> "%REPORT%"
                 set /a passScore+=1
             ) else if !numVal! GEQ 8 (
-                echo   %YELLOW%[WARN] Minimum password length: !val! (recommend 12+)%RESET%
+                echo   %YELLOW%[WARN] Minimum password length: !val! ^(recommend 12+^)%RESET%
                 (echo [WARN] Minimum password length: !val! - recommend 12+) >> "%REPORT%"
                 set /a warnings+=1
             ) else (
-                echo   %RED%[FAIL] Minimum password length: !val! (too short^^!)%RESET%
+                echo   %RED%[FAIL] Minimum password length: !val! ^(too short^^!^)%RESET%
                 (echo [FAIL] Minimum password length: !val! - too short) >> "%REPORT%"
                 set /a issues+=1
             )
@@ -118,7 +118,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
         set /a totalChecks+=1
         echo !val! | find /i "Unlimited" >nul 2>&1
         if not errorlevel 1 (
-            echo   %YELLOW%[WARN] Maximum password age: Unlimited (no forced rotation)%RESET%
+            echo   %YELLOW%[WARN] Maximum password age: Unlimited ^(no forced rotation^)%RESET%
             (echo [WARN] Maximum password age: Unlimited) >> "%REPORT%"
             set /a warnings+=1
         ) else (
@@ -132,7 +132,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     if not errorlevel 1 (
         set /a totalChecks+=1
         if "!val!"=="0" (
-            echo   %YELLOW%[WARN] Minimum password age: 0 days (allows immediate reuse cycling)%RESET%
+            echo   %YELLOW%[WARN] Minimum password age: 0 days ^(allows immediate reuse cycling^)%RESET%
             (echo [WARN] Minimum password age: 0 - allows reuse cycling) >> "%REPORT%"
             set /a warnings+=1
         ) else (
@@ -146,7 +146,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     if not errorlevel 1 (
         set /a totalChecks+=1
         if "!val!"=="None" (
-            echo   %RED%[FAIL] Password history: None (passwords can be reused)%RESET%
+            echo   %RED%[FAIL] Password history: None ^(passwords can be reused^)%RESET%
             (echo [FAIL] Password history: None - passwords can be reused) >> "%REPORT%"
             set /a issues+=1
         ) else (
@@ -156,7 +156,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
                 (echo [PASS] Password history: !val! passwords remembered) >> "%REPORT%"
                 set /a passScore+=1
             ) else (
-                echo   %YELLOW%[WARN] Password history: !val! (recommend 5+)%RESET%
+                echo   %YELLOW%[WARN] Password history: !val! ^(recommend 5+^)%RESET%
                 (echo [WARN] Password history: !val! - recommend 5+) >> "%REPORT%"
                 set /a warnings+=1
             )
@@ -167,7 +167,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
     if not errorlevel 1 (
         set /a totalChecks+=1
         if "!val!"=="Never" (
-            echo   %RED%[FAIL] Lockout threshold: Never (unlimited login attempts^^!)%RESET%
+            echo   %RED%[FAIL] Lockout threshold: Never ^(unlimited login attempts^^!^)%RESET%
             (echo [FAIL] Lockout threshold: Never - unlimited login attempts) >> "%REPORT%"
             set /a issues+=1
         ) else (
@@ -177,7 +177,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
                 (echo [PASS] Lockout threshold: !val! attempts) >> "%REPORT%"
                 set /a passScore+=1
             ) else (
-                echo   %YELLOW%[WARN] Lockout threshold: !val! (recommend 10 or fewer)%RESET%
+                echo   %YELLOW%[WARN] Lockout threshold: !val! ^(recommend 10 or fewer^)%RESET%
                 (echo [WARN] Lockout threshold: !val! - recommend 10 or fewer) >> "%REPORT%"
                 set /a warnings+=1
             )
@@ -195,7 +195,7 @@ for /f "tokens=1,* delims=:" %%a in ('net accounts 2^>nul') do (
                 (echo [PASS] Lockout duration: !val! minutes) >> "%REPORT%"
                 set /a passScore+=1
             ) else (
-                echo   %YELLOW%[WARN] Lockout duration: !val! minutes (recommend 15+)%RESET%
+                echo   %YELLOW%[WARN] Lockout duration: !val! minutes ^(recommend 15+^)%RESET%
                 (echo [WARN] Lockout duration: !val! minutes - recommend 15+) >> "%REPORT%"
                 set /a warnings+=1
             )
@@ -247,11 +247,11 @@ if exist "%SECPOL_EXPORT%" (
         set /a issues+=1
     )
 
-    :: Check reversible encryption
+    REM Check reversible encryption
     set /a totalChecks+=1
     findstr /i "ClearTextPassword" "%SECPOL_EXPORT%" 2>nul | find "1" >nul 2>&1
     if not errorlevel 1 (
-        echo   %RED%[FAIL] Reversible encryption: Enabled (stores passwords insecurely^^!)%RESET%
+        echo   %RED%[FAIL] Reversible encryption: Enabled ^(stores passwords insecurely^^!^)%RESET%
         (echo [FAIL] Reversible encryption: Enabled - stores passwords insecurely) >> "%REPORT%"
         set /a issues+=1
     ) else (
@@ -299,7 +299,7 @@ set /a totalChecks+=1
 net user Administrator 2>nul | find /i "Account active" | find /i "Yes" >nul 2>&1
 if not errorlevel 1 (
     echo   %YELLOW%[WARN] Built-in Administrator account: ENABLED%RESET%
-    echo   %YELLOW%       Consider disabling if not needed (use a named admin account instead)%RESET%
+    echo   %YELLOW%       Consider disabling if not needed ^(use a named admin account instead^)%RESET%
     (echo [WARN] Built-in Administrator account: ENABLED) >> "%REPORT%"
     set /a warnings+=1
 ) else (
@@ -341,7 +341,7 @@ set "PSNOPWD=%TEMP%\audit_nopwd.ps1"
 echo $noPwd = Get-LocalUser ^| Where-Object { $_.Enabled -eq $true -and $_.PasswordRequired -eq $false }
 echo if ^($noPwd^) {
 echo     foreach ^($u in $noPwd^) {
-echo         Write-Host "   [FAIL] $^($u.Name^) - no password required^^!" -ForegroundColor Red
+echo         Write-Host "   [FAIL] $^($u.Name^) - no password required^!" -ForegroundColor Red
 echo         "[FAIL] $^($u.Name^) - no password required"
 echo     }
 echo     exit 1
@@ -453,11 +453,11 @@ echo/
 set /a totalChecks+=1
 reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA 2>nul | find "0x1" >nul 2>&1
 if not errorlevel 1 (
-    echo   %GREEN%[PASS] UAC (User Account Control): Enabled%RESET%
+    echo   %GREEN%[PASS] UAC ^(User Account Control^): Enabled%RESET%
     (echo [PASS] UAC: Enabled) >> "%REPORT%"
     set /a passScore+=1
 ) else (
-    echo   %RED%[FAIL] UAC (User Account Control): Disabled^^!%RESET%
+    echo   %RED%[FAIL] UAC ^(User Account Control^): Disabled^^!%RESET%
     (echo [FAIL] UAC: Disabled) >> "%REPORT%"
     set /a issues+=1
 )
@@ -469,19 +469,19 @@ for /f "tokens=3" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVer
 )
 if defined uacLevel (
     if "!uacLevel!"=="0x0" (
-        echo   %RED%[FAIL] UAC prompt level: Never notify (no protection)%RESET%
+        echo   %RED%[FAIL] UAC prompt level: Never notify ^(no protection^)%RESET%
         (echo [FAIL] UAC prompt level: Never notify) >> "%REPORT%"
         set /a issues+=1
     ) else if "!uacLevel!"=="0x5" (
-        echo   %GREEN%[PASS] UAC prompt level: Default (prompt for non-Windows binaries)%RESET%
+        echo   %GREEN%[PASS] UAC prompt level: Default ^(prompt for non-Windows binaries^)%RESET%
         (echo [PASS] UAC prompt level: Default) >> "%REPORT%"
         set /a passScore+=1
     ) else if "!uacLevel!"=="0x2" (
-        echo   %GREEN%[PASS] UAC prompt level: Always notify (maximum protection)%RESET%
+        echo   %GREEN%[PASS] UAC prompt level: Always notify ^(maximum protection^)%RESET%
         (echo [PASS] UAC prompt level: Always notify) >> "%REPORT%"
         set /a passScore+=1
     ) else (
-        echo   %YELLOW%[WARN] UAC prompt level: Custom (!uacLevel!)%RESET%
+        echo   %YELLOW%[WARN] UAC prompt level: Custom ^(!uacLevel!^)%RESET%
         (echo [WARN] UAC prompt level: Custom) >> "%REPORT%"
         set /a warnings+=1
     )
@@ -491,11 +491,11 @@ if defined uacLevel (
 set /a totalChecks+=1
 reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon 2>nul | find "1" >nul 2>&1
 if not errorlevel 1 (
-    echo   %RED%[FAIL] Auto-logon: Enabled (bypasses login screen^^!)%RESET%
+    echo   %RED%[FAIL] Auto-logon: Enabled ^(bypasses login screen^^!^)%RESET%
     (echo [FAIL] Auto-logon: Enabled) >> "%REPORT%"
     set /a issues+=1
 
-    :: Check if password is stored in plaintext
+    REM Check if password is stored in plaintext
     reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword >nul 2>&1
     if not errorlevel 1 (
         echo   %RED%[FAIL] Auto-logon password is stored in plaintext in registry^^!%RESET%
@@ -515,7 +515,7 @@ for /f "tokens=3" %%a in ('reg query "HKCU\Control Panel\Desktop" /v ScreenSaveT
 )
 if defined lockTimeout (
     if "!lockTimeout!"=="0" (
-        echo   %YELLOW%[WARN] Screen saver timeout: Disabled (no automatic lock)%RESET%
+        echo   %YELLOW%[WARN] Screen saver timeout: Disabled ^(no automatic lock^)%RESET%
         (echo [WARN] Screen saver timeout: Disabled) >> "%REPORT%"
         set /a warnings+=1
     ) else (
@@ -551,7 +551,7 @@ if not errorlevel 1 (
     (echo [PASS] Windows Defender: Running) >> "%REPORT%"
     set /a passScore+=1
 ) else (
-    echo   %YELLOW%[WARN] Windows Defender: Not running (check if another AV is active)%RESET%
+    echo   %YELLOW%[WARN] Windows Defender: Not running ^(check if another AV is active^)%RESET%
     (echo [WARN] Windows Defender: Not running) >> "%REPORT%"
     set /a warnings+=1
 )

@@ -125,21 +125,21 @@ if not errorlevel 1 (
     echo %YELLOW%[INFO] Maximum Performance plan already exists. Updating settings...%RESET%
     set "planExists=1"
 ) else (
-    :: Duplicate the High Performance plan as our base
+    REM Duplicate the High Performance plan as our base
     echo [1/10] Creating plan based on High Performance...
 
-    :: First try to get the High Performance GUID
+    REM First try to get the High Performance GUID
     set "HP_GUID="
     for /f "tokens=4" %%g in ('powercfg /list 2^>nul ^| findstr /i /c:"High Performance"') do set "HP_GUID=%%g"
 
     if not defined HP_GUID (
-        :: High Performance might not be visible, use its known GUID
+        REM High Performance might not be visible, use its known GUID
         set "HP_GUID=8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
     )
 
     powercfg /duplicatescheme !HP_GUID! !PLAN_GUID! >nul 2>&1
     if errorlevel 1 (
-        :: Fallback: duplicate the active plan
+        REM Fallback: duplicate the active plan
         powercfg /duplicatescheme SCHEME_CURRENT !PLAN_GUID! >nul 2>&1
     )
 
@@ -302,7 +302,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Maximum Performance Plan Applied%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%All settings applied successfully^!%RESET%
+echo %GREEN%All settings applied successfully^^!%RESET%
 echo/
 echo Settings summary:
 echo   CPU min/max state:          100%% / 100%%
@@ -320,7 +320,7 @@ echo/
 
 if "!isLaptop!"=="1" (
     echo %YELLOW%LAPTOP NOTE: Battery life will be significantly reduced.%RESET%
-    echo %YELLOW%Switch to "Balanced Performance" (option 2) when on battery.%RESET%
+    echo %YELLOW%Switch to "Balanced Performance" ^(option 2^) when on battery.%RESET%
     echo/
 )
 
@@ -356,7 +356,7 @@ powercfg /list 2>nul | find "!BAL_GUID!" >nul 2>&1
 if not errorlevel 1 (
     echo %YELLOW%[INFO] Balanced Performance plan already exists. Updating...%RESET%
 ) else (
-    :: Duplicate Balanced plan
+    REM Duplicate Balanced plan
     powercfg /duplicatescheme 381b4222-f694-41f0-9685-ff5bb260df2e !BAL_GUID! >nul 2>&1
     if errorlevel 1 (
         powercfg /duplicatescheme SCHEME_CURRENT !BAL_GUID! >nul 2>&1
@@ -414,7 +414,7 @@ echo       %GREEN%[OK] Network configured%RESET%
 powercfg /setactive !BAL_GUID!
 
 echo/
-echo %GREEN%Balanced Performance plan created and activated^!%RESET%
+echo %GREEN%Balanced Performance plan created and activated^^!%RESET%
 echo/
 echo AC (Plugged In):
 echo   CPU scaling:        10-100%%, boost enabled

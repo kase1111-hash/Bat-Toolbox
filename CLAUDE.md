@@ -182,22 +182,63 @@ echo(
 
 ### Delayed Expansion and Special Character Escaping
 
-When `setlocal enabledelayedexpansion` is active, `!` characters are consumed by CMD:
+When `setlocal enabledelayedexpansion` is active, `!` characters are consumed by CMD.
+Carets are processed twice: first when the line is parsed (only *outside*
+double quotes), then again by delayed expansion (inside *and* outside quotes,
+on any line that contains a `!`). So the escape depends on quoting, not on
+whether the line is inside a block:
 
 ```batch
-:: Inside ( ) blocks (if/else, for, ( ) > file): use ^^!
+:: Unquoted text (top level or inside any ( ) block): use ^^!
+echo Operation complete^^!
 if condition (
     echo Warning: Something failed^^!
 )
 
-:: On standalone lines: use ^!
-echo Operation complete^!
-
-:: Inside ( ) > file blocks generating scripts: use ^^!
+:: Inside double quotes: use ^!   ("...^^!" would print ^ and drop the !)
 (
-echo     Write-Host "Error detected^^!" -ForegroundColor Red
+echo     Write-Host "Error detected^!" -ForegroundColor Red
+) > "%PSSCRIPT%"
+
+:: Single quotes are NOT quotes to CMD, so PowerShell '...' strings are unquoted
+echo     $mark = '[^^!]'
+```
+
+### Parentheses Inside Blocks
+
+Inside any parenthesized block (if/else bodies, for bodies, `( ) > file`
+generators), an unescaped `)` anywhere on a line closes the block - even in the
+middle of `echo` text. Any text after it is a fatal
+`... was unexpected at this time` error that aborts the whole script before the
+statement runs.
+
+```batch
+if condition (
+    REM CORRECT
+    echo Blocked UDP 5355 %DIM%^(LLMNR^)%RESET%
+    REM WRONG - the ")" closes the if block, then "%RESET%" is a fatal error
+    echo Blocked UDP 5355 %DIM%(LLMNR)%RESET%
+)
+(
+REM Single quotes do not protect parens from CMD - escape them
+echo     'avp' = 'Kaspersky ^(avp.exe^)'
+REM Double quotes do protect them
+echo     Write-Host "Done (all drives)"
 ) > "%PSSCRIPT%"
 ```
+
+- Escape both parens as `^(` `^)` (only `)` is strictly required, but keep them paired)
+- A `%VAR%` whose value contains `)` (e.g. `%ProgramFiles(x86)%`, or a path under
+  a folder like `Bat-Toolbox (1)`) must be inside double quotes within a block
+- Use `REM`, not `::`, for comments inside blocks (labels inside blocks are a
+  parsing hazard)
+
+### Line Endings
+
+`.bat` files must be checked out with CRLF line endings; with LF-only files
+cmd.exe can fail to find `GOTO`/`CALL` labels. `.gitattributes` enforces this
+(`*.bat text eol=crlf`), so the repository stores LF and Git converts on
+checkout and in downloaded archives.
 
 ### Safety Requirements
 

@@ -258,7 +258,7 @@ if %errorlevel% equ 0 (
 :: Require NTLMv2 (disable LM and NTLMv1)
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 5 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% LAN Manager auth set to NTLMv2 only %DIM%(LmCompatibilityLevel = 5)%RESET%
+    echo   %GREEN%[OK]%RESET% LAN Manager auth set to NTLMv2 only %DIM%^(LmCompatibilityLevel = 5^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set LAN Manager auth level
 )

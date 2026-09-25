@@ -82,7 +82,7 @@ set /p RENAME_CHOICE="       Rename msedge.exe? (y/N): "
 if /I "!RENAME_CHOICE!"=="y" (
     set "EDGE_DIR=C:\Program Files (x86)\Microsoft\Edge\Application"
     if exist "!EDGE_DIR!\msedge.exe" (
-        :: msedge.exe is locked down - take ownership first
+        REM msedge.exe is locked down - take ownership first
         takeown /F "!EDGE_DIR!\msedge.exe" >nul 2>&1
         icacls "!EDGE_DIR!\msedge.exe" /grant administrators:F >nul 2>&1
         ren "!EDGE_DIR!\msedge.exe" "msedge_disabled.exe" >nul 2>&1

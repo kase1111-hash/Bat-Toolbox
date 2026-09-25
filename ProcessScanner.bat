@@ -88,7 +88,7 @@ echo     'NortonSecurity' = 'Norton Security - Windows Defender is sufficient'
 echo     'bdagent' = 'Bitdefender - Windows Defender is sufficient'
 echo     'bdservicehost' = 'Bitdefender - Windows Defender is sufficient'
 echo     'kaspersky' = 'Kaspersky - Windows Defender is sufficient'
-echo     'avp' = 'Kaspersky (avp.exe) - Windows Defender is sufficient'
+echo     'avp' = 'Kaspersky ^(avp.exe^) - Windows Defender is sufficient'
 echo     'webroot' = 'Webroot - Windows Defender is sufficient'
 echo     # PUPs and Bloatware
 echo     'CCleaner' = 'CCleaner monitoring - unnecessary background task'

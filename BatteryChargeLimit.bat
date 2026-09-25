@@ -665,7 +665,7 @@ if %errorlevel%==0 (
 echo   Dell CCTK...
 where cctk >nul 2>&1
 if %errorlevel%==0 (
-    echo     %GREEN%[FOUND] Dell Command ^| Configure (CCTK)%RESET%
+    echo     %GREEN%[FOUND] Dell Command ^| Configure ^(CCTK^)%RESET%
     set "found=1"
 ) else (
     echo     %WHITE%[NOT FOUND]%RESET%

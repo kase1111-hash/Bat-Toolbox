@@ -182,7 +182,7 @@ if exist "%AppData%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.
     echo       %GREEN%- Cleared PowerShell command history%RESET%
     set /a success+=1
 ) else (
-    echo       - PowerShell history not found (may not exist)
+    echo       - PowerShell history not found ^(may not exist^)
 )
 
 echo/
@@ -261,7 +261,7 @@ reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Applets\Paint\Recent 
 :: Notepad recent files (Windows 11 Notepad)
 if exist "%LocalAppData%\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState" (
     del /f /q "%LocalAppData%\Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState\*" >nul 2>&1
-    echo       %GREEN%- Cleared Notepad tab state (Win11)%RESET%
+    echo       %GREEN%- Cleared Notepad tab state ^(Win11^)%RESET%
     set /a success+=1
 )
 
@@ -290,7 +290,7 @@ set /a success+=1
 
 :: Clear Activity Timeline database
 if exist "%LocalAppData%\ConnectedDevicesPlatform" (
-    :: Clear activity log files in each subfolder
+    REM Clear activity log files in each subfolder
     for /d %%D in ("%LocalAppData%\ConnectedDevicesPlatform\*") do (
         del /f /q "%%D\ActivitiesCache.db" >nul 2>&1
         del /f /q "%%D\ActivitiesCache.db-shm" >nul 2>&1
@@ -324,7 +324,7 @@ if "!isAdmin!"=="1" (
         echo       - Prefetch folder already empty
     )
 ) else (
-    echo       %YELLOW%- Skipped Prefetch (requires admin)%RESET%
+    echo       %YELLOW%- Skipped Prefetch ^(requires admin^)%RESET%
     set /a skipped+=1
 )
 
@@ -340,7 +340,7 @@ if "!isAdmin!"=="1" (
     echo       %GREEN%- Cleared system temp folder%RESET%
     set /a success+=1
 ) else (
-    echo       %YELLOW%- Skipped system temp folder (requires admin)%RESET%
+    echo       %YELLOW%- Skipped system temp folder ^(requires admin^)%RESET%
     set /a skipped+=1
 )
 
@@ -368,7 +368,7 @@ echo %CYAN%=====================================================================
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%Cleanup complete^!%RESET%
+echo %GREEN%Cleanup complete^^!%RESET%
 echo/
 echo   Items cleared:  !success!
 echo   Items skipped:  !skipped!

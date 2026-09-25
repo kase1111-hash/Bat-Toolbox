@@ -208,7 +208,7 @@ netsh advfirewall firewall delete rule name="Block NetBIOS-SSN (TCP 139)" >nul 2
 :: Block inbound UDP 137 (NetBIOS Name Service)
 netsh advfirewall firewall add rule name="Block NetBIOS-NS (UDP 137)" dir=in action=block protocol=UDP localport=137 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 137 %DIM%(NetBIOS Name Service)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 137 %DIM%^(NetBIOS Name Service^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 137
 )
@@ -216,7 +216,7 @@ if %errorlevel% equ 0 (
 :: Block inbound UDP 138 (NetBIOS Datagram)
 netsh advfirewall firewall add rule name="Block NetBIOS-DGM (UDP 138)" dir=in action=block protocol=UDP localport=138 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 138 %DIM%(NetBIOS Datagram)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 138 %DIM%^(NetBIOS Datagram^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 138
 )
@@ -224,7 +224,7 @@ if %errorlevel% equ 0 (
 :: Block inbound TCP 139 (NetBIOS Session)
 netsh advfirewall firewall add rule name="Block NetBIOS-SSN (TCP 139)" dir=in action=block protocol=TCP localport=139 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound TCP 139 %DIM%(NetBIOS Session)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound TCP 139 %DIM%^(NetBIOS Session^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for TCP 139
 )

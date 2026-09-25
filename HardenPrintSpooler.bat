@@ -223,7 +223,7 @@ if %errorlevel% equ 0 (
 :: Disable internet printing (IPP)
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers" /v DisableHTTPPrinting /t REG_DWORD /d 1 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Internet printing (IPP/HTTP) disabled
+    echo   %GREEN%[OK]%RESET% Internet printing ^(IPP/HTTP^) disabled
 ) else (
     echo   %RED%[FAIL]%RESET% Could not disable HTTP printing
 )

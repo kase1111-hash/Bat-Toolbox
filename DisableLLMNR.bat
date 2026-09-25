@@ -156,7 +156,7 @@ echo/
 :: Create the policy key if it doesn't exist
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% LLMNR disabled via Group Policy %DIM%(EnableMulticast = 0)%RESET%
+    echo   %GREEN%[OK]%RESET% LLMNR disabled via Group Policy %DIM%^(EnableMulticast = 0^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set LLMNR registry key
 )
@@ -174,7 +174,7 @@ echo/
 
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters" /v EnableMDNS /t REG_DWORD /d 0 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% mDNS disabled %DIM%(EnableMDNS = 0)%RESET%
+    echo   %GREEN%[OK]%RESET% mDNS disabled %DIM%^(EnableMDNS = 0^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set mDNS registry key
 )
@@ -193,7 +193,7 @@ echo/
 :: Disable WPAD override for current user
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Wpad" /v WpadOverride /t REG_DWORD /d 1 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% WPAD override set %DIM%(WpadOverride = 1)%RESET%
+    echo   %GREEN%[OK]%RESET% WPAD override set %DIM%^(WpadOverride = 1^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set WPAD override key
 )
@@ -201,7 +201,7 @@ if %errorlevel% equ 0 (
 :: Disable WinHTTP auto-proxy
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\WinHttp" /v DisableWpad /t REG_DWORD /d 1 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% WinHTTP WPAD disabled %DIM%(DisableWpad = 1)%RESET%
+    echo   %GREEN%[OK]%RESET% WinHTTP WPAD disabled %DIM%^(DisableWpad = 1^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set WinHTTP WPAD key
 )
@@ -209,7 +209,7 @@ if %errorlevel% equ 0 (
 :: Disable "Automatically detect settings" in Internet Options
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v AutoDetect /t REG_DWORD /d 0 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Auto-detect proxy disabled %DIM%(AutoDetect = 0)%RESET%
+    echo   %GREEN%[OK]%RESET% Auto-detect proxy disabled %DIM%^(AutoDetect = 0^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not set AutoDetect key
 )
@@ -247,7 +247,7 @@ netsh advfirewall firewall delete rule name="Block mDNS (UDP 5353)" >nul 2>&1
 :: Block LLMNR (UDP 5355)
 netsh advfirewall firewall add rule name="Block LLMNR (UDP 5355)" dir=in action=block protocol=UDP localport=5355 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 5355 %DIM%(LLMNR)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 5355 %DIM%^(LLMNR^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 5355
 )
@@ -256,7 +256,7 @@ if %errorlevel% equ 0 (
 netsh advfirewall firewall delete rule name="Block LLMNR outbound (UDP 5355)" >nul 2>&1
 netsh advfirewall firewall add rule name="Block LLMNR outbound (UDP 5355)" dir=out action=block protocol=UDP remoteport=5355 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 5355 %DIM%(LLMNR queries)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 5355 %DIM%^(LLMNR queries^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add outbound rule for UDP 5355
 )
@@ -264,7 +264,7 @@ if %errorlevel% equ 0 (
 :: Block mDNS (UDP 5353)
 netsh advfirewall firewall add rule name="Block mDNS (UDP 5353)" dir=in action=block protocol=UDP localport=5353 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 5353 %DIM%(mDNS)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 5353 %DIM%^(mDNS^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 5353
 )
@@ -272,7 +272,7 @@ if %errorlevel% equ 0 (
 netsh advfirewall firewall delete rule name="Block mDNS outbound (UDP 5353)" >nul 2>&1
 netsh advfirewall firewall add rule name="Block mDNS outbound (UDP 5353)" dir=out action=block protocol=UDP remoteport=5353 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 5353 %DIM%(mDNS queries)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 5353 %DIM%^(mDNS queries^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add outbound rule for UDP 5353
 )

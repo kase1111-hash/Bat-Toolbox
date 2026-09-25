@@ -1,0 +1,5 @@
+# Windows batch files must use CRLF line endings. cmd.exe's GOTO/CALL label
+# search is unreliable on LF-only files ("The system cannot find the batch
+# label specified"), so force CRLF on checkout and in downloaded archives.
+*.bat text eol=crlf
+*.cmd text eol=crlf

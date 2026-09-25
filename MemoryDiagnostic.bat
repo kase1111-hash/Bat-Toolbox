@@ -169,7 +169,7 @@ echo/
 echo if ^($isMatched^) {
 echo     Write-Host "  Stick Matching:       All sticks matched ^(same speed and capacity^)" -ForegroundColor Green
 echo } else {
-echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected^^!" -ForegroundColor Red
+echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected^!" -ForegroundColor Red
 echo     if ^($speeds.Count -gt 1^) {
 echo         Write-Host "    - Different speeds: $^($speeds -join ', '^) MHz" -ForegroundColor Yellow
 echo         Write-Host "      All sticks will run at the slowest speed." -ForegroundColor Yellow
@@ -196,7 +196,7 @@ echo/
 echo # Single channel warning
 echo if ^($channelMode -eq 'Single-Channel'^) {
 echo     Write-Host ""
-echo     Write-Host "  WARNING: Single-channel mode detected^^!" -ForegroundColor Red
+echo     Write-Host "  WARNING: Single-channel mode detected^!" -ForegroundColor Red
 echo     Write-Host "    - Dual-channel doubles memory bandwidth" -ForegroundColor Yellow
 echo     Write-Host "    - Add a matching stick for significant performance gain" -ForegroundColor Yellow
 echo     Write-Host "    - Especially impacts gaming and integrated graphics" -ForegroundColor Yellow
@@ -593,11 +593,11 @@ if "%diagChoice%"=="1" (
     set /p "confirm=Restart now? [Y/N]: "
     if /i not "!confirm!"=="Y" goto MainMenu
 
-    :: Schedule immediate diagnostic
+    REM Schedule immediate diagnostic
     bcdedit /set {memdiag} locale en-US >nul 2>&1
     mdsched.exe /f >nul 2>&1
     if errorlevel 1 (
-        :: Fallback
+        REM Fallback
         echo %YELLOW%Starting Windows Memory Diagnostic...%RESET%
         start "" mdsched.exe
     )

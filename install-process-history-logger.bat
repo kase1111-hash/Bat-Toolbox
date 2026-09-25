@@ -40,7 +40,7 @@ if errorlevel 1 (
 
 if not exist "%PS1_SOURCE%" (
     echo [FATAL] process-history-logger.ps1 not found next to this bat.
-    echo         Expected: %PS1_SOURCE%
+    echo         Expected: "%PS1_SOURCE%"
     pause
     exit /b 1
 )
