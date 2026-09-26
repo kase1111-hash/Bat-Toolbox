@@ -98,8 +98,10 @@ echo ===========================================================================
 echo  Services disabled successfully!
 echo ============================================================================
 echo/
-echo NOTE: If you need any of these services later, you can re-enable them
-echo using: sc config "ServiceName" start= auto
+echo NOTE: To re-enable a service with its original start type:
+echo   sc config "ServiceName" start= demand      (most of these services)
+echo   sc config MapsBroker start= delayed-auto
+echo   sc config DiagTrack start= auto
 echo/
 echo A reboot is recommended to apply all changes.
 echo/

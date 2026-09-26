@@ -15,26 +15,41 @@ HOW TO USE
 2. Select "Run as administrator" (recommended for full access)
 3. Confirm when prompted
 4. Review the exported list
-5. Find the output file on your Desktop
+5. Find the output file on your Desktop (the path is shown before the
+   export starts)
 
 
 OUTPUT FILE
 -----------
 Saved to Desktop as: WifiPasswords_COMPUTERNAME_DATE.txt
+The script asks Windows for the real Desktop folder, so this is also correct
+when OneDrive folder backup has moved the Desktop into OneDrive. If that
+folder cannot be found, the file goes to your user folder (%USERPROFILE%).
 
 Contains for each network:
   - Network name (SSID)
-  - Password (plain text)
-  - Security type (WPA2-Personal, WPA3, etc.)
-  - Cipher (CCMP, TKIP, etc.)
-  - Auto-connect setting
+  - Password (plain text, exactly as stored - including ":" "!" "^" etc.)
+  - Security type, as stored in the Wi-Fi profile (WPA2PSK, WPA3SAE,
+    WPA2 = WPA2-Enterprise, open, ...)
+  - Cipher (AES, TKIP, WEP, none)
+  - Auto-connect setting (auto / manual)
 
 Sample output:
   Network:    HomeWifi
   Password:   MySecretPassword123
-  Security:   WPA2-Personal
-  Cipher:     CCMP
-  Auto-connect: Connect automatically
+  Security:   WPA2PSK
+  Cipher:     AES
+  Auto-connect: auto
+
+Networks without a readable password are labelled instead of being listed
+as open networks:
+  (none - open network)                    - no security at all
+  (not available - run as administrator
+   to reveal it)                           - secured, but Windows only
+                                             reveals the key when elevated
+  (not available - 802.1X/Enterprise
+   network, no stored password)            - enterprise/802.1X network
+The summary counts these separately ("Key not available").
 
 
 SECURITY WARNING
@@ -49,11 +64,13 @@ SECURITY WARNING
 
 ADMIN REQUIREMENTS
 ------------------
-- Without admin: Shows network names but some passwords may be hidden
+- Without admin: Shows network names, but passwords of secured networks
+  are hidden
 - With admin: Full access to all stored passwords
 
-The script works without admin but may show "(none)" for some
-passwords that are only accessible with elevated privileges.
+The script works without admin, but Windows then exports the keys
+encrypted, so secured networks show "(not available - run as administrator
+to reveal it)" instead of the password.
 
 
 WHEN TO USE
@@ -67,9 +84,17 @@ WHEN TO USE
 
 HOW IT WORKS
 ------------
-Uses built-in Windows commands:
-  netsh wlan show profiles          - Lists all saved networks
-  netsh wlan show profile key=clear - Shows password for each network
+Uses built-in Windows tools:
+  netsh wlan export profile key=clear folder=<temp folder>
+      - Exports every saved profile as an XML file (the same format on
+        every Windows display language)
+  PowerShell (built in)
+      - Reads the XML files and writes the network name, password,
+        security, cipher and auto-connect setting to the output file
+
+The XML files are written to a private folder in %TEMP% and deleted as
+soon as they have been read. If the script is interrupted while it runs,
+delete any leftover %TEMP%\wlan_export_* folder - it contains passwords.
 
 No external tools or software required.
 
@@ -103,7 +128,8 @@ TIPS
 - Pair with ExportInstalledPrograms.bat before a clean install
 - Pair with FirmwareCheck.bat to save driver info too
 - Wi-Fi passwords are stored per-user and per-system
-- Enterprise WPA2 networks (802.1X) won't show passwords here
+- Enterprise WPA2 networks (802.1X) have no stored password; they are
+  listed as "not available - 802.1X/Enterprise network"
 - Passwords are stored by Windows in the WLAN profile store
 - The script handles multi-word network names correctly
 

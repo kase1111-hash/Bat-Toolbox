@@ -53,7 +53,10 @@ Option 1 additionally:
   - Sets start type to Disabled
 
 Option 2 additionally:
-  - Sets start type to Manual (starts only when needed)
+  - Keeps (or restores) Automatic start so printing survives reboots.
+    The spooler has no service trigger and is never started on demand,
+    so a Manual start type would leave it stopped after every restart.
+  - Starts the spooler if it is stopped (e.g. after an earlier Option 1 run)
 
 
 BEFORE YOU RUN
@@ -95,8 +98,11 @@ Option 2: Manual Reversal
     sc config Spooler start= auto
     sc start Spooler
 
-  Step 2 - Remove Point and Print restrictions:
-    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /f
+  Step 2 - Remove Point and Print restrictions (only the three values this
+  script sets; any other Point and Print policy values are left alone):
+    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v NoWarningNoElevationOnInstall /f
+    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v UpdatePromptSettings /f
+    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v RestrictDriverInstallationToAdministrators /f
 
   Step 3 - Re-enable web/HTTP printing:
     reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers" /v DisableWebPnPDownload /f
@@ -112,7 +118,7 @@ After running the script:
 
   1. Check spooler status:
      sc query Spooler
-     (State should be STOPPED if disabled, or RUNNING only when printing)
+     (State should be STOPPED if disabled, RUNNING for Option 2)
 
   2. Check Point and Print:
      reg query "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint"

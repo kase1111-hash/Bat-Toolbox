@@ -78,6 +78,7 @@ echo  - Prevent the Update Orchestrator from restarting services
 echo/
 echo %YELLOW%You will no longer receive security updates until you reverse this.%RESET%
 echo/
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
@@ -319,6 +320,7 @@ echo %YELLOW%To reverse these changes, run this script again and choose "Restore
 echo/
 echo A reboot is recommended.
 echo/
+set "reboot="
 set /p "reboot=Would you like to restart your computer now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     echo/
@@ -342,6 +344,7 @@ echo/
 echo This will re-enable Windows Update and all its services, scheduled tasks,
 echo and notifications.
 echo/
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MENU
 
@@ -457,6 +460,7 @@ echo Windows will resume checking for and installing updates.
 echo/
 echo A reboot is recommended.
 echo/
+set "reboot="
 set /p "reboot=Would you like to restart your computer now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     echo/

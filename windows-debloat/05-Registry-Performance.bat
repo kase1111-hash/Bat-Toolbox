@@ -24,6 +24,22 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: HKCU and %UserProfile% belong to the account this elevated window runs as.
+:: If a standard user elevated with another admin's credentials, that is NOT the
+:: signed-in user, so warn before changing the wrong account's settings.
+set "CONSOLE_USER="
+for /f "delims=" %%u in ('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystem).UserName" 2^>nul') do set "CONSOLE_USER=%%u"
+if not defined CONSOLE_USER goto :user_ok
+if /i "%CONSOLE_USER%"=="%USERDOMAIN%\%USERNAME%" goto :user_ok
+echo WARNING: This window runs as "%USERDOMAIN%\%USERNAME%", but "%CONSOLE_USER%" is signed in.
+echo Per-user settings and files will be changed for "%USERNAME%" only, NOT for "%CONSOLE_USER%".
+echo To change them for "%CONSOLE_USER%", that account must be an administrator and run this script itself.
+echo/
+choice /c YN /m "Continue anyway"
+if %errorlevel% neq 1 exit /b 1
+echo/
+:user_ok
+
 echo This script will apply the following performance tweaks:
 echo  - Disable window animations
 echo  - Disable taskbar animations

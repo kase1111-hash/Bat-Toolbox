@@ -38,7 +38,16 @@ set "RESET=%ESC%[0m"
 :: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
 :: assumes US format and yields a "/"-containing, invalid path elsewhere).
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
-set "OUTFILE=%USERPROFILE%\Desktop\TaskAudit_%COMPUTERNAME%_%TODAY%.txt"
+:: Resolve the real Desktop folder. It can be redirected (e.g. OneDrive folder
+:: backup moves it to %USERPROFILE%\OneDrive\Desktop), so %USERPROFILE%\Desktop
+:: is not always the Desktop the user sees. If that path is missing or cannot
+:: be used, fall back to %USERPROFILE%\Desktop, then to the profile folder.
+set "DESKTOP_DIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%"
+set "OUTFILE=%DESKTOP_DIR%\TaskAudit_%COMPUTERNAME%_%TODAY%.txt"
 
 echo Scanning scheduled tasks and categorizing them...
 echo Results will be saved to your Desktop.
@@ -76,7 +85,7 @@ echo     '*RealPlayer*', '*CyberLink*', '*WildTangent*',
 echo     '*Overwolf*', '*Razer*Synapse*Telemetry*',
 echo     '*Opera*', '*Brave*Update*', '*Vivaldi*Update*',
 echo     '*Java*Update*', '*Apple*Update*', '*iTunes*',
-echo     '*DropboxUpdate*', '*OneDrive*Standalone*',
+echo     '*DropboxUpdate*',
 echo     '*Samsung*Magician*Update*', '*Corsair*Update*',
 echo     '*HP*Telemetry*', '*Dell*SupportAssist*Telemetry*',
 echo     '*LenovoVantage*Telemetry*', '*ASUS*Update*'
@@ -241,6 +250,20 @@ echo     Write-Host ""
 echo     $report += ""
 echo }
 echo/
+echo # Unrecognized tasks outside \Microsoft\Windows\ ^(shown for review only^)
+echo $activeUnknown = @^($unknownList ^| Where-Object { $_.Category -eq 'UNKNOWN' -and $_.State -ne 'Disabled' }^)
+echo if ^($activeUnknown.Count -gt 0^) {
+echo     Write-Host "[UNKNOWN] - Unrecognized tasks (review manually, never auto-disabled):" -ForegroundColor White
+echo     $report += "[UNKNOWN] - Unrecognized tasks (review manually):"
+echo     foreach ^($t in $activeUnknown^) {
+echo         Write-Host "  [ ] $($t.Name)  ($($t.State))" -ForegroundColor White
+echo         Write-Host "      $($t.FullName)" -ForegroundColor DarkGray
+echo         $report += "  [ ] $($t.Name)  ($($t.State))  -  $($t.FullName)"
+echo     }
+echo     Write-Host ""
+echo     $report += ""
+echo }
+echo/
 echo # Essential ^(brief^)
 echo $activeEssential = @^($essentialList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo Write-Host "[ESSENTIAL] - $($activeEssential.Count) core tasks (will not be touched)" -ForegroundColor Green
@@ -267,6 +290,7 @@ echo Write-Host "  Telemetry (active):     $($activeTelemetry.Count)" -Foregroun
 echo Write-Host "  Bloatware (active):     $($activeBloatware.Count)" -ForegroundColor Red
 echo Write-Host "  Optional (active):      $($activeOptional.Count)" -ForegroundColor Yellow
 echo Write-Host "  Essential (active):     $($activeEssential.Count)" -ForegroundColor Green
+echo Write-Host "  Unknown (active):       $($activeUnknown.Count)" -ForegroundColor White
 echo Write-Host "  Already disabled:       $disabledCount" -ForegroundColor DarkGray
 echo Write-Host ""
 echo $report += ""
@@ -276,6 +300,7 @@ echo $report += "  Telemetry:         $($activeTelemetry.Count) active"
 echo $report += "  Bloatware:         $($activeBloatware.Count) active"
 echo $report += "  Optional:          $($activeOptional.Count) active"
 echo $report += "  Essential:         $($activeEssential.Count) active"
+echo $report += "  Unknown:           $($activeUnknown.Count) active"
 echo $report += "  Already disabled:  $disabledCount"
 echo $report += ""
 echo/
@@ -340,15 +365,24 @@ echo         Write-Host ""
 echo     }
 echo }
 echo/
-echo # Save report
-echo $report ^| Out-File -FilePath '%OUTFILE%' -Encoding UTF8
+echo # Save report. Read the path from the environment: pasting it into a quoted
+echo # literal breaks this whole script when the profile path has an apostrophe.
+echo $reportSaved = $false
+echo try {
+echo     $report ^| Out-File -FilePath $env:OUTFILE -Encoding UTF8 -ErrorAction Stop
+echo     $reportSaved = $true
+echo } catch { }
 echo/
 echo Write-Host ""
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " Scheduled Task Auditor Complete" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo Write-Host "Report saved to: %OUTFILE%" -ForegroundColor Green
+echo if ^($reportSaved^) {
+echo     Write-Host "Report saved to: $env:OUTFILE" -ForegroundColor Green
+echo } else {
+echo     Write-Host "[ERROR] Could not save report to $env:OUTFILE" -ForegroundColor Red
+echo }
 echo Write-Host ""
 echo Write-Host "To re-enable a disabled task:" -ForegroundColor Yellow
 echo Write-Host '  schtasks /Change /TN "\Path\TaskName" /Enable' -ForegroundColor Yellow

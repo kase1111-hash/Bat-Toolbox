@@ -47,7 +47,16 @@ title [1/2] Disk Health Check - Scanning drives...
 :: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
 :: assumes US format and yields a "/"-containing, invalid path elsewhere).
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
-set "OUTFILE=%USERPROFILE%\Desktop\DiskHealth_%COMPUTERNAME%_%TODAY%.txt"
+:: Resolve the real Desktop folder. It can be redirected (e.g. OneDrive folder
+:: backup moves it to %USERPROFILE%\OneDrive\Desktop), so %USERPROFILE%\Desktop
+:: is not always the Desktop the user sees. If that path is missing or cannot
+:: be used, fall back to %USERPROFILE%\Desktop, then to the profile folder.
+set "DESKTOP_DIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%"
+set "OUTFILE=%DESKTOP_DIR%\DiskHealth_%COMPUTERNAME%_%TODAY%.txt"
 
 echo   Results will be saved to your Desktop.
 echo/
@@ -68,7 +77,9 @@ echo # Reads S.M.A.R.T. data, temperatures, wear levels
 echo/
 echo $ErrorActionPreference = 'SilentlyContinue'
 echo/
-echo $outFile = '%OUTFILE%'
+echo # Read the path from the environment: pasting it into a quoted literal
+echo # breaks this whole script when the profile path has an apostrophe.
+echo $outFile = $env:OUTFILE
 echo $report = @^(^)
 echo/
 echo function Add-Line^($text^) {
@@ -204,13 +215,11 @@ echo         if ^($reliability.StartStopCycleCount^) {
 echo             Add-Line "  Power Cycles:   $($reliability.StartStopCycleCount)"
 echo         }
 echo/
-echo         # Unexpected shutdowns
-echo         if ^($reliability.UnrecoverableReadErrorsTotal -ne $null^) {
-echo             $unrecoverable = $reliability.UnrecoverableReadErrorsTotal
-echo             if ^($unrecoverable -gt 0^) {
-echo                 Add-ColorLine "  Unrecoverable:  $unrecoverable read errors [DATA AT RISK]" "Red"
-echo                 $criticalCount++
-echo             }
+echo         # Uncorrected read/write errors ^(data loss^)
+echo         $uncorrected = [uint64]$reliability.ReadErrorsUncorrected + [uint64]$reliability.WriteErrorsUncorrected
+echo         if ^($uncorrected -gt 0^) {
+echo             Add-ColorLine "  Uncorrected:    $uncorrected read/write errors [DATA AT RISK]" "Red"
+echo             $criticalCount++
 echo         }
 echo     } else {
 echo         Add-Line "  --- S.M.A.R.T. data not available for this drive ---"
@@ -240,7 +249,7 @@ echo     }
 echo     Add-Line ""
 echo }
 echo/
-echo # WMIC fallback for additional info
+echo # Additional info from WMI ^(Win32_DiskDrive^)
 echo Add-Line "============================================================================"
 echo Add-Line " Additional Drive Information (WMI)"
 echo Add-Line "============================================================================"
@@ -288,10 +297,13 @@ echo/
 echo Add-Line ""
 echo/
 echo # Save report
-echo $report ^| Out-File -FilePath $outFile -Encoding UTF8
-echo/
 echo Write-Host ""
-echo Write-Host "Report saved to: $outFile" -ForegroundColor Green
+echo try {
+echo     $report ^| Out-File -FilePath $outFile -Encoding UTF8 -ErrorAction Stop
+echo     Write-Host "Report saved to: $outFile" -ForegroundColor Green
+echo } catch {
+echo     Write-Host "[ERROR] Could not save report to $outFile" -ForegroundColor Red
+echo }
 echo Write-Host ""
 ) > "%PSSCRIPT%"
 

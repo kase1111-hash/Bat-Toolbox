@@ -26,6 +26,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: Set once a tweak or restore is applied; [0] Exit only offers the Explorer restart then
+set "changesMade="
+
 :MENU
 cls
 echo ============================================================================
@@ -47,18 +50,19 @@ echo  [9] Restore Defaults
 echo  [0] Exit
 echo/
 echo ============================================================================
+set "choice="
 set /p "choice=Select an option [0-9]: "
 
-if "%choice%"=="1" goto ALL_TWEAKS
-if "%choice%"=="2" goto PERFORMANCE
-if "%choice%"=="3" goto GAMING
-if "%choice%"=="4" goto UI_VISUAL
-if "%choice%"=="5" goto PRIVACY
-if "%choice%"=="6" goto EXPLORER
-if "%choice%"=="7" goto NETWORK
-if "%choice%"=="8" goto INPUT
-if "%choice%"=="9" goto RESTORE
-if "%choice%"=="0" goto EXIT
+if "!choice!"=="1" goto ALL_TWEAKS
+if "!choice!"=="2" goto PERFORMANCE
+if "!choice!"=="3" goto GAMING
+if "!choice!"=="4" goto UI_VISUAL
+if "!choice!"=="5" goto PRIVACY
+if "!choice!"=="6" goto EXPLORER
+if "!choice!"=="7" goto NETWORK
+if "!choice!"=="8" goto INPUT
+if "!choice!"=="9" goto RESTORE
+if "!choice!"=="0" goto EXIT
 goto MENU
 
 :: ============================================================================
@@ -72,9 +76,12 @@ echo ===========================================================================
 echo/
 echo This will apply all performance, gaming, UI, privacy, explorer, network,
 echo and input tweaks. Some changes require a restart to take effect.
+echo This includes turning off hibernation and resetting all saved folder views
+echo [a backup .reg of the old views is saved to your user folder].
 echo/
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
-if /i not "%confirm%"=="Y" goto MENU
+if /i not "!confirm!"=="Y" goto MENU
 
 call :DO_PERFORMANCE
 call :DO_GAMING
@@ -100,11 +107,19 @@ echo ===========================================================================
 echo  Performance Tweaks
 echo ============================================================================
 echo/
+echo This will disable SysMain, Windows Search indexing, Prefetch, Fast Startup and
+echo HIBERNATION, disable USB selective suspend and power throttling, set the CPU
+echo minimum state to 100%%, and change NTFS and memory settings [last access,
+echo 8.3 names, NTFS memory use, system cache].
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_PERFORMANCE
 pause
 goto MENU
 
 :DO_PERFORMANCE
+set "changesMade=1"
 echo [PERFORMANCE] Applying performance tweaks...
 echo/
 
@@ -175,11 +190,19 @@ echo ===========================================================================
 echo  Gaming Tweaks
 echo ============================================================================
 echo/
+echo This will disable Game DVR recording [also by machine policy], fullscreen
+echo optimizations and Game Mode, enable hardware-accelerated GPU scheduling,
+echo disable dynamic tick [boot setting], raise game CPU/GPU priority, and disable
+echo CPU core parking and network throttling.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_GAMING
 pause
 goto MENU
 
 :DO_GAMING
+set "changesMade=1"
 echo [GAMING] Applying gaming tweaks...
 echo/
 
@@ -244,11 +267,19 @@ echo ===========================================================================
 echo  UI / Visual Tweaks
 echo ============================================================================
 echo/
+echo This will disable transparency, animations, Aero Shake, Snap Assist
+echo suggestions, the startup delay and Windows tips, reduce the menu delay and
+echo window border padding, show seconds in the clock, restore the classic
+echo right-click menu [Windows 11] and remove Edge tabs from Alt-Tab.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_UI_VISUAL
 pause
 goto MENU
 
 :DO_UI_VISUAL
+set "changesMade=1"
 echo [UI] Applying visual tweaks...
 echo/
 
@@ -317,11 +348,19 @@ echo ===========================================================================
 echo  Privacy Tweaks
 echo ============================================================================
 echo/
+echo This will set machine policies that turn off telemetry, Cortana, Bing search,
+echo Activity History, the advertising ID and LOCATION SERVICES [this also stops
+echo automatic time zone and Find My Device], and turn off suggested apps,
+echo feedback requests, WiFi Sense and cloud clipboard sync.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_PRIVACY
 pause
 goto MENU
 
 :DO_PRIVACY
+set "changesMade=1"
 echo [PRIVACY] Applying privacy tweaks...
 echo/
 
@@ -376,9 +415,10 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" /v "Disabl
 echo   - Disabling WiFi Sense...
 reg add "HKLM\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" /v "AutoConnectAllowedOEM" /t REG_DWORD /d 0 /f >nul 2>&1
 
-:: Disable cloud clipboard
+:: Disable cloud clipboard sync (EnableCloudClipboard is the per-user "Sync across
+:: your devices" switch; local clipboard history [Win+V] is left as it is)
 echo   - Disabling cloud clipboard sync...
-reg add "HKCU\SOFTWARE\Microsoft\Clipboard" /v "EnableClipboardHistory" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\SOFTWARE\Microsoft\Clipboard" /v "EnableCloudClipboard" /t REG_DWORD /d 0 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "AllowCrossDeviceClipboard" /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo/
@@ -395,11 +435,20 @@ echo ===========================================================================
 echo  Explorer Tweaks
 echo ============================================================================
 echo/
+echo This will show file extensions, hidden and protected system files and the full
+echo path in the title bar, open Explorer to This PC, hide recent/frequent items in
+echo Quick Access, RESET ALL SAVED FOLDER VIEWS [a backup .reg is saved to your user
+echo folder first], disable the thumbnail cache, drop the "Shortcut" suffix and
+echo remove 3D Objects.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_EXPLORER
 pause
 goto MENU
 
 :DO_EXPLORER
+set "changesMade=1"
 echo [EXPLORER] Applying Explorer tweaks...
 echo/
 
@@ -427,10 +476,22 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v "ShowRecent
 echo   - Disabling frequent folders in Quick Access...
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v "ShowFrequent" /t REG_DWORD /d 0 /f >nul 2>&1
 
-:: Disable folder type auto-detection (faster folder loading)
-echo   - Disabling folder type auto-detection [faster loading]...
-reg delete "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
-reg delete "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
+:: Disable folder type auto-detection (faster folder loading). Deleting Bags/BagMRU
+:: also erases every folder's saved view [view mode, sort, columns], so export them
+:: first. The first backup is kept and never overwritten [views from before the first
+:: reset]; later runs write, or overwrite, WindowsTweaks_FolderViews_backup_latest.reg
+:: with the views they are about to reset. If the export fails, the views are left alone.
+echo   - Resetting saved folder views and disabling folder type auto-detection...
+set "viewsBackup=%USERPROFILE%\WindowsTweaks_FolderViews_backup.reg"
+if exist "!viewsBackup!" set "viewsBackup=%USERPROFILE%\WindowsTweaks_FolderViews_backup_latest.reg"
+reg export "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell" "!viewsBackup!" /y >nul 2>&1
+if %errorlevel% equ 0 (
+    echo     [folder views backup: !viewsBackup!]
+    reg delete "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags" /f >nul 2>&1
+    reg delete "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU" /f >nul 2>&1
+) else (
+    echo     [could not save a backup, so saved folder views were left unchanged]
+)
 reg add "HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v "FolderType" /t REG_SZ /d "NotSpecified" /f >nul 2>&1
 
 :: Expand navigation pane to current folder
@@ -469,20 +530,28 @@ echo ===========================================================================
 echo  Network Tweaks
 echo ============================================================================
 echo/
+echo This will disable Nagle's algorithm on your network interfaces, network
+echo throttling, TCP auto-tuning and task offload [Large Send Offload], and change
+echo name-resolution priorities.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_NETWORK
 pause
 goto MENU
 
 :DO_NETWORK
+set "changesMade=1"
 echo [NETWORK] Applying network tweaks...
 echo/
 
 :: Disable Nagle's algorithm (reduces latency)
 echo   - Disabling Nagle's Algorithm [reduces latency]...
-:: Query IPAddress with /s so reg prints the key path of each interface that
-:: actually has an address (i.e. a real adapter); apply the tweak only to those
-:: keys. The previous nested loop wrote to EVERY interface, N times over.
-for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /s /v IPAddress 2^>nul ^| findstr /i "HKEY"') do (
+:: Search value NAMES containing "IPAddress" [/v with no name plus /f] with /s, so
+:: reg prints the key path of each interface that has an address: IPAddress for a
+:: static setup, DhcpIPAddress for DHCP [the usual home setup]. Each key is printed
+:: once; apply the tweak only to those keys.
+for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces" /s /v /f "IPAddress" 2^>nul ^| findstr /i "HKEY"') do (
     reg add "%%k" /v "TcpAckFrequency" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "%%k" /v "TCPNoDelay" /t REG_DWORD /d 1 /f >nul 2>&1
 )
@@ -495,14 +564,9 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProf
 echo   - Disabling Windows Auto-Tuning [fixes some router issues]...
 netsh int tcp set global autotuninglevel=disabled >nul 2>&1
 
-:: Enable Direct Cache Access
-echo   - Enabling Direct Cache Access...
-netsh int tcp set global dca=enabled >nul 2>&1
-
-:: Disable RSS (Receive Side Scaling) on older systems
+:: Ensure RSS (Receive Side Scaling) is enabled
 echo   - Optimizing TCP settings...
 netsh int tcp set global rss=enabled >nul 2>&1
-netsh int tcp set global chimney=disabled >nul 2>&1
 
 :: Set DNS priority
 echo   - Optimizing DNS priority...
@@ -529,11 +593,18 @@ echo ===========================================================================
 echo  Input Tweaks
 echo ============================================================================
 echo/
+echo This will disable mouse acceleration and the Sticky/Filter/Toggle Keys
+echo popups, set the keyboard repeat rate to maximum, and disable the touch
+echo keyboard auto-popup.
+echo/
+call :CONFIRM_CATEGORY
+if errorlevel 1 goto MENU
 call :DO_INPUT
 pause
 goto MENU
 
 :DO_INPUT
+set "changesMade=1"
 echo [INPUT] Applying input tweaks...
 echo/
 
@@ -582,10 +653,13 @@ echo  Restore Defaults
 echo ============================================================================
 echo/
 echo This will attempt to restore Windows default settings.
-echo Note: Some changes may require a fresh Windows install to fully reverse.
+echo Note: Some tweaks are not reverted [see WindowsTweaks_README.txt];
+echo use your System Restore point to undo everything.
 echo/
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
-if /i not "%confirm%"=="Y" goto MENU
+if /i not "!confirm!"=="Y" goto MENU
+set "changesMade=1"
 
 echo/
 echo Restoring defaults...
@@ -600,14 +674,40 @@ echo   - Re-enabling Windows Search...
 sc config "WSearch" start= delayed-auto >nul 2>&1
 sc start "WSearch" >nul 2>&1
 
-:: Re-enable Fast Startup
-echo   - Re-enabling Fast Startup...
+:: Re-enable hibernation (required for Fast Startup) and Fast Startup
+echo   - Re-enabling Hibernation and Fast Startup...
+powercfg /hibernate on >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v "HiberbootEnabled" /t REG_DWORD /d 1 /f >nul 2>&1
 
-:: Re-enable Game DVR
+:: Re-enable Prefetch and power throttling
+echo   - Re-enabling Prefetch and Power Throttling...
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 3 /f >nul 2>&1
+reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableSuperfetch" /f >nul 2>&1
+reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" /v "PowerThrottlingOff" /f >nul 2>&1
+
+:: Re-enable Game DVR (the machine policy overrides the per-user values, so remove it too)
 echo   - Re-enabling Game DVR...
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\System\GameConfigStore" /v "GameDVR_Enabled" /t REG_DWORD /d 1 /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v "AllowGameDVR" /f >nul 2>&1
+
+:: Re-enable Game Mode and dynamic tick
+echo   - Re-enabling Game Mode and Dynamic Tick...
+reg delete "HKCU\SOFTWARE\Microsoft\GameBar" /v "AllowAutoGameMode" /f >nul 2>&1
+reg add "HKCU\SOFTWARE\Microsoft\GameBar" /v "AutoGameModeEnabled" /t REG_DWORD /d 1 /f >nul 2>&1
+bcdedit /deletevalue disabledynamictick >nul 2>&1
+
+:: Remove the privacy policies set by the Privacy tweaks
+echo   - Removing privacy policies [telemetry, Cortana, activity history, ads, location, clipboard]...
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "AllowTelemetry" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "EnableActivityFeed" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "PublishUserActivities" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "UploadUserActivities" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "AllowCrossDeviceClipboard" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" /v "DisabledByGroupPolicy" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" /v "DisableLocation" /f >nul 2>&1
+reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v "DisableSearchBoxSuggestions" /f >nul 2>&1
 
 :: Re-enable transparency
 echo   - Re-enabling transparency...
@@ -628,6 +728,7 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "H
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "LaunchTo" /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v "ShowRecent" /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v "ShowFrequent" /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowSuperHidden" /t REG_DWORD /d 0 /f >nul 2>&1
 
 :: Restore Windows 11 context menu
 echo   - Restoring Windows 11 context menu...
@@ -639,9 +740,17 @@ reg add "HKCU\Control Panel\Mouse" /v "MouseSpeed" /t REG_SZ /d "1" /f >nul 2>&1
 reg add "HKCU\Control Panel\Mouse" /v "MouseThreshold1" /t REG_SZ /d "6" /f >nul 2>&1
 reg add "HKCU\Control Panel\Mouse" /v "MouseThreshold2" /t REG_SZ /d "10" /f >nul 2>&1
 
-:: Restore network auto-tuning
-echo   - Restoring network auto-tuning...
+:: Restore accessibility popups and keyboard repeat delay (Windows default values)
+echo   - Restoring Sticky/Filter/Toggle Keys popups and keyboard delay...
+reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "510" /f >nul 2>&1
+reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v "Flags" /t REG_SZ /d "126" /f >nul 2>&1
+reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v "Flags" /t REG_SZ /d "62" /f >nul 2>&1
+reg add "HKCU\Control Panel\Keyboard" /v "KeyboardDelay" /t REG_SZ /d "1" /f >nul 2>&1
+
+:: Restore network auto-tuning and task offload
+echo   - Restoring network auto-tuning and task offload...
 netsh int tcp set global autotuninglevel=normal >nul 2>&1
+reg delete "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v "DisableTaskOffload" /f >nul 2>&1
 
 echo/
 echo ============================================================================
@@ -655,13 +764,31 @@ goto MENU
 :: ============================================================================
 :EXIT
 echo/
-echo Refreshing Explorer to apply changes...
-taskkill /f /im explorer.exe >nul 2>&1
-timeout /t 2 /nobreak >nul
-start explorer.exe
+REM Only offer the Explorer restart when something was changed, and ask first:
+REM it closes every open folder window and aborts copy/move dialogs in progress.
+if defined changesMade (
+    set "restartExplorer="
+    set /p "restartExplorer=Restart Explorer now to apply UI changes? Open folder windows will close. [Y/N]: "
+    if /i "!restartExplorer!"=="Y" (
+        echo Refreshing Explorer to apply changes...
+        taskkill /f /im explorer.exe >nul 2>&1
+        timeout /t 2 /nobreak >nul
+        start "" explorer.exe
+    )
+)
 echo/
 echo Thank you for using Windows Power User Tweaks^^!
 echo A restart is recommended to apply all changes.
 echo/
 pause
 exit /b 0
+
+:: ============================================================================
+:: CONFIRM_CATEGORY - ask before applying a single category
+:: Returns errorlevel 0 for Y; anything else, including just Enter, returns 1
+:: ============================================================================
+:CONFIRM_CATEGORY
+set "confirm="
+set /p "confirm=Apply these changes? [Y/N]: "
+if /i "!confirm!"=="Y" exit /b 0
+exit /b 1

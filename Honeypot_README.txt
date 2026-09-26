@@ -19,7 +19,8 @@ HOW TO USE
 3. When someone opens it:
    - Their information is logged to IntruderLog.txt
    - Warning messages and sounds play
-   - Computer shuts down after countdown
+   - After the on-screen countdown, a Windows shutdown is scheduled with
+     a 30-second timer, and the computer then shuts down
 
 The log file (IntruderLog.txt) records:
   - Date and time of access
@@ -32,20 +33,29 @@ The log file (IntruderLog.txt) records:
 BEFORE YOU RUN
 --------------
 - Understand that running this WILL shut down your computer
-- Save all work before testing
-- The shutdown can be cancelled within the countdown period
+- Save all work before testing (the shutdown forces apps to close, so
+  unsaved work is lost)
+- The shutdown can be cancelled - see below
 
 
 HOW TO CANCEL THE SHUTDOWN
 --------------------------
-If you accidentally trigger the honeypot:
+If you accidentally trigger the honeypot, there are two cancel windows:
+
+During the on-screen warnings and countdown (roughly 20-30 seconds, until
+the voice says "Goodbye."):
+  - Nothing has been scheduled yet, so "shutdown /a" does nothing here.
+  - Close the console window, or press Ctrl+C and answer Y.
+
+After "Goodbye." (the script ends and Windows shows a shutdown notice):
   1. Press Win+R quickly
   2. Type: shutdown /a
   3. Press Enter
 
 Or open Command Prompt and run: shutdown /a
 
-You have about 30 seconds to cancel before shutdown.
+The script runs "shutdown /s /t 30 /f", so you have about 30 seconds
+after "Goodbye." to cancel before the computer shuts down.
 
 
 HOW TO RESTORE / UNDO
@@ -65,7 +75,9 @@ To remove the honeypot:
 CUSTOMIZATION
 -------------
 You can edit the script to:
-  - Change the countdown time
+  - Change the countdown time (the on-screen countdown loop, and the
+    "/t 30" shutdown timer on the last line; keep /t above 0 or
+    "shutdown /a" can no longer cancel it)
   - Modify warning messages
   - Change or disable the shutdown
   - Add email notifications (requires additional setup)

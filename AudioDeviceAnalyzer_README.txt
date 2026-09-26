@@ -46,8 +46,11 @@ Option 1: List Audio Devices
   - Shows device state: Active, Disabled, Not Present, Unplugged
 
 Option 2: Driver Information
-  - All audio-related drivers with provider, version, date
-  - Color-codes old drivers (yellow >2yr, red >5yr)
+  - Drivers of all sound devices and audio processing objects (APOs) with
+    device name, provider, version, date - including Microsoft inbox drivers
+    (HD Audio, USB Audio class); read via WMI, no admin needed
+  - Color-codes old third-party drivers (yellow >2yr, red >5yr); Microsoft
+    inbox drivers are not age-flagged (they typically carry a 2006 date)
   - Audio-related services (Audiosrv, AudioEndpointBuilder, etc.)
   - Detects running audio processing software (Nahimic, Waves, etc.)
 
@@ -56,7 +59,8 @@ Option 3: Detect Common Issues
     1. Windows Audio Service running
     2. Audio Endpoint Builder running
     3. Sound devices present with OK status
-    4. Audio enhancements enabled
+    4. Audio enhancements enabled (active outputs with an effects/APO
+       key whose "Disable all enhancements" flag is not set)
     5. Exclusive mode settings
     6. Sample rate configuration
     7. Multiple audio driver conflicts
@@ -70,11 +74,19 @@ Option 4: Service Status
   - Flags services that should be Automatic but aren't
 
 Option 5: Apply Common Fixes
-  - Restart audio services (no reboot needed)
-  - Disable all audio enhancements via registry
-  - Open Sound Settings for manual format adjustment
-  - Re-register audio DLLs and restart services
-  - Direct link to Windows Sound Settings
+  - [1] Restart audio services (no reboot needed); reports an error if
+    either service fails to come back
+  - [2] Disable audio enhancements (admin, asks Y/N first): sets the
+    "Disable all enhancements" flag (PKEY_AudioEndpoint_Disable_SysFx,
+    value {1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5 = 1 in the endpoint's
+    FxProperties key) on every active output device; restart audio
+    services or reboot afterwards
+  - [3] Open the classic Sound dialog (mmsys.cpl) to set the format
+    (e.g. 24 bit, 48000 Hz) and Exclusive Mode manually - nothing is
+    changed automatically
+  - [4] Re-register audio DLLs and restart services; reports the real
+    service state afterwards
+  - [5] Direct link to Windows Sound Settings
 
 
 COMMON AUDIO ISSUES AND FIXES
@@ -137,8 +149,15 @@ Sonic Studio:
 HOW TO UNDO
 -----------
 Option [1] Restart services: Services will auto-start on next boot
-Option [2] Disable enhancements: Re-enable in Sound Settings >
-  Device Properties > Additional device properties > Enhancements tab
+Option [2] Disable enhancements: Re-enable per device in the classic
+  Sound dialog (mmsys.cpl) > Playback > device > Properties >
+  Enhancements tab (untick "Disable all enhancements"; where Windows shows
+  "Enable audio enhancements" on the Advanced tab instead, tick it), or in
+  Windows 11 Settings > System > Sound > device > Audio enhancements.
+  Registry alternative (admin): delete the value
+  {1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5 (or set it to 0) under
+  HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render\
+  {endpoint}\FxProperties, then restart audio services.
 Option [4] Re-register: No adverse effects, safe to run multiple times
 
 

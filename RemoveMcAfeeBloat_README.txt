@@ -15,9 +15,11 @@ HOW TO USE
 1. Right-click RemoveMcAfeeBloat.bat
 2. Select "Run as administrator" (REQUIRED)
 3. Confirm when prompted (Y/N)
-4. Wait for all phases to complete
-5. Restart when prompted (recommended)
-6. Open Windows Security to verify Defender is active
+4. If a McAfee uninstall window opens, follow it through to the end
+   (the script waits until it closes)
+5. Wait for all phases to complete
+6. Restart when prompted (recommended)
+7. Open Windows Security to verify Defender is active
 
 
 BEFORE YOU RUN
@@ -42,7 +44,7 @@ WHAT GETS REMOVED
 - McAfee scheduled tasks and startup entries
 - McAfee browser extension force-install policies
 - McAfee context menu entries (right-click scan)
-- McAfee Security Center registration
+- Stale McAfee entries in Windows Security Center (WMI root\SecurityCenter2)
 
 WHAT STAYS INTACT
 -----------------
@@ -50,6 +52,29 @@ WHAT STAYS INTACT
 - Windows Firewall
 - All other installed security software
 - Browser settings (extensions may need manual removal)
+
+
+HOW IT WORKS
+------------
+1. Runs McAfee's own uninstaller for every McAfee product listed in
+   Apps & features (LiveSafe / Total Protection, WebAdvisor, True Key, ...).
+   MSI-based products are removed silently with msiexec /x; the others open
+   McAfee's normal uninstall window. (The old "wmic product" method only saw
+   MSI products, so it never removed the McAfee suites - and WMIC is not
+   available on Windows 11 24H2 and later.)
+2. Checks Apps & features again. If any McAfee product is STILL installed,
+   the script lists it and stops WITHOUT running the forced cleanup below,
+   because force-deleting the services, drivers, registry keys and files of a
+   live, self-protected McAfee install leaves it half-removed and breaks its
+   own uninstaller. Restart if McAfee asked you to, or remove it via
+   Settings > Apps or McAfee's MCPR tool, then run the script again.
+3. Only when no McAfee product is installed any more: removes McAfee Store
+   apps, stops/disables/deletes leftover services and kernel drivers, removes
+   scheduled tasks, startup entries, registry keys, browser policies, context
+   menu handlers and leftover folders.
+4. Re-enables Windows Defender and reports whether Defender is actually
+   active. Services that cannot be disabled (access denied) are shown in red
+   instead of being reported as disabled.
 
 
 HOW TO RESTORE / UNDO
@@ -127,6 +152,10 @@ NOTES
   Firefox: about:addons > Remove McAfee WebAdvisor
 - If Windows Defender does not activate after reboot, open Windows Security
   and click "Turn on" under Virus & threat protection.
+- If Windows Security still lists McAfee as your antivirus after the
+  restart, or the script stops because McAfee is still installed and its
+  uninstaller fails, use McAfee's official removal tool (MCPR - "McAfee
+  Consumer Product Removal"), available from McAfee's support site.
 
 
 TIPS

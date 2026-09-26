@@ -37,20 +37,30 @@ set "RESET=%ESC%[0m"
 :: Setup log file. Use PowerShell for a locale-independent date (%DATE% slicing
 :: assumes US format and yields a "/"-containing, invalid path elsewhere).
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
-set "LOGFILE=%USERPROFILE%\Desktop\RepairKit_%COMPUTERNAME%_%TODAY%.txt"
+:: Resolve the real Desktop folder. It can be redirected (e.g. OneDrive folder
+:: backup moves it to %USERPROFILE%\OneDrive\Desktop), so %USERPROFILE%\Desktop
+:: is not always the Desktop the user sees. If that path is missing or cannot
+:: be used, fall back to %USERPROFILE%\Desktop, then to the profile folder.
+set "DESKTOP_DIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%"
+set "LOGFILE=%DESKTOP_DIR%\RepairKit_%COMPUTERNAME%_%TODAY%.txt"
 
 echo %CYAN%This script will run three system integrity checks:%RESET%
 echo/
 echo   [1] SFC /scannow        - Scans and repairs Windows system files
-echo   [2] DISM /RestoreHealth  - Repairs the Windows component store
+echo   [2] DISM /ScanHealth    - Checks the component store, repairs it if needed
 echo   [3] CHKDSK              - Checks disk for filesystem errors
 echo/
 echo Results will be saved to:
-echo   %LOGFILE%
+echo   !LOGFILE!
 echo/
 echo %YELLOW%This process can take 15-60 minutes depending on your system.%RESET%
 echo/
 
+set "CONFIRM="
 set /p "CONFIRM=Run all checks? [Y/N]: "
 if /i not "!CONFIRM!"=="Y" (
     echo Cancelled.
@@ -87,12 +97,19 @@ echo/
 echo [1/3] SFC /scannow>> "%LOGFILE%"
 echo ---------------------------------------->> "%LOGFILE%"
 
+:: Remember when SFC started, so only this run's CBS.log entries are reported.
+:: CBS.log lines start with a local "yyyy-MM-dd HH:mm:ss" timestamp.
+set "SFC_START="
+for /f "delims=" %%D in ('powershell -NoProfile -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture)"') do set "SFC_START=%%D"
+
 sfc /scannow > "%TEMP%\sfc_output.txt" 2>&1
 set "SFC_EXIT=%errorlevel%"
 
-:: sfc writes UTF-16 (NUL-interleaved) output, which findstr cannot match
-:: reliably. Re-encode to ASCII first so the phrase checks below work.
-powershell -NoProfile -Command "Get-Content -LiteralPath '%TEMP%\sfc_output.txt' | Set-Content -LiteralPath '%TEMP%\sfc_ascii.txt' -Encoding ascii" 2>nul
+:: sfc writes UTF-16LE output with no BOM, so Windows PowerShell reads it as
+:: ANSI with a NUL after every character. Strip the NULs and save as ASCII so
+:: the findstr phrase checks below can match. Paths come from $env:TEMP so an
+:: apostrophe in the profile path cannot break the PowerShell command.
+powershell -NoProfile -Command "(Get-Content -LiteralPath (Join-Path $env:TEMP 'sfc_output.txt')) -replace [char]0,'' | Set-Content -LiteralPath (Join-Path $env:TEMP 'sfc_ascii.txt') -Encoding ascii" 2>nul
 
 :: Parse SFC results. Use /c: so the whole phrase must match - without it,
 :: findstr treats each space-separated word as a separate OR pattern.
@@ -119,7 +136,7 @@ if %errorlevel% equ 0 (
     echo Result: Found corrupt files but UNABLE to repair.>> "%LOGFILE%"
 )
 
-findstr /i /c:"could not perform the requested operation" "%TEMP%\sfc_ascii.txt" >nul 2>&1
+findstr /i /c:"could not perform the requested operation" /c:"system repair pending" "%TEMP%\sfc_ascii.txt" >nul 2>&1
 if %errorlevel% equ 0 (
     set "SFC_STATUS=BLOCKED"
     echo %RED%[WARN] SFC: Could not perform scan. Pending repairs may exist.%RESET%
@@ -134,11 +151,16 @@ if "!SFC_STATUS!"=="UNKNOWN" (
 
 :: Check CBS log for details
 echo/>> "%LOGFILE%"
-echo CBS Log errors (last 50 relevant lines^):>> "%LOGFILE%"
+echo CBS Log entries from this SFC run (last 50 relevant lines^):>> "%LOGFILE%"
 if exist "%WINDIR%\Logs\CBS\CBS.log" (
-    findstr /i /c:"corrupt" /c:"Cannot repair" /c:"repaired" "%WINDIR%\Logs\CBS\CBS.log" 2>nul | more +0 > "%TEMP%\cbs_errors.txt"
+    REM CBS.log also holds entries from earlier SFC/DISM runs. Keep only lines
+    REM stamped at or after SFC_START - an ordinal compare of the fixed-width
+    REM yyyy-MM-dd HH:mm:ss prefix that starts every CBS.log line.
+    findstr /i /c:"corrupt" /c:"Cannot repair" /c:"repaired" "%WINDIR%\Logs\CBS\CBS.log" > "%TEMP%\cbs_all.txt" 2>nul
+    powershell -NoProfile -Command "Get-Content -LiteralPath (Join-Path $env:TEMP 'cbs_all.txt') | Where-Object { $_.Length -ge 19 -and [string]::CompareOrdinal($_.Substring(0,19), $env:SFC_START) -ge 0 }" > "%TEMP%\cbs_errors.txt" 2>nul
+    del "%TEMP%\cbs_all.txt" 2>nul
     REM Get last 50 lines using PowerShell
-    powershell -Command "Get-Content '%TEMP%\cbs_errors.txt' -Tail 50" >> "%LOGFILE%" 2>nul
+    powershell -NoProfile -Command "Get-Content -LiteralPath (Join-Path $env:TEMP 'cbs_errors.txt') -Tail 50" >> "%LOGFILE%" 2>nul
 
     REM Count issues for display
     for /f %%a in ('findstr /i /c:"Cannot repair" "%TEMP%\cbs_errors.txt" 2^>nul ^| find /c /v ""') do set "CBS_FAILURES=%%a"
@@ -160,18 +182,33 @@ del "%TEMP%\sfc_ascii.txt" 2>nul
 del "%TEMP%\cbs_errors.txt" 2>nul
 
 :: ============================================================================
-:: Step 2: DISM RestoreHealth
+:: Step 2: DISM ScanHealth + RestoreHealth
 :: ============================================================================
 echo/
-echo %CYAN%[2/3] Running DISM /RestoreHealth...%RESET%
-echo       This repairs the Windows component store using Windows Update.
+echo %CYAN%[2/3] Running DISM /ScanHealth (then /RestoreHealth if needed)...%RESET%
+echo       This checks the Windows component store and repairs it using
+echo       Windows Update if the scan does not report it as clean.
 echo/
 
-echo [2/3] DISM /Online /Cleanup-Image /RestoreHealth>> "%LOGFILE%"
+echo [2/3] DISM /Online /Cleanup-Image /ScanHealth, then /RestoreHealth if needed>> "%LOGFILE%"
 echo ---------------------------------------->> "%LOGFILE%"
 
-DISM /Online /Cleanup-Image /RestoreHealth > "%TEMP%\dism_output.txt" 2>&1
+:: /RestoreHealth prints "The restore operation completed successfully" whether
+:: or not anything was repaired, and never prints "No component store
+:: corruption detected" (only /ScanHealth and /CheckHealth do). So scan first
+:: and run /RestoreHealth only when the scan does not report a clean store.
+:: dism_output.txt then holds the scan output (CLEAN) or the restore output.
+DISM /Online /Cleanup-Image /ScanHealth > "%TEMP%\dism_output.txt" 2>&1
 set "DISM_EXIT=%errorlevel%"
+findstr /i /c:"No component store corruption detected" "%TEMP%\dism_output.txt" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo       ScanHealth did not report a clean store - running DISM /RestoreHealth...
+    echo DISM /ScanHealth output:>> "%LOGFILE%"
+    type "%TEMP%\dism_output.txt" >> "%LOGFILE%"
+    echo/>> "%LOGFILE%"
+    DISM /Online /Cleanup-Image /RestoreHealth > "%TEMP%\dism_output.txt" 2>&1
+    set "DISM_EXIT=!errorlevel!"
+)
 
 :: Parse DISM results
 set "DISM_STATUS=UNKNOWN"
@@ -216,6 +253,7 @@ if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
     echo %YELLOW%[TIP] SFC found unrepairable files but DISM succeeded.%RESET%
     echo %YELLOW%      Re-running SFC may now be able to fix those files.%RESET%
     echo/
+    set "RERUN_SFC="
     set /p "RERUN_SFC=Re-run SFC /scannow now? [Y/N]: "
     if /i "!RERUN_SFC!"=="Y" (
         echo/
@@ -224,7 +262,8 @@ if "!SFC_STATUS!"=="FAILED" if "!DISM_STATUS!"=="SUCCESS" (
         echo [BONUS] SFC /scannow re-run after DISM>> "%LOGFILE%"
         echo ---------------------------------------->> "%LOGFILE%"
         sfc /scannow > "%TEMP%\sfc2_output.txt" 2>&1
-        powershell -NoProfile -Command "Get-Content -LiteralPath '%TEMP%\sfc2_output.txt' | Set-Content -LiteralPath '%TEMP%\sfc2_ascii.txt' -Encoding ascii" 2>nul
+        REM Same UTF-16 NUL stripping as for the first SFC run above
+        powershell -NoProfile -Command "(Get-Content -LiteralPath (Join-Path $env:TEMP 'sfc2_output.txt')) -replace [char]0,'' | Set-Content -LiteralPath (Join-Path $env:TEMP 'sfc2_ascii.txt') -Encoding ascii" 2>nul
 
         findstr /i /c:"did not find any integrity violations" "%TEMP%\sfc2_ascii.txt" >nul 2>&1
         if !errorlevel! equ 0 (
@@ -271,15 +310,21 @@ if %errorlevel% equ 0 (
     echo %GREEN%[OK] CHKDSK: No filesystem problems found on %SYSDRIVE%.%RESET%
     echo Result: No filesystem problems found on %SYSDRIVE%.>> "%LOGFILE%"
 ) else (
-    REM Check for errors that need fixing
-    findstr /i "errors" "%TEMP%\chkdsk_output.txt" >nul 2>&1
-    if !errorlevel! equ 0 (
+    REM Check for problems that need fixing. A read-only scan of a damaged
+    REM NTFS volume reports "found problems", "fixed offline" or "spotfix"
+    REM on Windows 8 and later, or "errors" on older builds. Exit code 3 also
+    REM means errors were found but not fixed because /F was not given.
+    findstr /i /c:"found problems" /c:"errors" /c:"fixed offline" /c:"spotfix" "%TEMP%\chkdsk_output.txt" >nul 2>&1
+    set "CHK_PROBLEM=!errorlevel!"
+    if !CHKDSK_EXIT! geq 3 set "CHK_PROBLEM=0"
+    if "!CHK_PROBLEM!"=="0" (
         echo %RED%[WARN] CHKDSK: Filesystem errors detected on %SYSDRIVE%.%RESET%
         echo Result: Filesystem errors detected on %SYSDRIVE%.>> "%LOGFILE%"
         echo/
         echo %YELLOW%       To fix errors, schedule a repair for next reboot:%RESET%
         echo         chkdsk %SYSDRIVE% /F /R
         echo/
+        set "SCHEDULE_CHKDSK="
         set /p "SCHEDULE_CHKDSK=Schedule CHKDSK /F /R for next reboot? [Y/N]: "
         if /i "!SCHEDULE_CHKDSK!"=="Y" (
             echo Y | chkdsk %SYSDRIVE% /F /R >nul 2>&1
@@ -287,7 +332,7 @@ if %errorlevel% equ 0 (
             echo CHKDSK /F /R scheduled for next reboot.>> "%LOGFILE%"
         )
     ) else (
-        echo %GREEN%[OK] CHKDSK completed on %SYSDRIVE% ^(exit code %CHKDSK_EXIT%^).%RESET%
+        echo %YELLOW%[INFO] CHKDSK completed on %SYSDRIVE% ^(exit code %CHKDSK_EXIT%^).%RESET%
         echo Result: Completed on %SYSDRIVE% ^(exit code %CHKDSK_EXIT%^).>> "%LOGFILE%"
     )
 )
@@ -339,7 +384,7 @@ if "!DISM_STATUS!"=="CLEAN" (
 )
 
 :: CHKDSK summary
-if %CHKDSK_EXIT% equ 0 (
+if "%CHKDSK_EXIT%"=="0" (
     echo   CHKDSK: %GREEN%PASS%RESET% - No filesystem errors
 ) else (
     echo   CHKDSK: %YELLOW%CHECK LOG%RESET% - Review log for details
@@ -347,7 +392,7 @@ if %CHKDSK_EXIT% equ 0 (
 
 echo/
 echo Full log saved to:
-echo   %LOGFILE%
+echo   !LOGFILE!
 echo/
 
 :: Completion timestamp

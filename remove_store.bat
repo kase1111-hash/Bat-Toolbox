@@ -18,15 +18,17 @@ REM    - Disables content delivery (the thing that reinstalls Candy Crush)
 REM
 REM  WHAT THIS DOES NOT DO:
 REM    - Does not break sideloaded .appx/.msix packages
-REM    - Does not remove apps already installed (run winget or PowerShell
-REM      separately to remove individual UWP apps you don't want)
+REM    - Does not remove installed apps other than the ones listed in
+REM      phase 6 (comment out any of those you want to keep)
+REM    - Does not block inbox apps: DisableStoreApps and ClipSVC are left
+REM      commented out (see phases 1 and 3)
 REM
 REM  TO REVERSE:
-REM    Delete the policy keys added here, re-enable services,
-REM    then run: wsreset.exe
-REM    Or reinstall Store via PowerShell:
-REM      Get-AppxPackage -AllUsers Microsoft.WindowsStore | 
-REM        Foreach {Add-AppxPackage -Register "$($_.InstallLocation)\AppxManifest.xml" -DisableDevelopmentMode}
+REM    Set Start=3 for InstallService, PushToInstall and wlidsvc (and for
+REM    ClipSVC if an older version of this script disabled it), delete the
+REM    WindowsStore and CloudContent policy keys, REBOOT, then reinstall the
+REM    Store with: wsreset.exe -i
+REM    Exact commands: see remove_store_README.txt (HOW TO RESTORE / UNDO).
 REM
 REM  Author: Kase Branham / True North Construction LLC
 REM  License: Public Domain
@@ -59,8 +61,11 @@ REM -- RemoveWindowsStore: The main policy kill switch --
 REM This prevents the Store from launching even if the package exists.
 reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v RemoveWindowsStore /t REG_DWORD /d 1 /f
 
-REM -- DisableStoreApps: Prevents all Store app execution --
-reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v DisableStoreApps /t REG_DWORD /d 1 /f
+REM -- DisableStoreApps: WARNING - on Enterprise/Education this also blocks ALL --
+REM -- Store-serviced inbox apps (Calculator, Photos, Notepad, Paint, Terminal). --
+REM -- Left commented out on purpose; RemoveWindowsStore above already blocks --
+REM -- the Store itself. Uncomment ONLY if you want every Store app blocked: --
+REM reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v DisableStoreApps /t REG_DWORD /d 1 /f
 
 REM -- AutoDownload: Disable automatic app updates from Store --
 REM   2 = Never auto-download. Stops Store from pulling updates silently.
@@ -123,15 +128,15 @@ REM -- Uncomment the line below ONLY if you want full UWP lockdown: --
 REM reg add "HKLM\SYSTEM\CurrentControlSet\Services\AppXSvc" /v Start /t REG_DWORD /d 4 /f
 
 REM -- ClipSVC: Client License Service --
-REM -- Manages Store-bought app licenses. Safe to disable if no Store apps. --
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\ClipSVC" /v Start /t REG_DWORD /d 4 /f
+REM -- Left enabled on purpose: inbox apps (Calculator, Photos, Notepad, Paint, --
+REM -- Terminal) are Store-licensed and fail to launch if ClipSVC is disabled. --
+REM reg add "HKLM\SYSTEM\CurrentControlSet\Services\ClipSVC" /v Start /t REG_DWORD /d 4 /f
 
 echo/
 echo [4/7] Disabling Store-related scheduled tasks...
 echo -------------------------------------------------
 
-REM -- These tasks handle background Store updates and maintenance --
-schtasks /Change /TN "Microsoft\Windows\WindowsUpdate\Scheduled Start" /Disable >nul 2>&1
+REM -- These InstallService tasks run background Store app update scans --
 schtasks /Change /TN "Microsoft\Windows\InstallService\ScanForUpdates" /Disable >nul 2>&1
 schtasks /Change /TN "Microsoft\Windows\InstallService\ScanForUpdatesAsUser" /Disable >nul 2>&1
 schtasks /Change /TN "Microsoft\Windows\InstallService\SmartRetry" /Disable >nul 2>&1
@@ -158,8 +163,10 @@ echo [6/7] Removing Store-dependent bloatware...
 echo ---------------------------------------------
 
 REM -- These apps serve no purpose without the Store and are typically --
-REM -- unwanted. Each line removes for current user and deprovisioned. --
-REM -- Comment out any you actually want to keep. --
+REM -- unwanted. Each line removes the app for the current user; the --
+REM -- "Deprovisioning" line at the end of this phase also removes the --
+REM -- provisioned copies (Xbox has its own line). To keep an app, comment --
+REM -- out its line AND delete its name from that line's -match list. --
 
 echo   Removing Xbox components...
 PowerShell -NoProfile -Command "Get-AppxPackage *Xbox* | Remove-AppxPackage -ErrorAction SilentlyContinue" >nul 2>&1
@@ -206,6 +213,12 @@ PowerShell -NoProfile -Command "Get-AppxPackage *Getstarted* | Remove-AppxPackag
 echo   Removing Microsoft Copilot...
 PowerShell -NoProfile -Command "Get-AppxPackage *Copilot* | Remove-AppxPackage -ErrorAction SilentlyContinue" >nul 2>&1
 
+REM -- Deprovision the apps above so new accounts (and feature updates) do --
+REM -- not bring them back. If you commented out an app above to keep it, --
+REM -- also delete its name from the -match list on the next line. --
+echo   Deprovisioning the apps above so new accounts do not get them...
+PowerShell -NoProfile -Command "Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -match 'BingNews|BingWeather|BingFinance|BingSports|ZuneMusic|ZuneVideo|People|WindowsMaps|Messaging|Solitaire|Clipchamp|Todos|PowerAutomate|MicrosoftTeams|WindowsFeedbackHub|GetHelp|Getstarted|Copilot' } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue" >nul 2>&1
+
 echo/
 echo [7/7] Blocking Store reinstallation via Windows Update...
 echo ----------------------------------------------------------
@@ -216,7 +229,8 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableSoftLa
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableCloudOptimizedContent /t REG_DWORD /d 1 /f
 
 REM -- Disable app suggestions and "tips" --
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f
+REM -- This one is a per-user policy, so it is read from HKCU, not HKLM --
+reg add "HKCU\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f
 
 echo/
 echo ============================================================================
@@ -233,11 +247,13 @@ echo/
 echo  TO SEE WHAT UWP APPS REMAIN (run in PowerShell):
 echo    Get-AppxPackage ^| Select Name ^| Sort Name
 echo/
-echo  TO REVERSE:
-echo    Run in PowerShell as Admin:
-echo      Get-AppxPackage -AllUsers Microsoft.WindowsStore ^| ForEach
-echo        {Add-AppxPackage -Register "$($_.InstallLocation)\AppxManifest.xml"
-echo         -DisableDevelopmentMode}
-echo    Then run: wsreset.exe
+echo  TO REVERSE (Admin Command Prompt):
+echo    reg add "HKLM\SYSTEM\CurrentControlSet\Services\InstallService" /v Start /t REG_DWORD /d 3 /f
+echo    (repeat with PushToInstall and wlidsvc - and ClipSVC if an older
+echo     version of this script disabled it)
+echo    reg delete "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /f
+echo    reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /f
+echo    Reboot, then run: wsreset.exe -i
+echo    Full steps: remove_store_README.txt
 echo/
 pause

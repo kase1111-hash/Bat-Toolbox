@@ -36,8 +36,12 @@ WHAT GETS REMOVED
 - Nahimic / Nahimic Companion (audio effects engine by A-Volute)
 - A-Volute Sonic Studio / Sonic Radar (spatial audio processing)
 - Waves MaxxAudio / DTS Audio Processing (if bundled)
-- Audio Processing Object (APO) hooks in the driver chain
+- Nahimic Audio Processing Object (APO) entries on the audio endpoints,
+  where Windows allows it (see "NAHIMIC APO" below)
 - Related services, scheduled tasks, and startup entries
+- Desktop (MSI) versions of the above are uninstalled silently with
+  msiexec /x (found in Apps & features; WMIC is no longer used, as it is
+  not available on Windows 11 24H2 and later)
 
 WHAT STAYS INTACT
 -----------------
@@ -45,6 +49,7 @@ WHAT STAYS INTACT
 - Windows Audio Service (AudioSrv / AudioEndpointBuilder)
 - All audio devices and endpoints (speakers, headphones, mic)
 - System sounds and volume controls
+- Dolby Access / Dolby Audio / Dolby Atmos apps (not touched)
 - Your audio will continue to work normally
 
 
@@ -102,10 +107,33 @@ WHAT YOU LOSE
 WHAT YOU GAIN
 -------------
 - Reduced audio latency
-- Elimination of audio crackling/popping caused by APO conflicts
+- Less audio crackling/popping caused by Nahimic (fully gone only once its
+  APO is no longer loaded - see "NAHIMIC APO" below)
 - Lower CPU usage from background audio services
 - Cleaner audio signal path (no forced processing)
 - Better compatibility with pro audio software and ASIO drivers
+
+
+NAHIMIC APO
+-----------
+The Nahimic audio effect (APO) is registered per audio endpoint under
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio as CLSIDs.
+The script resolves each CLSID to its COM registration to find the Nahimic /
+A-Volute ones and tries to remove those entries. It never removes an entry
+that also lists other (e.g. Realtek) effects, and it only reports
+"Cleared APO entry" when the delete really worked. These endpoint keys are
+normally protected (owned by TrustedInstaller), so Windows usually refuses
+the delete; the script then says the APO was found but not removed.
+
+To unload a Nahimic APO that is still active, remove its driver package:
+  1. Open Device Manager (Win+X > Device Manager)
+  2. Expand "Software components" (and "Sound, video and game controllers")
+  3. For each entry named Nahimic or A-Volute (leave the Realtek audio
+     device itself alone): right-click > Uninstall device, tick
+     "Attempt to remove the driver for this device", click Uninstall
+  4. Restart. Windows Update may reinstall it with a later driver update.
+To undo, reinstall the full audio driver package from your PC maker
+(Option 4 above) or use System Restore.
 
 
 NOTES

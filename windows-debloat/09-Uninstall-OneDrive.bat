@@ -22,13 +22,31 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: HKCU and %UserProfile% belong to the account this elevated window runs as.
+:: If a standard user elevated with another admin's credentials, that is NOT the
+:: signed-in user, so warn before changing the wrong account's settings.
+set "CONSOLE_USER="
+for /f "delims=" %%u in ('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystem).UserName" 2^>nul') do set "CONSOLE_USER=%%u"
+if not defined CONSOLE_USER goto :user_ok
+if /i "%CONSOLE_USER%"=="%USERDOMAIN%\%USERNAME%" goto :user_ok
+echo WARNING: This window runs as "%USERDOMAIN%\%USERNAME%", but "%CONSOLE_USER%" is signed in.
+echo Per-user settings and files will be changed for "%USERNAME%" only, NOT for "%CONSOLE_USER%".
+echo To change them for "%CONSOLE_USER%", that account must be an administrator and run this script itself.
+echo/
+choice /c YN /m "Continue anyway"
+if %errorlevel% neq 1 exit /b 1
+echo/
+:user_ok
+
 echo This script will:
 echo  - Stop and uninstall OneDrive
-echo  - Remove OneDrive folders
+echo  - Remove leftover OneDrive program/cache folders
+echo    ^(your %UserProfile%\OneDrive files folder is only removed if it is empty^)
 echo  - Remove OneDrive from Explorer sidebar
 echo/
-echo WARNING: Any files stored only in OneDrive will be lost!
-echo Make sure to sync/download important files first.
+echo NOTE: Files already uploaded stay in your OneDrive account online.
+echo       %UserProfile%\OneDrive is kept unless empty - if Desktop/Documents/Pictures are backed up
+echo       to OneDrive they live there; turn off folder backup in OneDrive settings first.
 echo/
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
@@ -64,8 +82,16 @@ echo ===========================================================================
 echo  Removing OneDrive Folders...
 echo ============================================================================
 
-echo Removing %UserProfile%\OneDrive...
-rd "%UserProfile%\OneDrive" /q /s 2>nul
+:: Never delete the user's OneDrive files folder recursively. With OneDrive
+:: folder backup (Known Folder Move) Desktop/Documents/Pictures live inside it,
+:: and files that were never uploaded would be lost for good. Plain "rd" (no /s)
+:: only removes the folder when it is empty.
+echo Checking %UserProfile%\OneDrive...
+rd "%UserProfile%\OneDrive" 2>nul
+if exist "%UserProfile%\OneDrive\" (
+    echo   Kept "%UserProfile%\OneDrive" - it still contains files. Desktop/Documents/Pictures
+    echo   may be stored there ^(OneDrive folder backup^). Move what you need out, then delete it manually.
+)
 
 echo Removing %LocalAppData%\Microsoft\OneDrive...
 rd "%LocalAppData%\Microsoft\OneDrive" /q /s 2>nul
@@ -96,6 +122,10 @@ echo NOTE: You may need to restart Explorer or reboot for the
 echo sidebar changes to take effect.
 echo/
 echo To restart Explorer now, run: taskkill /f /im explorer.exe ^&^& explorer.exe
+echo/
+echo To reinstall OneDrive later: if you ran 04-Registry-Privacy.bat, first run
+echo   reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /f
+echo then download OneDrive from Microsoft and sign out and back in.
 echo/
 
 pause

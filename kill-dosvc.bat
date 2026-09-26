@@ -173,7 +173,9 @@ REM  Subroutines
 REM ===========================================================================
 
 :KillTask
-schtasks /Change /TN %~1 /Disable >nul 2>&1
+REM Quote the task path: %~1 strips the caller's quotes, and paths such as
+REM "\Microsoft\Windows\WindowsUpdate\Scheduled Start" contain spaces.
+schtasks /Change /TN "%~1" /Disable >nul 2>&1
 if errorlevel 1 (
     echo   [skip] %~1
 ) else (

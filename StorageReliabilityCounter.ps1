@@ -242,12 +242,8 @@ function Show-DetailedReport {
                     if ($poh -ge 35000) { $pohNote = 'High usage - monitor closely'; $pohColor = 'Yellow' }
                     if ($poh -ge 50000) { $pohNote = 'Very high - consider replacement'; $pohColor = 'Red' }
                     Write-Host ("  Power-On Hours:       {0:N0} hrs ({1} days / {2} years)  [{3}]" -f $poh, $days, $years, $pohNote) -ForegroundColor $pohColor
-
-                    # Estimate daily usage
-                    if ($poh -gt 168) {
-                        $dailyUse = [math]::Min(24, [math]::Round(24 * ($poh / [math]::Max(1, $days * 24)), 1))
-                        Write-Host ("  Average Daily Use:    ~{0:N0} hrs/day (estimated)" -f $dailyUse)
-                    }
+                    # No "average daily use" figure: it cannot be derived from
+                    # power-on hours alone (no wall-clock baseline is available).
                 }
 
                 # Wear level
@@ -471,9 +467,17 @@ function Export-Report {
     }
     Add-Line ""
 
-    $script:report | Out-File -FilePath $Path -Encoding UTF8
-    Write-Host ""
-    Write-Host "Report saved to: $Path" -ForegroundColor Green
+    # -ErrorAction Stop overrides the script-wide SilentlyContinue so a failed
+    # write (e.g. missing folder) is reported instead of claiming success.
+    try {
+        $script:report | Out-File -LiteralPath $Path -Encoding UTF8 -ErrorAction Stop
+        Write-Host ""
+        Write-Host "Report saved to: $Path" -ForegroundColor Green
+    } catch {
+        Write-Host ""
+        Write-Host "[ERROR] Could not write report to: $Path ($($_.Exception.Message))" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # ============================================================================

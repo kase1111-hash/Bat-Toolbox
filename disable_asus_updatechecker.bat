@@ -49,8 +49,10 @@ set /a SERVICES_DISABLED=0
 
 :: ===== Layer 1: kill running instances =====
 echo [1/4] Killing any running instances...
+:: CSV output: the default table format cuts image names to 25 characters, so
+:: "AsusSoftwareManagerAgent.exe" would never match
 for %%E in ("%TARGET%" "%SECONDARY%") do (
-    tasklist /FI "IMAGENAME eq %%~E" 2>nul | find /I "%%~E" >nul
+    tasklist /FI "IMAGENAME eq %%~E" /FO CSV /NH 2>nul | find /I "%%~E" >nul
     if not errorlevel 1 (
         taskkill /F /IM "%%~E" /T >nul 2>&1
         if not errorlevel 1 (
@@ -69,7 +71,8 @@ echo/
 echo [2/4] Scanning scheduled tasks for references to %TARGET%...
 :: schtasks /FO CSV emits TaskName as the first comma-separated field.
 :: For each task, query its verbose detail and grep for our binary.
-for /f "skip=1 tokens=1 delims=," %%T in ('schtasks /Query /FO CSV /NH 2^>nul') do (
+:: /NH already suppresses the header, so no skip= - it would drop the first real task.
+for /f "tokens=1 delims=," %%T in ('schtasks /Query /FO CSV /NH 2^>nul') do (
     set "tname=%%~T"
     if not "!tname!"=="" if /I not "!tname!"=="TaskName" (
         schtasks /Query /TN "!tname!" /V /FO LIST 2>nul | findstr /I "%TARGET% %SECONDARY%" >nul

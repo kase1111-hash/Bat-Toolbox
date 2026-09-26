@@ -27,7 +27,11 @@ WHAT IT DOES
 The script performs four steps:
 
   1. Per-adapter disable: Sets TcpipNetbiosOptions to 2 (Disabled) on every
-     IP-enabled adapter via WMI.
+     IP-enabled adapter via WMI, and sets NetbiosOptions = 2 on every
+     interface under
+     HKLM\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces
+     so adapters that are disconnected at run time (e.g. Wi-Fi while docked,
+     VPN adapters) are covered too.
 
   2. NetBT driver: Sets the NetBIOS over TCP/IP transport driver to disabled
      and stops it if running.
@@ -80,11 +84,14 @@ Option 2: Manual Reversal
 
   Step 1 - Re-enable NetBIOS on adapters (PowerShell):
     Get-WmiObject Win32_NetworkAdapterConfiguration | Where {$_.IPEnabled} | ForEach { $_.SetTcpipNetbios(0) }
+    Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces' | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 0 }
+    (0 = Default: use the NetBIOS setting from the DHCP server)
 
   Step 2 - Re-enable services (Command Prompt):
     sc config NetBT start= system
-    sc config lmhosts start= auto
+    sc config lmhosts start= demand
     sc start lmhosts
+    (Manual / trigger start is the Windows 10/11 default for lmhosts)
 
   Step 3 - Remove firewall rules (Command Prompt):
     netsh advfirewall firewall delete rule name="Block NetBIOS-NS (UDP 137)"

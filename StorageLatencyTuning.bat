@@ -33,7 +33,7 @@ echo/
 echo %YELLOW%This script optimizes:%RESET%
 echo   - NVMe queue depth and submission efficiency
 echo   - AHCI Link Power Management (disable ASPM stalls)
-echo   - Write-back caching for consistent throughput
+echo   - Write-cache guidance (manual Device Manager setting)
 echo   - Power state transitions (prevent PS3/PS4 latency)
 echo   - Interrupt coalescing and MSI-X optimization
 echo   - File system and memory manager tuning
@@ -47,11 +47,14 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    powershell -Command "Checkpoint-Computer -Description 'Before StorageLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'" 2>nul
+    REM Checkpoint-Computer exits 0 even when it silently skips because of the 24h
+    REM frequency limit, so verify a newer restore point exists. Compare the highest
+    REM sequence number, not the count: a full shadow storage drops the oldest point.
+    powershell -NoProfile -Command "$b=(Get-ComputerRestorePoint | Measure-Object -Property SequenceNumber -Maximum).Maximum; Checkpoint-Computer -Description 'Before StorageLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'; $a=(Get-ComputerRestorePoint | Measure-Object -Property SequenceNumber -Maximum).Maximum; if ($a -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
     ) else (
-        echo %YELLOW%[WARN] Could not create restore point - System Protection may be disabled%RESET%
+        echo %YELLOW%[WARN] No new restore point - System Protection is off, or one was already made in the last 24 hours%RESET%
     )
 )
 
@@ -61,6 +64,35 @@ if %errorlevel%==2 (
     echo %YELLOW%Cancelled by user.%RESET%
     pause
     exit /b 0
+)
+
+:: Select the performance power plan FIRST, so the SCHEME_CURRENT writes in
+:: Phases 1-2 land on the plan that stays active. Plans are identified by GUID,
+:: not by their (localized) names.
+echo/
+echo %WHITE%Selecting a high performance power plan...%RESET%
+set "current_scheme="
+for /f "tokens=1,* delims=:" %%a in ('powercfg /getactivescheme') do set "current_scheme=%%b"
+echo        Previous plan:!current_scheme!
+:: Fixed destination GUID so re-runs reuse one Ultimate Performance copy
+:: instead of adding a new duplicate every time
+set "ULT_GUID=3ff9831b-6f80-4830-8178-736cd4229e7b"
+set "HIGH_GUID=8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
+set "plan_result=Current power plan kept"
+powercfg /list | findstr /i "%ULT_GUID%" >nul || powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 %ULT_GUID% >nul 2>&1
+powercfg /setactive %ULT_GUID% >nul 2>&1
+powercfg /getactivescheme | find /i "%ULT_GUID%" >nul
+if %errorlevel% equ 0 (
+    set "plan_result=Ultimate Performance plan activated"
+) else (
+    powercfg /setactive %HIGH_GUID% >nul 2>&1
+    powercfg /getactivescheme | find /i "%HIGH_GUID%" >nul
+    if !errorlevel! equ 0 set "plan_result=High Performance plan activated"
+)
+if "!plan_result!"=="Current power plan kept" (
+    echo %YELLOW%   [INFO] Keeping current power plan - the settings below change it%RESET%
+) else (
+    echo %GREEN%   [OK] !plan_result!%RESET%
 )
 
 echo/
@@ -151,18 +183,10 @@ echo %WHITE%  PHASE 3: Write Cache Optimization%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
 
-:: Enable write caching on all drives
-echo %WHITE%[1/3] Enabling write-back caching on storage devices...%RESET%
-:: Enable write caching via device settings
-for /f "delims=" %%d in ('powershell -NoProfile -Command "(Get-CimInstance Win32_DiskDrive).DeviceID" 2^>nul ^| findstr /i "PHYSICALDRIVE"') do (
-    set "drive=%%d"
-    set "drive=!drive: =!"
-    if not "!drive!"=="" (
-        echo        Processing !drive!
-    )
-)
-echo %GREEN%   [OK] Write caching policy set%RESET%
-echo %YELLOW%   [INFO] Per-drive caching enabled via Device Manager policy%RESET%
+:: Write caching is a per-device Device Manager setting; this script does not change it
+echo %WHITE%[1/3] Checking write-back caching...%RESET%
+echo %YELLOW%   [INFO] Write caching was NOT changed by this script.%RESET%
+echo %YELLOW%          To enable it: Device Manager ^> Disk drives ^> Properties ^> Policies%RESET%
 
 :: Disable write cache buffer flushing (performance mode)
 echo %WHITE%[2/3] Optimizing write cache buffer flushing...%RESET%
@@ -234,26 +258,10 @@ echo %WHITE%  PHASE 5: Power Plan Storage Settings%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
 
-:: Ensure High Performance or Ultimate Performance plan
-echo %WHITE%[1/2] Checking power plan...%RESET%
-for /f "tokens=4" %%a in ('powercfg /getactivescheme') do set "current_scheme=%%a"
-echo        Current scheme: %current_scheme%
-
-:: Try to enable Ultimate Performance plan
-powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 >nul 2>&1
-for /f "tokens=4" %%a in ('powercfg /list ^| findstr /i "Ultimate"') do (
-    powercfg /setactive %%a >nul 2>&1
-    echo %GREEN%   [OK] Ultimate Performance plan activated%RESET%
-    goto :power_done
-)
-:: Fall back to High Performance
-for /f "tokens=4" %%a in ('powercfg /list ^| findstr /i "High performance"') do (
-    powercfg /setactive %%a >nul 2>&1
-    echo %GREEN%   [OK] High Performance plan activated%RESET%
-    goto :power_done
-)
-echo %YELLOW%   [INFO] Keeping current power plan%RESET%
-:power_done
+:: The plan was selected before Phase 1 (so Phases 1-2 changed the active plan);
+:: only report it here.
+echo %WHITE%[1/2] Active power plan:%RESET%
+for /f "tokens=1,* delims=:" %%a in ('powercfg /getactivescheme') do echo       %%b
 
 :: Unhide all storage power settings
 echo %WHITE%[2/2] Exposing hidden storage power options...%RESET%
@@ -285,9 +293,10 @@ for /f "tokens=*" %%a in ('fsutil behavior query disabledeletenotify') do (
 :: Prefetch/Superfetch for SSDs
 echo %WHITE%[2/4] Optimizing Prefetch for SSD...%RESET%
 :: Disable Prefetch/Superfetch on pure SSD systems (reduces writes)
-:: Check if system drive is SSD
+:: Check if the disk that holds the system drive is an SSD (disk numbers follow
+:: enumeration order, so disk 0 is not necessarily the boot disk)
 set "is_ssd=0"
-for /f "tokens=*" %%a in ('powershell -Command "(Get-PhysicalDisk | Where-Object {$_.DeviceId -eq 0}).MediaType"') do (
+for /f "tokens=*" %%a in ('powershell -NoProfile -Command "$n=(Get-Partition -DriveLetter $env:SystemDrive.Substring(0,1)).DiskNumber; (Get-PhysicalDisk | Where-Object {$_.DeviceId -eq $n}).MediaType" 2^>nul') do (
     echo %%a | findstr /i "SSD" >nul && set "is_ssd=1"
 )
 if "%is_ssd%"=="1" (
@@ -300,10 +309,20 @@ if "%is_ssd%"=="1" (
 
 :: Defragmentation settings
 echo %WHITE%[3/4] Configuring scheduled optimization...%RESET%
-:: Disable scheduled defrag for SSDs (TRIM is sufficient)
-:: Note: Windows 10+ handles this automatically but we ensure it
-schtasks /change /tn "\Microsoft\Windows\Defrag\ScheduledDefrag" /disable >nul 2>&1
-echo %GREEN%   [OK] Scheduled defrag disabled (TRIM handles SSD optimization)%RESET%
+:: Disable scheduled defrag only when EVERY physical disk is an SSD. The task
+:: optimizes all volumes, so disabling it would stop HDD defragmentation too.
+:: Unknown media type or a failed query keeps the task.
+powershell -NoProfile -Command "$d=@(Get-PhysicalDisk -ErrorAction Stop); if ($d.Count -gt 0 -and -not ($d | Where-Object { $_.MediaType -ne 'SSD' })) { exit 0 } else { exit 1 }" >nul 2>&1
+if %errorlevel% equ 0 (
+    schtasks /change /tn "\Microsoft\Windows\Defrag\ScheduledDefrag" /disable >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo %GREEN%   [OK] Scheduled defrag disabled ^(all drives are SSDs^)%RESET%
+    ) else (
+        echo %YELLOW%   [WARN] Could not disable the scheduled defrag task%RESET%
+    )
+) else (
+    echo %YELLOW%   [INFO] Scheduled optimization kept - HDD or unknown media present%RESET%
+)
 
 :: Boot trace optimization
 echo %WHITE%[4/4] Disabling boot tracing...%RESET%
@@ -321,12 +340,11 @@ echo %WHITE%Summary of changes:%RESET%
 echo   [+] NVMe power state transitions minimized
 echo   [+] AHCI Link Power Management disabled
 echo   [+] PCIe ASPM disabled for storage
-echo   [+] Write caching optimized
 echo   [+] Queue depth increased to 256
 echo   [+] Interrupt coalescing disabled
 echo   [+] MSI-X enabled for NVMe
 echo   [+] File system optimizations applied
-echo   [+] Power plan set to high performance
+echo   [+] Power plan: !plan_result!
 echo   [+] Hidden power options exposed
 echo/
 echo %YELLOW%Recommendations:%RESET%
@@ -347,8 +365,13 @@ echo/
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
     echo/
-    echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
-    shutdown /r /t 10 /c "Restarting to apply storage latency optimizations"
+    REM Ctrl+C would only end this batch file; the scheduled restart needs shutdown /a
+    shutdown /r /t 30 /c "Restarting to apply storage latency optimizations"
+    choice /c AC /t 25 /d C /m "Restarting in 30 seconds. Press A to abort, C to continue"
+    if !errorlevel! equ 1 (
+        shutdown /a
+        echo %YELLOW%Restart cancelled.%RESET%
+    )
 )
 
 echo/

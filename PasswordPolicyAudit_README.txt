@@ -26,12 +26,13 @@ No system changes are made. This is a read-only audit tool.
 
 WHAT IT CHECKS
 --------------
-Phase 1: Password Policy (net accounts)
+Phase 1: Password Policy (local security policy, read with secedit)
   - Minimum password length
   - Maximum/minimum password age
   - Password history (reuse prevention)
   - Account lockout threshold
-  - Lockout duration and observation window
+  - Lockout duration and observation window (shown as N/A and not scored
+    while account lockout is disabled, because they have no effect then)
 
 Phase 2: Password Complexity
   - Whether complexity requirements are enabled
@@ -54,9 +55,19 @@ Phase 4: Audit Policy
 Phase 5: Additional Security
   - UAC (User Account Control) status and level
   - Auto-logon configuration
-  - Screen lock timeout
+  - Screen lock timeout (only counts when a screen saver is actually selected;
+    choosing "(None)" leaves the old timeout behind but nothing locks)
   - Screen saver password requirement
+  - Group Policy screen saver settings override the user's own settings
   - Windows Defender status
+
+Language and renamed accounts:
+  Phases 1-3 read the language-neutral key names of the security policy
+  export (secedit /export) instead of the localized "net accounts" / "net
+  user" text, so they also work on non-English Windows and when the Guest or
+  Administrator account has been renamed. Phase 4 looks the audit
+  subcategories up by GUID ("auditpol /backup"), and the Administrators group
+  is found by its well-known SID, for the same reason.
 
 Phase 6: Security Score
   - Overall score as percentage and letter grade
@@ -80,7 +91,8 @@ STATUS MEANINGS
 [WARN] - Setting is acceptable but could be improved
 [FAIL] - Setting is a security risk, should be fixed
 [INFO] - Informational, no action needed
-[SKIP] - Could not check (insufficient permissions)
+[N/A]  - Setting has no effect in the current configuration (not scored)
+[SKIP] - Could not check (e.g. the security policy export failed)
 
 
 RECOMMENDED SETTINGS
@@ -115,9 +127,17 @@ Set password history to remember 5:
 
 Disable Guest account:
   net user Guest /active:no
+  (On non-English Windows or if the account was renamed, use its real name,
+  e.g. "Gast" - the report's recommendation shows the current name.)
 
 Disable built-in Administrator:
   net user Administrator /active:no
+  (Use the localized or renamed name if it differs, e.g. "Administrateur".)
+
+Turn on a locking screen saver:
+  Settings > Personalization > Lock screen > Screen saver: pick any screen
+  saver (not "(None)"), set the wait time, and tick "On resume, display
+  logon screen".
 
 Enable password complexity (requires secpol.msc):
   1. Press Win+R, type "secpol.msc", press Enter
@@ -145,8 +165,11 @@ Contains:
 NOTES
 -----
 - This is a read-only tool. No system changes are made.
-- Some checks require the security policy export (secedit)
-- Audit policy requires auditpol access (admin only)
+- Password policy, complexity and Guest/Administrator checks use the security
+  policy export (secedit /export). It is written to %TEMP% and deleted
+  right after it is read.
+- Audit policy requires auditpol access (admin only). A temporary
+  auditpol_backup.csv in %TEMP% is read and deleted.
 - Run periodically to verify security posture
 - Run after joining a domain to compare local vs domain policy
 - Domain-joined machines may have different policies from Group Policy

@@ -27,13 +27,16 @@ echo/
 
 :: Set output directory and filename
 set "EXPORT_DIR=%USERPROFILE%\Desktop"
+:: Ask the shell for the real Desktop - OneDrive folder backup redirects it
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "EXPORT_DIR=%%D"
+if not exist "%EXPORT_DIR%\" set "EXPORT_DIR=%USERPROFILE%"
 :: Locale-independent timestamp via PowerShell. %DATE%/%TIME% slicing assumes US
 :: formatting and breaks (invalid "/" in the name) on other locales.
 for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm"') do set "TIMESTAMP=%%T"
 set "EXPORT_FILE=%EXPORT_DIR%\InstalledPrograms_%COMPUTERNAME%_%TIMESTAMP%.txt"
 
 echo Output will be saved to:
-echo  %EXPORT_FILE%
+echo  !EXPORT_FILE!
 echo/
 echo Press any key to start scanning...
 pause >nul
@@ -55,7 +58,7 @@ echo Export Date: %DATE% %TIME% >> "%EXPORT_FILE%"
 echo/ >> "%EXPORT_FILE%"
 
 :: Get Windows version
-for /f "tokens=4-5 delims=[.] " %%i in ('ver') do set "WINVER=%%i.%%j"
+for /f "tokens=4-7 delims=[.] " %%i in ('ver') do set "WINVER=%%i.%%j.%%k.%%l"
 echo Windows Version: %WINVER% >> "%EXPORT_FILE%"
 echo/ >> "%EXPORT_FILE%"
 
@@ -168,14 +171,18 @@ echo  WINDOWS OPTIONAL FEATURES (Enabled) >> "%EXPORT_FILE%"
 echo ============================================================================ >> "%EXPORT_FILE%"
 echo/ >> "%EXPORT_FILE%"
 
+:: Read enabled features through WMI (InstallState=1 means Enabled). Unlike
+:: "dism /online" (which fails without elevation and prints a translated State
+:: column) this is language-independent and normally works without admin.
+:: If nothing comes back, say so instead of leaving a silently empty section.
 set "count=0"
-for /f "tokens=*" %%a in ('dism /online /get-features /format:table 2^>nul ^| findstr /i "Enabled"') do (
-    set "line=%%a"
-    set "line=!line: | Enabled=!"
-    echo !line! >> "%EXPORT_FILE%"
+for /f "delims=" %%a in ('powershell -NoProfile -Command "Get-CimInstance -ClassName Win32_OptionalFeature -Filter 'InstallState=1' | Sort-Object Name | ForEach-Object Name" 2^>nul') do (
+    echo %%a >> "%EXPORT_FILE%"
     set /a count+=1
 )
-echo   Found %count% features
+if !count! equ 0 echo [Could not read optional features - re-run as administrator] >> "%EXPORT_FILE%"
+echo   Found !count! features
+if !count! equ 0 echo   [Could not read optional features - re-run as administrator to include them]
 
 :: ============================================================================
 :: Section 6: Detailed Program List with Versions
@@ -209,20 +216,20 @@ if %errorlevel% equ 0 (
     if exist "%WINGET_FILE%" (
         REM Count packages in JSON
         set "winget_count=0"
-        for /f %%a in ('powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages.Count" 2^>nul') do set "winget_count=%%a"
+        for /f %%a in ('powershell -Command "(Get-Content -LiteralPath $env:WINGET_FILE | ConvertFrom-Json).Sources.Packages.Count" 2^>nul') do set "winget_count=%%a"
         echo       - Exported !winget_count! programs to Winget JSON
         echo/ >> "%EXPORT_FILE%"
         echo ============================================================================ >> "%EXPORT_FILE%"
         echo  WINGET EXPORT >> "%EXPORT_FILE%"
         echo ============================================================================ >> "%EXPORT_FILE%"
         echo/ >> "%EXPORT_FILE%"
-        echo Winget JSON file created: %WINGET_FILE% >> "%EXPORT_FILE%"
+        echo Winget JSON file created: !WINGET_FILE! >> "%EXPORT_FILE%"
         echo/ >> "%EXPORT_FILE%"
         echo To reinstall after clean install, run: >> "%EXPORT_FILE%"
         echo   winget import -i "%WINGET_FILE%" --accept-source-agreements --accept-package-agreements >> "%EXPORT_FILE%"
         echo/ >> "%EXPORT_FILE%"
         echo Programs included in Winget export: >> "%EXPORT_FILE%"
-        powershell -Command "(Get-Content '%WINGET_FILE%' | ConvertFrom-Json).Sources.Packages | ForEach-Object { Write-Output ('  - ' + $_.PackageIdentifier) }" >> "%EXPORT_FILE%" 2>nul
+        powershell -Command "(Get-Content -LiteralPath $env:WINGET_FILE | ConvertFrom-Json).Sources.Packages | ForEach-Object { Write-Output ('  - ' + $_.PackageIdentifier) }" >> "%EXPORT_FILE%" 2>nul
     ) else (
         echo       - Winget export failed [no matching packages found]
     )
@@ -268,9 +275,9 @@ echo  Export Complete^^!
 echo ============================================================================
 echo/
 echo Files saved to:
-echo  Text report: %EXPORT_FILE%
+echo  Text report: !EXPORT_FILE!
 if exist "%WINGET_FILE%" (
-    echo  Winget JSON: %WINGET_FILE%
+    echo  Winget JSON: !WINGET_FILE!
 )
 echo/
 
@@ -281,6 +288,7 @@ echo Report contains approximately %totallines% lines.
 echo/
 
 :: Ask if user wants to open the file
+set "openfile="
 set /p "openfile=Would you like to open the text report now? [Y/N]: "
 if /i "%openfile%"=="Y" (
     notepad "%EXPORT_FILE%"

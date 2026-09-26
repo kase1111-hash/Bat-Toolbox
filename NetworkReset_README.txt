@@ -12,8 +12,18 @@ HOW TO USE
 ----------
 1. Right-click NetworkReset.bat
 2. Select "Run as administrator" (REQUIRED)
-3. Wait for each step to complete
-4. Restart your computer when finished
+3. Read the warning and answer Y to continue (anything else cancels
+   without changing anything)
+4. Wait for each step to complete
+5. Restart your computer when finished
+   (to cancel a restart that has already been scheduled, press Win+R and
+   run: shutdown /a)
+
+The script first detects the adapter to cycle: the one that carries the
+IPv4 default route. Virtual adapters without a gateway (Hyper-V Default
+Switch, WSL, VMware and VirtualBox host-only adapters) are skipped, and the
+detection works on any display language. If none is found, steps 6 and 7
+are skipped.
 
 The script performs these steps in order:
   1. Releases current IP address
@@ -38,6 +48,10 @@ BEFORE YOU RUN
 5. Click Create and wait for completion
 
 Also note:
+- The TCP/IP reset ERASES static IP, gateway and DNS settings. If you use
+  them, run "ipconfig /all" first and note them down - you will need to
+  re-enter them afterwards (see HOW TO RESTORE / UNDO)
+- All connections drop, including VPN and Remote Desktop sessions
 - You will temporarily lose internet connection during the reset
 - Close any programs that require internet
 - Download any needed files before running

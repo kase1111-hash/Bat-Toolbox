@@ -39,6 +39,7 @@ echo/
 echo %YELLOW%This is a read-only audit. No changes will be made.%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=Start the port scan? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -49,7 +50,13 @@ if /i not "%confirm%"=="Y" (
 
 :: Set up report file
 for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
-set "REPORT=%USERPROFILE%\Desktop\PortScan_%COMPUTERNAME%_%dt:~0,8%.txt"
+:: Ask Windows for the real Desktop folder: with OneDrive folder backup it is
+:: the profile's OneDrive\Desktop folder, not its plain Desktop folder.
+set "DESKTOPDIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOPDIR=%%D"
+if not defined DESKTOPDIR set "DESKTOPDIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOPDIR%\" set "DESKTOPDIR=%USERPROFILE%"
+set "REPORT=%DESKTOPDIR%\PortScan_%COMPUTERNAME%_%dt:~0,8%.txt"
 
 echo/
 echo %CYAN%============================================================================%RESET%
@@ -289,28 +296,17 @@ if exist "%TEMP%\portscan_results.txt" (
     del "%TEMP%\portscan_results.txt" 2>nul
 )
 
-:: Read counts
+:: Read counts (set /p keeps the old value when a file is empty, so each
+:: count is reset to 0 right before it is read)
 set "totalPorts=0"
+if exist "%TEMP%\portscan_total.txt" set /p totalPorts=<"%TEMP%\portscan_total.txt"
 set "suspiciousPorts=0"
+if exist "%TEMP%\portscan_suspicious.txt" set /p suspiciousPorts=<"%TEMP%\portscan_suspicious.txt"
 set "wildcardPorts=0"
+if exist "%TEMP%\portscan_wildcard.txt" set /p wildcardPorts=<"%TEMP%\portscan_wildcard.txt"
 set "highRiskPorts=0"
-
-if exist "%TEMP%\portscan_total.txt" (
-    set /p totalPorts=<"%TEMP%\portscan_total.txt"
-    del "%TEMP%\portscan_total.txt" 2>nul
-)
-if exist "%TEMP%\portscan_suspicious.txt" (
-    set /p suspiciousPorts=<"%TEMP%\portscan_suspicious.txt"
-    del "%TEMP%\portscan_suspicious.txt" 2>nul
-)
-if exist "%TEMP%\portscan_wildcard.txt" (
-    set /p wildcardPorts=<"%TEMP%\portscan_wildcard.txt"
-    del "%TEMP%\portscan_wildcard.txt" 2>nul
-)
-if exist "%TEMP%\portscan_highrisk.txt" (
-    set /p highRiskPorts=<"%TEMP%\portscan_highrisk.txt"
-    del "%TEMP%\portscan_highrisk.txt" 2>nul
-)
+if exist "%TEMP%\portscan_highrisk.txt" set /p highRiskPorts=<"%TEMP%\portscan_highrisk.txt"
+del "%TEMP%\portscan_total.txt" "%TEMP%\portscan_suspicious.txt" "%TEMP%\portscan_wildcard.txt" "%TEMP%\portscan_highrisk.txt" 2>nul
 
 del "%PSSCRIPT%" 2>nul
 
@@ -328,9 +324,16 @@ echo/
 (echo  FIREWALL STATUS) >> "%REPORT%"
 (echo ============================================================================) >> "%REPORT%"
 
+:: Ask the firewall API for each profile's effective state. netsh's text output
+:: is localized (German prints "Status EIN/AUS"), so searching it for "ON" gave
+:: wrong results on non-English Windows. The COM API is the fallback if the
+:: NetSecurity cmdlets cannot be used. Exit code: 0 = on, 1 = off, 2 = unknown.
 for %%P in (Domain Private Public) do (
-    netsh advfirewall show %%Pprofile state 2>nul | find /i "ON" >nul 2>&1
-    if not errorlevel 1 (
+    powershell -NoProfile -Command "$n = @{Domain=1; Private=2; Public=4}['%%P']; try { $on = (Get-NetFirewallProfile -PolicyStore ActiveStore -Name '%%P' -ErrorAction Stop).Enabled -eq 'True' } catch { try { $on = [bool](New-Object -ComObject HNetCfg.FwPolicy2).FirewallEnabled($n) } catch { exit 2 } }; if ($on) { exit 0 } else { exit 1 }" >nul 2>&1
+    if errorlevel 2 (
+        echo   %YELLOW%[??]  %%P Profile firewall status could not be read%RESET%
+        echo [??]  %%P Profile firewall status could not be read>> "%REPORT%"
+    ) else if not errorlevel 1 (
         echo   %GREEN%[ON]  %%P Profile firewall is enabled%RESET%
         echo [ON]  %%P Profile firewall is enabled>> "%REPORT%"
     ) else (
@@ -427,12 +430,17 @@ echo     } catch {}
 echo     $local = "$($conn.LocalAddress):$($conn.LocalPort)"
 echo     $remote = "$($conn.RemoteAddress):$($conn.RemotePort)"
 echo     $pidStr = $conn.OwningProcess.ToString^(^)
-echo     Write-Host "  $($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
-echo     "$($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
+echo     "  $($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
 echo }
 ) > "%PSESTABLISHED%"
 
-powershell -ExecutionPolicy Bypass -File "%PSESTABLISHED%" 2>nul >> "%REPORT%"
+:: Capture the list once, then show it on screen and append it to the report.
+:: (Write-Host is not used: with stdout redirected it goes into the file too.)
+set "ESTLIST=%TEMP%\portscan_est.txt"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PSESTABLISHED%" 2>nul > "%ESTLIST%"
+type "%ESTLIST%"
+type "%ESTLIST%" >> "%REPORT%"
+del "%ESTLIST%" 2>nul
 del "%PSESTABLISHED%" 2>nul
 
 echo/
@@ -496,7 +504,7 @@ echo  - Disable RDP/SSH/WinRM if not actively used
 echo  - Keep Windows Firewall enabled on all profiles
 echo  - Run this scan periodically or after installing new software
 echo/
-echo Report saved to: %REPORT%
+echo Report saved to: !REPORT!
 echo/
 
 (echo/) >> "%REPORT%"

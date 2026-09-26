@@ -32,18 +32,27 @@ MENU OPTIONS
 Option 1: Backup All Third-Party Drivers
   - Uses DISM /export-driver to copy all non-inbox drivers
   - Falls back to pnputil if DISM has issues
-  - Creates a DriverInventory.txt with full driver listing
+  - Creates a DriverInventory.txt listing every non-inbox driver package
+    (the same set DISM exports, including Microsoft-provided OEM packages)
   - Saves to Desktop by default (custom path supported)
   - Folder name includes computer name and date
 
 Option 2: List Installed Third-Party Drivers
   - Shows all non-Microsoft drivers currently installed
   - Displays class, published name, provider, and version
+  - Also prints how many Microsoft-provided OEM packages exist; those are
+    backed up but not listed here
   - Read-only, no changes made
 
 Option 3: Restore Drivers from Backup
-  - Bulk install: installs all .inf files from backup folder
-  - Selective install: review each driver before installing
+  - Enter the backup folder path (quotes from a pasted or drag-and-dropped
+    path are removed automatically)
+  - [1] Bulk install: installs all .inf files from backup folder
+  - [2] Selective install: review each driver before installing; pressing
+    Enter at "Install this driver?" skips that driver
+  - [0], Enter or any other key cancels without installing anything
+  - Drivers that install but need a restart (pnputil exit code 3010) are
+    counted as installed
   - Skips drivers already installed or not needed
   - Recommends reboot after restore
 
@@ -51,6 +60,8 @@ Option 4: Backup with Self-Contained Restore Script
   - Performs a full backup (same as option 1)
   - Creates RestoreAllDrivers.bat inside the backup folder
   - The restore script is portable — works on any Windows install
+  - The restore script counts drivers that need a restart (pnputil exit
+    code 3010) as installed, not skipped
   - Copy the entire folder to USB for clean install recovery
 
 

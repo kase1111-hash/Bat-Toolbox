@@ -28,13 +28,16 @@ SMB Server Hardening:
   - EnableSecuritySignature = True
   - EncryptData = True               (all transfers encrypted)
   - RejectUnencryptedAccess = True    (block unencrypted clients)
-  - EnableInsecureGuestLogons = False
   - DisableCompression = True         (SMBGhost CVE-2020-0796)
+    Windows 10 and older builds without the -DisableCompression cmdlet
+    parameter get the ADV200005 registry value instead:
+    HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters
+    DisableCompression = 1 (DWORD)
 
 SMB Client Hardening:
   - RequireSecuritySignature = True
   - EnableSecuritySignature = True
-  - EnableInsecureGuestLogons = False
+  - EnableInsecureGuestLogons = False (no unauthenticated guest fallback)
 
 Registry Hardening:
   - RestrictAnonymousSAM = 1          (no anonymous SAM enumeration)
@@ -79,18 +82,38 @@ Option 1: System Restore (Recommended)
   3. Follow the wizard to restore
 
 Option 2: Manual Reversal
-  Run these commands as Administrator:
+  Run these commands as Administrator. They restore the Windows defaults
+  (the script does not record the previous values). Settings that the
+  script sets to their Windows default are deliberately NOT weakened:
+  RejectUnencryptedAccess stays True and RestrictAnonymousSAM stays 1.
 
   Step 1 - Revert SMB server (PowerShell):
-    Set-SmbServerConfiguration -RequireSecuritySignature $false -EncryptData $false -RejectUnencryptedAccess $false -Confirm:$false
+    Set-SmbServerConfiguration -EncryptData $false -Confirm:$false
+    Set-SmbServerConfiguration -RequireSecuritySignature $false -Confirm:$false
+    (Skip the second line on Windows 11 24H2 and later Pro/Enterprise/
+    Education: SMB signing is required there by default.)
 
   Step 2 - Revert SMB client (PowerShell):
-    Set-SmbClientConfiguration -RequireSecuritySignature $false -EnableInsecureGuestLogons $true -Confirm:$false
+    Set-SmbClientConfiguration -RequireSecuritySignature $false -Confirm:$false
+    (Skip this on Windows 11 24H2 and later Pro/Enterprise/Education:
+    SMB signing is required there by default.)
+
+    Insecure guest logons are left disabled. Windows 10/11 Enterprise and
+    Education, and Windows 11 24H2+ Pro, disable them by default. Only if a
+    legacy NAS needs guest access:
+    Set-SmbClientConfiguration -EnableInsecureGuestLogons $true -Confirm:$false
 
   Step 3 - Revert registry (Command Prompt):
-    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymousSAM /t REG_DWORD /d 0 /f
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymous /t REG_DWORD /d 0 /f
     reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 3 /f
+    (NullSessionPipes / NullSessionShares are left empty. On workstations
+    the default is also no anonymously accessible pipes or shares.)
+
+  Step 4 - Re-enable SMB compression:
+    Windows 11 (PowerShell):
+      Set-SmbServerConfiguration -DisableCompression $false -Confirm:$false
+    Windows 10 (Command Prompt):
+      reg delete "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v DisableCompression /f
 
 
 COMPATIBILITY

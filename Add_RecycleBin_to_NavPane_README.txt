@@ -17,8 +17,9 @@ HOW TO USE
 ----------
 1. (Recommended) Right-click Add_RecycleBin_to_NavPane.bat and choose
    "Run as administrator" for the most reliable result.
-2. The script writes two registry values and then restarts Explorer so the
-   change appears immediately.
+2. The script writes one registry value (and removes an obsolete override
+   left by earlier versions), then restarts Explorer so the change appears
+   immediately.
 3. When Explorer relaunches, open any Explorer window - the Recycle Bin now
    appears in the Navigation Pane on the left.
 
@@ -29,15 +30,19 @@ where Explorer restart timing differs.
 
 WHAT IT DOES
 ------------
-The script makes two registry changes under the current user's classes hive
-for the Recycle Bin CLSID {645FF040-5081-101B-9F08-00AA002F954E}:
+The script makes these registry changes under the current user's classes
+hive for the Recycle Bin CLSID {645FF040-5081-101B-9F08-00AA002F954E}:
 
-  1. Creates the CLSID key:
+  1. Sets the DWORD value System.IsPinnedToNameSpaceTree = 1 on
      HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}
+     (creating the key if needed). This is the value Explorer uses to pin
+     an item such as This PC, Network or OneDrive to the Navigation Pane.
 
-  2. Sets the ShellFolder Attributes value to 0x50000020, which is the flag
-     combination that tells Explorer to show the folder in the Navigation
-     Pane tree.
+  2. Deletes the per-user ShellFolder override
+     HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\ShellFolder
+     if it exists. Earlier versions of this script wrote an Attributes value
+     of 0x50000020 there; it did not pin anything and replaced the Recycle
+     Bin's normal shell attributes for this user.
 
 It then restarts Explorer:
   - taskkill /f /im explorer.exe
@@ -55,9 +60,13 @@ BEFORE YOU RUN
 
 HOW TO RESTORE / UNDO
 ---------------------
-Remove the Navigation Pane entry by deleting the CLSID key you added:
+Remove the Navigation Pane entry by deleting the value the script added:
 
-  reg delete "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}" /f
+  reg delete "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}" /v "System.IsPinnedToNameSpaceTree" /f
+
+(Setting the value to 0 instead also unpins it. Deleting the whole per-user
+key with  reg delete "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}" /f
+also works if nothing else has customized the Recycle Bin for this user.)
 
 Then restart Explorer (or sign out and back in):
 

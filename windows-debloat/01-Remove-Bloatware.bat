@@ -34,7 +34,7 @@ echo  - Xbox apps (if you don't game on PC)
 echo  - Groove Music, Movies and TV (Zune apps)
 echo  - Maps, Alarms, Camera, Sound Recorder
 echo  - Feedback Hub, Get Help, Tips
-echo  - Wallet, Print3D, OneConnect
+echo  - Paint 3D, Wallet, Print3D, OneConnect
 echo  - Third-party bloat (Candy Crush, Facebook, Spotify, etc.)
 echo/
 echo Press any key to continue or Ctrl+C to cancel...
@@ -128,16 +128,16 @@ echo }
 echo/
 echo Write-Host ''
 echo Write-Host 'Removing third-party bloatware...' -ForegroundColor Cyan
-echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*Dolby*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*', '*Disney*', '*Amazon*', '*TikTok*', '*Instagram*'^)
+echo $thirdParty = @^('*CandyCrush*', '*Facebook*', '*Twitter*', '*Spotify*', '*Netflix*', '*FitbitCoach*', '*PandoraMedia*', '*LinkedIn*', '*Disney*', '*Amazon*', '*TikTok*', '*Instagram*'^)
 echo/
 echo foreach ^($pattern in $thirdParty^) {
-echo     $packages = Get-AppxPackage -Name $pattern -ErrorAction SilentlyContinue
+echo     $packages = Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue
 echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $pattern
 echo/
 echo     foreach ^($pkg in $packages^) {
 echo         Write-Host "Removing $($pkg.Name)..." -ForegroundColor Yellow
 echo         try {
-echo             Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
+echo             Remove-AppxPackage -Package $pkg.PackageFullName -AllUsers -ErrorAction Stop
 echo             Write-Host "  Removed." -ForegroundColor Green
 echo             $removedCount++
 echo         } catch {

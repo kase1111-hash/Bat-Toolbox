@@ -122,14 +122,19 @@ echo $types = $sticks ^| Select-Object -ExpandProperty SMBIOSMemoryType -Unique
 echo/
 echo $isMatched = ^($speeds.Count -eq 1 -and $capacities.Count -eq 1^)
 echo/
-echo # Memory type name
+echo # Memory type name ^(SMBIOS Type 17 memory type codes^)
 echo $typeNames = @{
-echo     20 = 'DDR'
-echo     21 = 'DDR2'
-echo     22 = 'DDR2 FB-DIMM'
+echo     18 = 'DDR'
+echo     19 = 'DDR2'
+echo     20 = 'DDR2 FB-DIMM'
 echo     24 = 'DDR3'
 echo     26 = 'DDR4'
+echo     27 = 'LPDDR'
+echo     28 = 'LPDDR2'
+echo     29 = 'LPDDR3'
+echo     30 = 'LPDDR4'
 echo     34 = 'DDR5'
+echo     35 = 'LPDDR5'
 echo }
 echo/
 echo Write-Host "  INSTALLED RAM STICKS" -ForegroundColor White
@@ -181,16 +186,20 @@ echo         Write-Host "      Dual-channel may operate in flex mode (partial du
 echo     }
 echo }
 echo/
-echo # XMP/DOCP detection
+echo # Memory speed: SMBIOS Speed is the BIOS-reported module max, not the XMP/EXPO profile
 echo $configSpeed = ^($sticks ^| Select-Object -First 1^).ConfiguredClockSpeed
 echo $ratedSpeed = ^($sticks ^| Select-Object -First 1^).Speed
+echo $isLaptop = ^($cs.PCSystemType -eq 2^)
 echo if ^($ratedSpeed -and $configSpeed -and $ratedSpeed -gt $configSpeed^) {
 echo     Write-Host ""
-echo     Write-Host "  XMP/DOCP:             NOT ENABLED" -ForegroundColor Yellow
-echo     Write-Host "    - RAM is running at ${configSpeed}MHz but rated for ${ratedSpeed}MHz" -ForegroundColor Yellow
-echo     Write-Host "    - Enable XMP/DOCP/EXPO in BIOS to get full speed" -ForegroundColor Yellow
-echo } elseif ^($ratedSpeed -and $configSpeed -and $ratedSpeed -eq $configSpeed^) {
-echo     Write-Host "  XMP/DOCP:             Running at rated speed (${configSpeed}MHz)" -ForegroundColor Green
+echo     Write-Host "  Memory Speed:         ${configSpeed} MT/s (module max ${ratedSpeed} MT/s)" -ForegroundColor Yellow
+echo     if ^($isLaptop^) {
+echo         Write-Host "    - Most likely capped by the CPU or platform" -ForegroundColor Yellow
+echo     } else {
+echo         Write-Host "    - Check the BIOS memory profile (XMP/DOCP/EXPO); the CPU or board may also cap speed" -ForegroundColor Yellow
+echo     }
+echo } elseif ^($ratedSpeed -and $configSpeed^) {
+echo     Write-Host "  Memory Speed:         ${configSpeed} MT/s" -ForegroundColor Green
 echo }
 echo/
 echo # Single channel warning
@@ -406,18 +415,20 @@ echo         $score -= 5
 echo     }
 echo }
 echo/
-echo # Check 4: XMP/DOCP
+echo # Check 4: Memory speed vs module maximum
+echo # SMBIOS Speed is the BIOS-reported module max, not the XMP/EXPO profile, so XMP state cannot be confirmed
 echo $configSpeed = ^($sticks ^| Select-Object -First 1^).ConfiguredClockSpeed
 echo $ratedSpeed = ^($sticks ^| Select-Object -First 1^).Speed
+echo $isLaptop = ^($cs.PCSystemType -eq 2^)
 echo/
-echo Write-Host "  [CHECK] XMP/DOCP:" -NoNewline
+echo Write-Host "  [CHECK] Memory Speed:" -NoNewline
 echo if ^($ratedSpeed -and $configSpeed -and $ratedSpeed -gt $configSpeed^) {
-echo     Write-Host " NOT ENABLED (${configSpeed}MHz of ${ratedSpeed}MHz)" -ForegroundColor Yellow
-echo     $issues += "RAM running below rated speed (${configSpeed} vs ${ratedSpeed} MHz)"
-echo     $recommendations += "Enable XMP/DOCP/EXPO in BIOS for full RAM speed"
-echo     $score -= 15
+echo     Write-Host " BELOW MODULE MAX (${configSpeed} of ${ratedSpeed} MT/s)" -ForegroundColor Yellow
+echo     if ^(-not $isLaptop^) {
+echo         $recommendations += "Check the BIOS memory profile (XMP/DOCP/EXPO); the CPU or board may also cap speed"
+echo     }
 echo } elseif ^($ratedSpeed -and $configSpeed^) {
-echo     Write-Host " OK (${configSpeed}MHz)" -ForegroundColor Green
+echo     Write-Host " OK (${configSpeed} MT/s)" -ForegroundColor Green
 echo } else {
 echo     Write-Host " UNKNOWN" -ForegroundColor Yellow
 echo }
@@ -472,10 +483,10 @@ echo Write-Host ""
 echo/
 echo # Score
 echo $grade = switch ^([math]::Floor^($score / 10^)^) {
-echo     { $_ -ge 9 } { 'A' }
-echo     { $_ -ge 8 } { 'B' }
-echo     { $_ -ge 7 } { 'C' }
-echo     { $_ -ge 6 } { 'D' }
+echo     { $_ -ge 9 } { 'A'; break }
+echo     { $_ -ge 8 } { 'B'; break }
+echo     { $_ -ge 7 } { 'C'; break }
+echo     { $_ -ge 6 } { 'D'; break }
 echo     default { 'F' }
 echo }
 echo $gradeColor = switch ^($grade^) {
@@ -552,6 +563,7 @@ echo   [3] View results from last diagnostic
 echo   [0] Cancel
 echo/
 
+set "diagChoice="
 set /p "diagChoice=Select option: "
 
 if "%diagChoice%"=="0" goto MainMenu
@@ -585,36 +597,23 @@ if "%diagChoice%"=="3" (
     goto MainMenu
 )
 
+:: mdsched.exe takes no command-line switches: both options open the same Windows
+:: dialog, and nothing is scheduled or restarted until the user picks a choice there.
 if "%diagChoice%"=="1" (
     echo/
-    echo %YELLOW%The computer will restart now to run Memory Diagnostic.%RESET%
-    echo %YELLOW%Save all work before continuing.%RESET%
+    echo %YELLOW%Save all work first. The Windows Memory Diagnostic dialog will open.%RESET%
+    echo %YELLOW%Choose "Restart now and check for problems".%RESET%
     echo/
-    set /p "confirm=Restart now? [Y/N]: "
-    if /i not "!confirm!"=="Y" goto MainMenu
-
-    REM Schedule immediate diagnostic
-    bcdedit /set {memdiag} locale en-US >nul 2>&1
-    mdsched.exe /f >nul 2>&1
-    if errorlevel 1 (
-        REM Fallback
-        echo %YELLOW%Starting Windows Memory Diagnostic...%RESET%
-        start "" mdsched.exe
-    )
+    start "" mdsched.exe
+    pause
     goto MainMenu
 )
 
 if "%diagChoice%"=="2" (
     echo/
-    echo %GREEN%Memory Diagnostic will run on next restart.%RESET%
+    echo %YELLOW%In the dialog, choose "Check for problems the next time I start my computer".%RESET%
     echo/
-    mdsched.exe >nul 2>&1
-    if errorlevel 1 (
-        start "" mdsched.exe
-    )
-    echo %YELLOW%When prompted by the system dialog, select%RESET%
-    echo %YELLOW%"Check for problems the next time I start my computer"%RESET%
-    echo/
+    start "" mdsched.exe
     pause
     goto MainMenu
 )

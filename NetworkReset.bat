@@ -22,17 +22,29 @@ echo   NETWORK RESET UTILITY
 echo ============================================
 echo/
 
-:: Get the active adapter name
-:: tokens=4* puts first word in %%a, remaining words in %%b
-:: We need both parts to handle multi-word adapter names
-:: "Connected" is a substring of "Disconnected", so a plain findstr for
-:: "Connected" also matches disconnected adapters. Filter those out first.
-for /f "tokens=4*" %%a in ('netsh interface show interface ^| findstr /i "Connected" ^| findstr /v /i "Disconnected"') do (
-    set "adapter=%%a"
-    if not "%%b"=="" set "adapter=%%a %%b"
-)
+:: Pick the adapter that carries the IPv4 default route. This skips Hyper-V,
+:: WSL, VMware and VirtualBox host-only adapters (they have no gateway) and does
+:: not depend on the display language (netsh prints "Connected" only in English).
+:: Detect it before "ipconfig /release" - the gateway disappears after release.
+set "adapter="
+for /f "usebackq delims=" %%a in (`powershell -NoProfile -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up' } | Select-Object -First 1).InterfaceAlias" 2^>nul`) do set "adapter=%%a"
 
 echo Active adapter detected: %adapter%
+if not defined adapter echo   ^(none found - the adapter disable/enable step will be skipped^)
+echo/
+
+echo WARNING: This resets Winsock and the TCP/IP stack. All network connections
+echo          ^(including VPN and Remote Desktop^) will drop, and static IP, gateway
+echo          and DNS settings will be erased and must be re-entered afterwards.
+echo          Run "ipconfig /all" first if you need to note them down.
+echo/
+set "confirm="
+set /p "confirm=Continue? (Y/N): "
+if /i not "%confirm%"=="Y" (
+    echo Cancelled.
+    pause
+    exit /b 0
+)
 echo/
 
 echo [1/8] Releasing IP address...
@@ -51,13 +63,13 @@ echo [5/8] Resetting TCP/IP stack...
 netsh int ip reset >nul 2>&1
 
 echo [6/8] Disabling network adapter...
-netsh interface set interface "%adapter%" disable >nul 2>&1
+if defined adapter (netsh interface set interface name="%adapter%" admin=disabled >nul 2>&1) else (echo       - No active adapter detected, skipping)
 
 echo       Waiting 5 seconds...
 timeout /t 5 /nobreak >nul
 
 echo [7/8] Re-enabling network adapter...
-netsh interface set interface "%adapter%" enable >nul 2>&1
+if defined adapter (netsh interface set interface name="%adapter%" admin=enabled >nul 2>&1) else (echo       - No active adapter detected, skipping)
 
 echo       Waiting for connection...
 timeout /t 5 /nobreak >nul
@@ -83,13 +95,15 @@ echo ============================================
 
 :reboot_prompt
 echo/
+set "reboot="
 set /p "reboot=Restart computer now? (Y/N): "
 
 if /i "%reboot%"=="Y" (
     echo/
     echo Restarting in 10 seconds...
-    echo Press Ctrl+C to cancel.
+    echo To cancel, press Win+R and run: shutdown /a
     shutdown /r /t 10 /c "Network Reset Utility - Restarting to complete network stack reset"
+    pause
     exit /b 0
 )
 

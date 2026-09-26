@@ -134,6 +134,7 @@ echo   or a corporate proxy via auto-detect, some of these may be needed.
 echo   Standard DNS resolution is NOT affected.%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=  Disable LLMNR, mDNS, and WPAD? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -214,20 +215,9 @@ if %errorlevel% equ 0 (
     echo   %RED%[FAIL]%RESET% Could not set AutoDetect key
 )
 
-:: Disable WinHTTP autoproxy service
-sc config WinHttpAutoProxySvc start= disabled >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% WinHTTP Auto-Proxy service set to disabled
-) else (
-    echo   %YELLOW%[SKIP]%RESET% Could not configure WinHTTP Auto-Proxy service
-)
-
-sc stop WinHttpAutoProxySvc >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% WinHTTP Auto-Proxy service stopped
-) else (
-    echo   %DIM%[--]%RESET% Service was not running or could not be stopped now
-)
+:: The WinHTTP Auto-Proxy service (WinHttpAutoProxySvc) is left alone: its
+:: start type cannot be changed by Administrators on Windows 10/11, Microsoft
+:: advises against disabling it, and DisableWpad = 1 already stops WinHTTP WPAD.
 
 echo/
 
@@ -306,7 +296,6 @@ echo     %DIM%3.%RESET% Re-enable WPAD:
 echo        %CYAN%reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Wpad" /v WpadOverride /f%RESET%
 echo        %CYAN%reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\WinHttp" /v DisableWpad /f%RESET%
 echo        %CYAN%reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v AutoDetect /t REG_DWORD /d 1 /f%RESET%
-echo        %CYAN%sc config WinHttpAutoProxySvc start= demand%RESET%
 echo/
 echo     %DIM%4.%RESET% Remove firewall rules:
 echo        %CYAN%netsh advfirewall firewall delete rule name="Block LLMNR (UDP 5355)"%RESET%

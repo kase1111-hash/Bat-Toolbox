@@ -79,6 +79,7 @@ set "DEFAULT_BACKUP=%USERPROFILE%\Desktop\DriverBackup_%COMPUTERNAME%"
 echo Default backup location:
 echo   %DEFAULT_BACKUP%
 echo/
+set "BACKUP_PATH="
 set /p "BACKUP_PATH=Press Enter to use default, or type a custom path: "
 
 if "!BACKUP_PATH!"=="" set "BACKUP_PATH=%DEFAULT_BACKUP%"
@@ -92,6 +93,7 @@ echo Backup will be saved to:
 echo   %YELLOW%!BACKUP_PATH!%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
@@ -148,21 +150,23 @@ echo  OS:
 ) > "!INVENTORY!"
 
 :: Get OS version
-for /f "tokens=2 delims==" %%v in ('wmic os get Caption /value 2^>nul ^| find "="') do (
+for /f "delims=" %%v in ('powershell -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).Caption" 2^>nul') do (
     echo  %%v>> "!INVENTORY!"
 )
 
 (echo ============================================================================) >> "!INVENTORY!"
 (echo/) >> "!INVENTORY!"
 
-:: List all third-party drivers with details
+:: List all third-party drivers with details.
+:: Without -All, Get-WindowsDriver returns only non-inbox oem*.inf packages - the
+:: same set DISM /export-driver backs up, including Microsoft-provided OEM packages.
 set "PSINVENTORY=%TEMP%\driver_inventory.ps1"
 
 (
 echo $drivers = Get-WindowsDriver -Online -ErrorAction SilentlyContinue ^| Where-Object { $_.Driver -ne $null }
-echo $thirdParty = $drivers ^| Where-Object { $_.ProviderName -ne 'Microsoft' }
+echo $thirdParty = $drivers
 echo/
-echo Write-Output "THIRD-PARTY DRIVERS ($($thirdParty.Count) total)"
+echo Write-Output "NON-INBOX DRIVER PACKAGES ($($thirdParty.Count) total)"
 echo Write-Output "============================================================================"
 echo Write-Output ""
 echo Write-Output ^("{0,-40} {1,-30} {2,-15} {3}" -f "Driver Name", "Provider", "Version", "Class"^)
@@ -188,9 +192,7 @@ echo     Write-Output ^("  {0,-35} {1} drivers" -f $_.Name, $_.Count^)
 echo }
 echo/
 echo Write-Output ""
-echo Write-Output "MICROSOFT (INBOX) DRIVERS: $($drivers.Count - $thirdParty.Count)"
-echo Write-Output "THIRD-PARTY DRIVERS:       $($thirdParty.Count)"
-echo Write-Output "TOTAL DRIVERS:             $($drivers.Count)"
+echo Write-Output "NON-INBOX DRIVER PACKAGES: $($thirdParty.Count)"
 ) > "!PSINVENTORY!"
 
 powershell -ExecutionPolicy Bypass -File "!PSINVENTORY!" >> "!INVENTORY!" 2>nul
@@ -259,7 +261,7 @@ echo }
 echo/
 echo Write-Host ""
 echo Write-Host "Total third-party drivers: $($thirdParty.Count)" -ForegroundColor Green
-echo Write-Host "Total inbox (Microsoft) drivers: $($drivers.Count - $thirdParty.Count)"
+echo Write-Host "Microsoft-provided OEM packages (not listed above): $($drivers.Count - $thirdParty.Count)"
 echo Write-Host ""
 ) > "!PSLIST!"
 
@@ -282,7 +284,10 @@ echo/
 echo Enter the path to your driver backup folder:
 echo   Example: D:\DriverBackup_MYPC_20260101
 echo/
+set "RESTORE_PATH="
 set /p "RESTORE_PATH=Backup path: "
+:: Strip quotes from a pasted or drag-and-dropped path; every use below adds its own
+if defined RESTORE_PATH set "RESTORE_PATH=!RESTORE_PATH:"=!"
 
 if not exist "!RESTORE_PATH!" (
     echo/
@@ -313,12 +318,14 @@ echo   [2] Install drivers one at a time (review each)
 echo   [0] Cancel
 echo/
 
+set "restoreChoice="
 set /p "restoreChoice=Select option: "
 
-if "%restoreChoice%"=="0" goto MainMenu
-if "%restoreChoice%"=="2" goto RestoreSelective
+:: Only an explicit 1 or 2 installs anything; Enter, 0 or any other input cancels
+if "!restoreChoice!"=="2" goto RestoreSelective
+if not "!restoreChoice!"=="1" goto MainMenu
 
-:: Bulk install all drivers
+:: Bulk install all drivers (only reached on an explicit "1")
 echo/
 echo Installing all drivers from backup...
 echo/
@@ -326,10 +333,15 @@ echo/
 set "installed=0"
 set "failed=0"
 
-for /r "!RESTORE_PATH!" %%f in (*.inf) do (
+:: FOR /R roots are never delayed-expanded, so RESTORE_PATH must use percent expansion here
+:: pnputil exit code 3010 means installed but a restart is required - count it as installed
+for /r "%RESTORE_PATH%" %%f in (*.inf) do (
     echo   Installing: %%~nxf
+    set "ok="
     pnputil /add-driver "%%f" /install >nul 2>&1
-    if not errorlevel 1 (
+    if not errorlevel 1 set "ok=1"
+    if errorlevel 3010 if not errorlevel 3011 set "ok=1"
+    if defined ok (
         echo       %GREEN%[OK]%RESET%
         set /a installed+=1
     ) else (
@@ -347,6 +359,7 @@ echo/
 echo %YELLOW%A reboot is recommended to load newly installed drivers.%RESET%
 echo/
 
+set "reboot="
 set /p "reboot=Restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     shutdown /r /t 10 /c "Driver Restore - Restart"
@@ -364,7 +377,7 @@ echo/
 set "installed=0"
 set "skippedDrv=0"
 
-for /r "!RESTORE_PATH!" %%f in (*.inf) do (
+for /r "%RESTORE_PATH%" %%f in (*.inf) do (
     echo   %WHITE%%%~nxf%RESET%
 
     REM Try to show driver provider/description from the INF
@@ -374,10 +387,14 @@ for /r "!RESTORE_PATH!" %%f in (*.inf) do (
         echo     !infoKey!= !infoVal!
     )
 
+    set "installThis="
     set /p "installThis=  Install this driver? [Y/N]: "
     if /i "!installThis!"=="Y" (
+        set "ok="
         pnputil /add-driver "%%f" /install >nul 2>&1
-        if not errorlevel 1 (
+        if not errorlevel 1 set "ok=1"
+        if errorlevel 3010 if not errorlevel 3011 set "ok=1"
+        if defined ok (
             echo       %GREEN%[OK] Installed%RESET%
             set /a installed+=1
         ) else (
@@ -414,6 +431,7 @@ set "BACKUP_PATH=!DEFAULT_BACKUP!_%dt:~0,8%"
 echo Backup will be saved to: !BACKUP_PATH!
 echo/
 
+set "confirm="
 set /p "confirm=Continue? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
@@ -467,8 +485,12 @@ echo set "failed=0"
 echo/
 echo for /r "%%~dp0" %%%%f in ^(*.inf^) do ^(
 echo     echo   Installing: %%%%~nxf
+echo     REM pnputil exit code 3010 = installed, restart required - count it as installed
+echo     set "ok="
 echo     pnputil /add-driver "%%%%f" /install ^>nul 2^>^&1
-echo     if not errorlevel 1 ^(
+echo     if not errorlevel 1 set "ok=1"
+echo     if errorlevel 3010 if not errorlevel 3011 set "ok=1"
+echo     if defined ok ^(
 echo         echo       [OK]
 echo         set /a installed+=1
 echo     ^) else ^(

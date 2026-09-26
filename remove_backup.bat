@@ -44,11 +44,29 @@ echo  REMOVE_BACKUP.BAT - Windows Backup Removal Script
 echo ============================================================================
 echo/
 echo  This will disable Windows Backup and all related components.
+echo  It also DELETES all existing restore points and shadow copies.
 echo  Press Ctrl+C to abort, or...
 pause
 
 echo/
-echo [1/5] Disabling backup services...
+echo [1/5] Removing existing shadow copies and restore points...
+echo --------------------------------------------------------------
+
+REM -- Must run BEFORE VSS/swprv are disabled and before the SystemRestore --
+REM -- policies are set: vssadmin and Disable-ComputerRestore both need VSS. --
+vssadmin delete shadows /all /quiet >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   Shadow copies - none found or could not be deleted - check with: vssadmin list shadows
+) else (
+    echo   Existing shadow copies/restore points - DELETED
+)
+
+REM -- Disable System Protection on the system drive --
+powershell -NoProfile -Command "Disable-ComputerRestore -Drive ($env:SystemDrive + '\')" >nul 2>&1
+echo   System Protection on %SystemDrive% - DISABLED
+
+echo/
+echo [2/5] Disabling backup services...
 echo ------------------------------------
 
 REM -- wbengine: Block Level Backup Engine Service --
@@ -97,7 +115,7 @@ echo     NOTE: Also closes the BlueHammer exploit vector.
 echo     If installers break, re-enable with: sc config VSS start= demand
 
 echo/
-echo [2/5] Disabling backup scheduled tasks...
+echo [3/5] Disabling backup scheduled tasks...
 echo -------------------------------------------
 
 REM -- Windows Backup scheduled tasks --
@@ -121,7 +139,7 @@ schtasks /Change /TN "Microsoft\Windows\CloudBackup\CloudBackup" /Disable >nul 2
 echo   CloudBackup - DISABLED
 
 echo/
-echo [3/5] Disabling Windows Backup in Settings and policies...
+echo [4/5] Disabling Windows Backup in Settings and policies...
 echo -----------------------------------------------------------
 
 REM -- Disable Windows Backup feature via policy --
@@ -138,36 +156,33 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\FileHistory" /v Disabled /t RE
 echo   File History policy - DISABLED
 
 echo/
-echo [4/5] Disabling OneDrive backup integration...
+echo [5/5] Disabling OneDrive backup integration...
 echo -------------------------------------------------
 
 REM -- Prevent OneDrive from managing backup --
-REM -- OneDrive's "backup" feature syncs Desktop/Documents/Pictures --
-REM -- to Microsoft's cloud without clear consent. --
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /t REG_DWORD /d 1 /f >nul 2>&1
+REM -- OneDrive's "backup" feature (Known Folder Move) syncs Desktop/ --
+REM -- Documents/Pictures to Microsoft's cloud without clear consent. --
+REM -- KFMBlockOptIn blocks only that folder backup. DisableFileSyncNGSC is --
+REM -- deliberately NOT set: it turns OneDrive off completely, and cloud-only --
+REM -- files in already-redirected folders could then no longer be opened. --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\OneDrive" /v KFMBlockOptIn /t REG_DWORD /d 1 /f >nul 2>&1
-echo   OneDrive backup/sync - DISABLED
+echo   OneDrive folder backup (Known Folder Move) - BLOCKED
 
-REM -- Disable OneDrive startup --
-reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v OneDrive /f >nul 2>&1
-echo   OneDrive autostart - REMOVED
-
-REM -- Disable OneDrive per-machine install --
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /t REG_DWORD /d 1 /f >nul 2>&1
-echo   OneDrive file sync - DISABLED
-
+REM -- Optional: stop OneDrive from starting at sign-in --
+REM -- Asked separately: if Desktop/Documents are already redirected into --
+REM -- OneDrive with Files On-Demand, OneDrive must be running or online-only --
+REM -- files there cannot be opened. --
 echo/
-echo [5/5] Cleaning up existing restore points and backup data...
-echo --------------------------------------------------------------
-
-REM -- Delete all existing restore points --
-REM -- These take up disk space and are no longer needed --
-vssadmin delete shadows /all /quiet >nul 2>&1
-echo   Existing shadow copies/restore points - DELETED
-
-REM -- Disable System Protection on C: drive --
-powershell -NoProfile -Command "Disable-ComputerRestore -Drive 'C:\'" >nul 2>&1
-echo   System Protection on C: - DISABLED
+echo   OPTIONAL: also remove OneDrive from startup - HKCU Run key?
+echo   Answer N if your Desktop, Documents or Pictures are stored in OneDrive:
+echo   online-only files there cannot be opened while OneDrive is not running.
+choice /C YN /N /M "  Remove OneDrive autostart? (Y/N): "
+if %errorlevel% equ 1 (
+    reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v OneDrive /f >nul 2>&1
+    echo   OneDrive autostart - REMOVED
+) else (
+    echo   OneDrive autostart - left unchanged
+)
 
 echo/
 echo ============================================================================
@@ -197,11 +212,18 @@ echo/
 echo  TO REVERSE:
 echo    sc config wbengine start= demand
 echo    sc config SDRSVC start= demand
-echo    sc config fhsvc start= manual
-echo    sc config swprv start= manual
-echo    sc config VSS start= manual
+echo    sc config fhsvc start= demand
+echo    sc config swprv start= demand
+echo    sc config VSS start= demand
 echo    Delete policy keys under:
 echo      HKLM\SOFTWARE\Policies\Microsoft\Windows\Backup
 echo      HKLM\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore
+echo      HKLM\SOFTWARE\Policies\Microsoft\Windows\FileHistory
+echo    Re-allow OneDrive folder backup - the second line also repairs
+echo    machines where an older version of this script turned OneDrive off:
+echo      reg delete "HKLM\SOFTWARE\Policies\Microsoft\OneDrive" /v KFMBlockOptIn /f
+echo      reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /f
+echo    Then start OneDrive from the Start menu as your normal user - not
+echo    from an admin prompt; this also restores its own startup entry.
 echo/
 pause

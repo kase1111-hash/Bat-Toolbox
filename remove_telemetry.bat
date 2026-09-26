@@ -109,6 +109,7 @@ REM -- CompatTelRunner.exe: "Microsoft Compatibility Telemetry" --
 REM -- This process is infamous for high CPU usage. It inventories your --
 REM -- installed software and sends it to Microsoft, ostensibly for --
 REM -- compatibility assessment. It runs as a scheduled task. --
+REM -- DisableUAR = 'Turn off Steps Recorder' (psr.exe) --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v AITEnable /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableInventory /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableUAR /t REG_DWORD /d 1 /f
@@ -116,8 +117,9 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableUAR /t RE
 REM -- Disable Program Compatibility Assistant --
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisablePCA /t REG_DWORD /d 1 /f
 
-REM -- Disable Steps Recorder (psr.exe) - records screen steps, sends data --
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableEngine /t REG_DWORD /d 1 /f
+REM -- NOTE: DisableEngine is intentionally NOT set. It is the policy 'Turn off --
+REM -- Application Compatibility Engine', not a telemetry switch: it stops the --
+REM -- compatibility shims that many older apps and games need. --
 
 echo/
 echo [4/12] Disabling Customer Experience Improvement Program (CEIP)...
@@ -315,8 +317,17 @@ if %errorlevel% equ 0 (
 
 echo   Adding telemetry blocks to hosts file...
 
-REM -- Create backup first --
-copy "%HOSTS%" "%HOSTS%.bak.%date:~-4%%date:~4,2%%date:~7,2%" >nul 2>&1
+REM -- Create backup first. The time stamp comes from PowerShell because --
+REM -- the DATE variable is locale-dependent and often contains a slash, --
+REM -- which is not valid in a file name. --
+set "STAMP="
+for /f %%d in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%d"
+if not defined STAMP set "STAMP=backup"
+copy /y "%HOSTS%" "%HOSTS%.bak.%STAMP%" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   ERROR: Could not back up the hosts file - hosts file left unchanged.
+    goto :skip_hosts
+)
 
 (
     echo/
@@ -391,7 +402,7 @@ copy "%HOSTS%" "%HOSTS%.bak.%date:~-4%%date:~4,2%%date:~7,2%" >nul 2>&1
     echo # --- END TELEMETRY BLOCK ---
 ) >> "%HOSTS%"
 
-echo   Hosts file updated. Backup saved as %HOSTS%.bak.*
+echo   Hosts file updated. Backup saved as %HOSTS%.bak.%STAMP%
 
 :skip_hosts
 
@@ -420,10 +431,22 @@ echo    Network:   60+ telemetry domains blocked via hosts file
 echo/
 echo  TO REVERSE:
 echo    - Delete policy keys under HKLM\SOFTWARE\Policies\Microsoft
+echo    - Delete the values this script set outside that tree:
+echo      reg delete "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /f
+echo      reg delete "HKLM\SOFTWARE\Microsoft\SQMClient\Windows" /v CEIPEnable /f
+echo      reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v AllowTelemetry /f
+echo      reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v MaxTelemetryAllowed /f
+echo      reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /f
+echo      reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /f
+echo      reg delete "HKLM\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" /v AutoConnectAllowedOEM /f
+echo    - If an older version of this script ran, also restore app compatibility shims:
+echo      reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableEngine /f
 echo    - Set service Start values back to 2 or 3
 echo    - Remove the telemetry block section from:
 echo      %SystemRoot%\System32\drivers\etc\hosts
 echo    - Re-enable scheduled tasks via Task Scheduler
+echo    - After rebooting, choose the diagnostic data level in
+echo      Settings ^> Privacy ^& security ^> Diagnostics ^& feedback
 echo/
 echo  OPTIONAL - VERIFY NOTHING IS PHONING HOME:
 echo    Open PowerShell and run:

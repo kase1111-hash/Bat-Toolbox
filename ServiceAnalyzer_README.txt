@@ -15,10 +15,20 @@ HOW TO USE
 2. Select "Run as administrator" (REQUIRED)
 3. Wait for the analysis to complete
 4. Review the categorized list
-5. Choose which categories to disable when prompted:
-   - Bloatware services? [Y/N]
-   - Telemetry services? [Y/N]
-   - Xbox services? [Y/N]
+5. Choose which categories to change when prompted:
+   - Set BLOATWARE services to Manual? [Y/N]
+   - Disable TELEMETRY services? [Y/N]
+   - Disable XBOX services? [Y/N]
+   (pressing Enter without an answer counts as No)
+
+What each answer does:
+  - Bloatware: stopped and set to Manual (NOT Disabled), so they no longer
+    start with Windows but the owning app (VPN client, Apple device sync,
+    Xbox Gaming Services, etc.) can still start them when needed.
+  - Telemetry and Xbox: stopped and set to Disabled.
+
+Only services shown in this run's lists are changed. Lists left behind by
+an interrupted earlier run are deleted before each scan.
 
 
 BEFORE YOU RUN
@@ -47,6 +57,11 @@ WHAT EACH CATEGORY MEANS
   - Third-party antivirus (Windows Defender is sufficient)
   - Vendor bloatware (ASUS, Dell, HP support services)
   - PUP services (IObit, Auslogics, etc.)
+  Answering Y sets these to Manual, not Disabled.
+  Display-driver helper services are deliberately NOT in this list:
+  NVDisplay.ContainerLocalSystem (NVIDIA Control Panel/driver features) and
+  AMD External Events Utility (Radeon driver; needed for FreeSync and
+  display-event/hotkey handling).
 
 [TELEMETRY] - Magenta
   Microsoft data collection services:
@@ -81,6 +96,9 @@ WHAT EACH CATEGORY MEANS
 HOW TO RESTORE / UNDO
 ---------------------
 Option 1: Re-enable Individual Services
+  Every service this script changes was Automatic (or Automatic (Delayed
+  Start)) before, because only automatic services are analyzed. Bloatware
+  services were set to Manual, telemetry and Xbox services to Disabled.
   Open Command Prompt as Administrator and run:
     sc config "ServiceName" start= auto
     sc start "ServiceName"

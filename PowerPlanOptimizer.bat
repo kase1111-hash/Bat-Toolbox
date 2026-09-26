@@ -43,13 +43,16 @@ for /f "tokens=4" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPla
 for /f "tokens=2 delims=()" %%a in ('powercfg /getactivescheme 2^>nul') do set "currentPlanName=%%a"
 
 :: Detect if laptop or desktop via CIM (wmic is removed on Windows 11 24H2+).
-:: Chassis types 8=Portable, 9=Laptop, 10=Notebook, 14=Sub-Notebook.
+:: Chassis types 8=Portable, 9=Laptop, 10=Notebook, 14=Sub-Notebook, 30=Tablet, 31=Convertible, 32=Detachable.
 set "isLaptop=0"
 for /f %%c in ('powershell -NoProfile -Command "(Get-CimInstance Win32_SystemEnclosure).ChassisTypes" 2^>nul') do (
     if "%%c"=="8" set "isLaptop=1"
     if "%%c"=="9" set "isLaptop=1"
     if "%%c"=="10" set "isLaptop=1"
     if "%%c"=="14" set "isLaptop=1"
+    if "%%c"=="30" set "isLaptop=1"
+    if "%%c"=="31" set "isLaptop=1"
+    if "%%c"=="32" set "isLaptop=1"
 )
 
 echo %WHITE%Current plan:%RESET%  !currentPlanName!
@@ -73,6 +76,7 @@ echo   [5] Restore Windows default power plans
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto MaxPerformance
@@ -112,6 +116,7 @@ if "!isLaptop!"=="1" (
 )
 echo/
 
+set "confirm="
 set /p "confirm=Create Maximum Performance plan? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
@@ -233,7 +238,14 @@ echo       %CYAN%(Keeps drives always ready - eliminates spin-up delay)%RESET%
 powercfg /setacvalueindex !PLAN_GUID! SUB_DISK DISKIDLE 0
 powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK DISKIDLE 0
 
-:: NVMe power state transition latency tolerance
+:: NVMe power state transition latency tolerance, primary and secondary (milliseconds).
+:: 0 ms = only power states with zero entry/exit latency, i.e. no APST idle states.
+powercfg /setacvalueindex !PLAN_GUID! SUB_DISK fc95af4d-40e7-4b6d-835a-56d131dbc80e 0 >nul 2>&1
+powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK fc95af4d-40e7-4b6d-835a-56d131dbc80e 0 >nul 2>&1
+powercfg /setacvalueindex !PLAN_GUID! SUB_DISK dbc9e238-6de9-49e3-92cd-8c2b4946b472 0 >nul 2>&1
+powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK dbc9e238-6de9-49e3-92cd-8c2b4946b472 0 >nul 2>&1
+
+:: AHCI link power management - adaptive (SATA link idle time in ms before slumber; 0 = partial state only)
 powercfg /setacvalueindex !PLAN_GUID! SUB_DISK dab60367-53fe-4fbc-825e-521d069d2456 0 >nul 2>&1
 powercfg /setdcvalueindex !PLAN_GUID! SUB_DISK dab60367-53fe-4fbc-825e-521d069d2456 0 >nul 2>&1
 
@@ -244,10 +256,11 @@ echo/
 echo [8/10] Configuring display and sleep settings...
 echo       %CYAN%(Disable screen timeout and sleep for uninterrupted operation)%RESET%
 
-:: Display off after: 0 = never (AC), 15 min (DC/battery)
+:: VIDEOIDLE/STANDBYIDLE/HIBERNATEIDLE/DISKIDLE values are in SECONDS (not minutes).
+:: Display off after: 0 = never (AC), 900 s = 15 min (DC/battery)
 powercfg /setacvalueindex !PLAN_GUID! SUB_VIDEO VIDEOIDLE 0
 if "!isLaptop!"=="1" (
-    powercfg /setdcvalueindex !PLAN_GUID! SUB_VIDEO VIDEOIDLE 15
+    powercfg /setdcvalueindex !PLAN_GUID! SUB_VIDEO VIDEOIDLE 900
 ) else (
     powercfg /setdcvalueindex !PLAN_GUID! SUB_VIDEO VIDEOIDLE 0
 )
@@ -288,9 +301,9 @@ echo/
 echo [10/10] Configuring network adapter power settings...
 echo       %CYAN%(Prevents Wi-Fi/Ethernet from sleeping mid-game)%RESET%
 
-:: Wireless adapter power saving mode: 1 = Maximum Performance
-powercfg /setacvalueindex !PLAN_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 1
-powercfg /setdcvalueindex !PLAN_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 1
+:: Wireless adapter power saving mode: 0 = Max Performance, 1 = Low, 2 = Medium, 3 = Maximum Power Saving
+powercfg /setacvalueindex !PLAN_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
+powercfg /setdcvalueindex !PLAN_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
 
 echo       %GREEN%[OK] Network adapter configured%RESET%
 
@@ -344,6 +357,7 @@ echo This plan optimizes performance while respecting power/thermal limits.
 echo Good for laptops or quiet desktops.
 echo/
 
+set "confirm="
 set /p "confirm=Create Balanced Performance plan? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
@@ -394,21 +408,23 @@ powercfg /setacvalueindex !BAL_GUID! 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7
 powercfg /setdcvalueindex !BAL_GUID! 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 1
 echo       %GREEN%[OK] USB configured%RESET%
 
+:: VIDEOIDLE/STANDBYIDLE/DISKIDLE values are in SECONDS (not minutes).
 echo [4/6] Configuring storage...
 powercfg /setacvalueindex !BAL_GUID! SUB_DISK DISKIDLE 0
-powercfg /setdcvalueindex !BAL_GUID! SUB_DISK DISKIDLE 20
+powercfg /setdcvalueindex !BAL_GUID! SUB_DISK DISKIDLE 1200
 echo       %GREEN%[OK] Storage configured%RESET%
 
 echo [5/6] Configuring display/sleep...
-powercfg /setacvalueindex !BAL_GUID! SUB_VIDEO VIDEOIDLE 15
-powercfg /setdcvalueindex !BAL_GUID! SUB_VIDEO VIDEOIDLE 5
+powercfg /setacvalueindex !BAL_GUID! SUB_VIDEO VIDEOIDLE 900
+powercfg /setdcvalueindex !BAL_GUID! SUB_VIDEO VIDEOIDLE 300
 powercfg /setacvalueindex !BAL_GUID! SUB_SLEEP STANDBYIDLE 0
-powercfg /setdcvalueindex !BAL_GUID! SUB_SLEEP STANDBYIDLE 30
+powercfg /setdcvalueindex !BAL_GUID! SUB_SLEEP STANDBYIDLE 1800
 echo       %GREEN%[OK] Display/sleep configured%RESET%
 
 echo [6/6] Configuring network...
-powercfg /setacvalueindex !BAL_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 1
-powercfg /setdcvalueindex !BAL_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 3
+:: Wireless adapter power saving mode: 0 = Max Performance (AC), 2 = Medium Power Saving (DC)
+powercfg /setacvalueindex !BAL_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
+powercfg /setdcvalueindex !BAL_GUID! 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 2
 echo       %GREEN%[OK] Network configured%RESET%
 
 powercfg /setactive !BAL_GUID!
@@ -475,10 +491,10 @@ echo ^)
 echo/
 echo foreach ^($s in $settings^) {
 echo     $output = powercfg /query SCHEME_CURRENT $s.Sub $s.Setting 2^>$null
-echo     $acLine = $output ^| Select-String 'Current AC Power Setting Index'
-echo     $dcLine = $output ^| Select-String 'Current DC Power Setting Index'
-echo     $acVal = if ^($acLine^) { ^($acLine -split ': '^)[1].Trim^(^) } else { 'N/A' }
-echo     $dcVal = if ^($dcLine^) { ^($dcLine -split ': '^)[1].Trim^(^) } else { 'N/A' }
+echo     # Language-neutral: the labels are localized, but the last two "...: 0x########" lines are always AC then DC
+echo     $hex = @^($output ^| Select-String ':\s*0x[0-9a-fA-F]+\s*$'^)
+echo     $acVal = if ^($hex.Count -ge 2^) { ^($hex[-2].Line -split ':\s*'^)[-1].Trim^(^) } else { 'N/A' }
+echo     $dcVal = if ^($hex.Count -ge 2^) { ^($hex[-1].Line -split ':\s*'^)[-1].Trim^(^) } else { 'N/A' }
 echo     $name = $s.Name.PadRight^(25^)
 echo     Write-Host "  $name AC: $acVal    DC: $dcVal"
 echo }
@@ -487,9 +503,9 @@ echo # Check core parking
 echo Write-Host ""
 echo Write-Host "Core Parking:" -ForegroundColor White
 echo $cpOutput = powercfg /query SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 2^>$null
-echo $cpAC = $cpOutput ^| Select-String 'Current AC Power Setting Index'
-echo if ^($cpAC^) {
-echo     $val = ^($cpAC -split ': '^)[1].Trim^(^)
+echo $cpHex = @^($cpOutput ^| Select-String ':\s*0x[0-9a-fA-F]+\s*$'^)
+echo if ^($cpHex.Count -ge 2^) {
+echo     $val = ^($cpHex[-2].Line -split ':\s*'^)[-1].Trim^(^)
 echo     Write-Host "  Min cores unparked:     $val"
 echo } else {
 echo     Write-Host "  Core parking data not available (may be hidden)"
@@ -498,9 +514,9 @@ echo/
 echo # USB selective suspend
 echo Write-Host "USB Settings:" -ForegroundColor White
 echo $usbOut = powercfg /query SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 2^>$null
-echo $usbAC = $usbOut ^| Select-String 'Current AC Power Setting Index'
-echo if ^($usbAC^) {
-echo     $val = ^($usbAC -split ': '^)[1].Trim^(^)
+echo $usbHex = @^($usbOut ^| Select-String ':\s*0x[0-9a-fA-F]+\s*$'^)
+echo if ^($usbHex.Count -ge 2^) {
+echo     $val = ^($usbHex[-2].Line -split ':\s*'^)[-1].Trim^(^)
 echo     $status = if ^($val -eq '0x00000000'^) { 'Disabled' } else { 'Enabled' }
 echo     Write-Host "  USB Selective Suspend:   $status ($val)"
 echo }
@@ -526,10 +542,31 @@ echo Windows hides many power settings by default. This makes them all visible
 echo in the Power Options advanced settings dialog.
 echo/
 
+set "confirm="
 set /p "confirm=Unhide all power settings? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
 echo/
+
+:: Back up the original Attributes values first so option [4] can be undone.
+:: One backup is kept per computer (the file name includes the computer name), so
+:: a copy of the toolbox used on several PCs never restores one PC's settings on another.
+:: An existing backup for this PC is kept, because it holds the state from before the first unhide.
+set "ATTR_BACKUP=%~dp0PowerSettings_Attributes_backup_%COMPUTERNAME%.reg"
+if exist "!ATTR_BACKUP!" goto UnhideBackupReady
+reg export "HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerSettings" "!ATTR_BACKUP!" /y >nul 2>&1
+if %errorlevel% neq 0 (
+    echo %RED%[ERROR] Could not save a backup to: !ATTR_BACKUP!%RESET%
+    echo %RED%        Nothing was changed. Move the script to a writable folder and try again.%RESET%
+    echo/
+    pause
+    goto MainMenu
+)
+:UnhideBackupReady
+echo %YELLOW%Backup of the original settings: !ATTR_BACKUP!%RESET%
+echo %YELLOW%Double-click it (or run: reg import "!ATTR_BACKUP!") to re-hide the settings later.%RESET%
+echo/
+
 echo Unhiding power settings in registry...
 
 :: Unhide all power settings by setting Attributes to 2
@@ -577,9 +614,15 @@ echo %CYAN%=====================================================================
 echo %CYAN% Restore Default Power Plans%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo This will restore Windows default power plans and remove custom plans.
+echo This will switch to Balanced, delete the Bat-Toolbox plans, and reset ALL
+echo power plans to Windows defaults.
+echo %RED%WARNING: every other user-created or app-created plan below is also deleted permanently.%RESET%
+echo %RED%Export any you want to keep first: powercfg /export "C:\plan-backup.pow" ^<GUID^>%RESET%
+echo/
+powercfg /list
 echo/
 
+set "confirm="
 set /p "confirm=Restore defaults? [Y/N]: "
 if /i not "%confirm%"=="Y" goto MainMenu
 
@@ -598,6 +641,25 @@ echo       - Removed Balanced Performance plan (if it existed)
 :: Restore default plans
 powercfg /restoredefaultschemes >nul 2>&1
 echo       - Restored all default power schemes
+
+:: Option [1] also disables the dynamic timer tick in the boot configuration (BCD).
+:: That is not part of any power plan, so ask separately: InterruptLatencyTuning.bat
+:: and WindowsTweaks.bat set the same value, and this would undo theirs as well.
+echo/
+echo Option [1] disables the dynamic timer tick ^(a boot setting, not part of any power plan^).
+echo %YELLOW%InterruptLatencyTuning.bat and WindowsTweaks.bat set the same value; re-enabling it undoes theirs too.%RESET%
+set "undoTick="
+set /p "undoTick=Re-enable the dynamic timer tick? [Y/N]: "
+if /i "%undoTick%"=="Y" (
+    bcdedit /deletevalue disabledynamictick >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo       - Re-enabled dynamic timer tick ^(takes effect after reboot^)
+    ) else (
+        echo       - Dynamic timer tick was not changed ^(already at the Windows default^)
+    )
+) else (
+    echo       - Dynamic timer tick left unchanged
+)
 
 echo/
 echo %GREEN%[OK] Default power plans restored.%RESET%

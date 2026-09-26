@@ -42,6 +42,7 @@ echo  - Realtek Audio Console (UWP app)
 echo  - Nahimic / Nahimic Companion (audio effects engine)
 echo  - A-Volute / Sonic Studio virtual audio (spatial audio bloat)
 echo  - Realtek HD Audio Universal Service (app service, not the driver)
+echo  - Waves MaxxAudio / DTS Audio Processing apps and services (if bundled by Dell/HP/Lenovo)
 echo  - Related scheduled tasks and startup entries
 echo/
 echo %GREEN%What will be KEPT:%RESET%
@@ -52,6 +53,7 @@ echo  - Your audio will continue to work normally
 echo/
 
 :: Confirm before proceeding
+set "confirm="
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -150,9 +152,7 @@ echo     '*RealtekAudioConsole*',
 echo     '*RealtekAudioControl*',
 echo     '*Realtek.USB.Audio*',
 echo     '*SonicStudio*',
-echo     '*SonicRadar*',
-echo     '*DolbyAccess*',
-echo     '*DolbyLaboratories*'
+echo     '*SonicRadar*'
 echo ^)
 echo/
 echo foreach ^($pattern in $packages^) {
@@ -173,34 +173,27 @@ del "%PSSCRIPT%" 2>nul
 set /a success+=1
 
 echo/
-echo [4/7] Removing desktop applications via WMIC...
+echo [4/7] Removing desktop (MSI) applications...
 
 :: Nahimic removal
 echo       - Checking Nahimic...
-wmic product where "name like '%%Nahimic%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%A-Volute%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "Nahimic|A-Volute"
 
 :: Realtek Audio Console removal (desktop version)
 echo       - Checking Realtek Audio Console...
-wmic product where "name like '%%Realtek Audio Console%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%Realtek Audio Control%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%Realtek Audio Universal Service%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "Realtek Audio Console|Realtek Audio Control|Realtek Audio Universal Service"
 
 :: Sonic Studio / Radar
 echo       - Checking Sonic Studio/Radar...
-wmic product where "name like '%%Sonic Studio%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%Sonic Radar%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "Sonic Studio|Sonic Radar"
 
 :: Waves MaxxAudio (bundled with some Realtek configs on Dell/HP)
 echo       - Checking Waves MaxxAudio...
-wmic product where "name like '%%Waves MaxxAudio%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%MaxxAudio Pro%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%WavesNx%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "Waves MaxxAudio|MaxxAudio Pro|WavesNx"
 
 :: DTS Audio
 echo       - Checking DTS Audio Processing...
-wmic product where "name like '%%DTS Audio%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%DTS Sound%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "\bDTS Audio|\bDTS Sound"
 
 echo       %GREEN%- Application removal complete%RESET%
 set /a success+=1
@@ -273,30 +266,60 @@ reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "NahimicCompa
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "NahimicNotifier" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "WavesSvc" /f >nul 2>&1
 
-:: Disable Nahimic APO (Audio Processing Object) in the driver chain
-:: This prevents audio effects from loading even if DLLs remain
+:: Disable Nahimic APO (Audio Processing Object) in the driver chain.
+:: FxProperties values hold APO CLSIDs, not vendor names, so each CLSID is
+:: resolved to its COM registration (name + DLL path) to find Nahimic's APOs.
+:: A value is removed only when it lists nothing but Nahimic APOs (removing a
+:: shared effect chain would also drop Realtek's own effects), and success is
+:: reported only when Windows actually allowed the delete: the endpoint keys
+:: are normally protected (TrustedInstaller), so the APO is often left in place.
 echo       - Disabling Nahimic audio processing objects...
 set "PSAPO=%TEMP%\disable-nahimic-apo.ps1"
 (
 echo # Find and disable Nahimic/A-Volute APO entries in the audio endpoint registry
+echo $apoPattern = 'Nahimic^|A-Volute^|AVolute^|SonicStudio'
 echo $fxPaths = @^(
 echo     'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render',
 echo     'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Capture'
 echo ^)
+echo $found = 0
+echo $cleared = 0
 echo foreach ^($basePath in $fxPaths^) {
 echo     if ^(Test-Path $basePath^) {
 echo         Get-ChildItem -Path $basePath -Recurse -ErrorAction SilentlyContinue ^|
 echo             Where-Object { $_.Name -match 'FxProperties' } ^| ForEach-Object {
-echo                 $props = $_.GetValueNames^(^)
-echo                 foreach ^($prop in $props^) {
-echo                     $val = $_.GetValue^($prop^)
-echo                     if ^($val -match 'Nahimic' -or $val -match 'A-Volute' -or $val -match 'SonicStudio'^) {
-echo                         Write-Host "       - Cleared APO entry: $prop"
-echo                         Remove-ItemProperty -Path $_.PSPath -Name $prop -ErrorAction SilentlyContinue
+echo                 $key = $_
+echo                 foreach ^($prop in $key.GetValueNames^(^)^) {
+echo                     $guids = @^(@^($key.GetValue^($prop^)^) ^| Where-Object { $_ -is [string] -and $_ -match '^^\{[0-9A-Fa-f-]{36}\}$' }^)
+echo                     if ^($guids.Count -eq 0^) { continue }
+echo                     $apoDlls = @^(^)
+echo                     $others = 0
+echo                     foreach ^($g in $guids^) {
+echo                         $name = [string]^(Get-ItemProperty -LiteralPath "HKLM:\SOFTWARE\Classes\CLSID\$g" -ErrorAction SilentlyContinue^).'^(default^)'
+echo                         $dll = [string]^(Get-ItemProperty -LiteralPath "HKLM:\SOFTWARE\Classes\CLSID\$g\InprocServer32" -ErrorAction SilentlyContinue^).'^(default^)'
+echo                         if ^("$name $dll" -match $apoPattern^) { $apoDlls += [System.IO.Path]::GetFileName^($dll^) } else { $others++ }
+echo                     }
+echo                     if ^($apoDlls.Count -eq 0^) { continue }
+echo                     $found++
+echo                     if ^($others -gt 0^) {
+echo                         Write-Host "       - Nahimic APO shares $prop with other audio effects; left in place" -ForegroundColor Yellow
+echo                         continue
+echo                     }
+echo                     try {
+echo                         Remove-ItemProperty -LiteralPath $key.PSPath -Name $prop -ErrorAction Stop
+echo                         $cleared++
+echo                         Write-Host "       - Cleared APO entry: $prop ($($apoDlls -join ', '))"
+echo                     } catch {
+echo                         Write-Host "       - Nahimic APO found in $prop but the key is protected (TrustedInstaller); not removed" -ForegroundColor Yellow
 echo                     }
 echo                 }
 echo             }
 echo     }
+echo }
+echo if ^($found -eq 0^) {
+echo     Write-Host '       - No Nahimic/A-Volute APO found on any audio endpoint'
+echo } elseif ^($cleared -lt $found^) {
+echo     Write-Host "       - Nahimic APO is still active - see RemoveRealtekBloat_README.txt to remove its driver" -ForegroundColor Yellow
 echo }
 ) > "%PSAPO%"
 
@@ -353,7 +376,7 @@ echo  - Nahimic / A-Volute audio effects engine
 echo  - Sonic Studio / Sonic Radar
 echo  - Waves MaxxAudio / DTS Audio Processing (if present)
 echo  - Audio bloatware services and scheduled tasks
-echo  - Startup entries and APO hooks
+echo  - Startup entries, plus Nahimic APO entries Windows allowed to be removed (see Phase 4)
 echo/
 echo What remains intact:
 echo  - Realtek HD Audio driver (core audio)
@@ -371,6 +394,7 @@ echo/
 echo A reboot is recommended to complete the removal process.
 echo/
 
+set "reboot="
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     echo/
@@ -386,11 +410,22 @@ exit /b 0
 :: Subroutine: CleanFolder
 :: ============================================================================
 :CleanFolder
-if exist "%~1" (
-    rd /s /q "%~1" >nul 2>&1
-    if not errorlevel 1 (
-        echo       %GREEN%- Removed: %~1%RESET%
-        set /a success+=1
-    )
-)
+:: No ( ) block here: the folder argument is often "C:\Program Files (x86)\..."
+:: and its ")" would close a block early and abort the whole script. RD does
+:: not reset ERRORLEVEL on success, so check whether the folder is really gone.
+if not exist "%~1\" goto :eof
+rd /s /q "%~1" >nul 2>&1
+if exist "%~1\" goto :eof
+echo       %GREEN%- Removed: %~1%RESET%
+set /a success+=1
 goto :eof
+
+:: ============================================================================
+:: Subroutine: UninstallMsiByName
+:: ============================================================================
+:UninstallMsiByName
+REM %~1 = .NET regex matched case-insensitively against installed MSI product names.
+REM Replaces "wmic product ... call uninstall" (WMIC is not available on Windows 11 24H2+).
+set "MSI_NAME_REGEX=%~1"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$rx = $env:MSI_NAME_REGEX; $roots = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'; Get-ItemProperty -Path $roots -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -and $_.DisplayName -match $rx -and $_.PSChildName -match '^\{[0-9A-Fa-f-]{36}\}$' } | Sort-Object PSChildName -Unique | ForEach-Object { $proc = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/x', $_.PSChildName, '/qn', '/norestart') -Wait -PassThru; Write-Host ('        Uninstalled: ' + $_.DisplayName + ' [exit ' + $proc.ExitCode + ']') }"
+exit /b 0

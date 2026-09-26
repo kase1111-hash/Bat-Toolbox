@@ -17,7 +17,7 @@ HOW TO USE
 2. Select "Run as administrator" (RECOMMENDED)
 3. Confirm when prompted (Y/N)
 4. Review the output on screen
-5. Check the report saved to your Desktop
+5. Check the report saved to your Desktop (the script prints its full path)
 
 
 BEFORE YOU RUN
@@ -39,6 +39,9 @@ Phase 2: Firewall Status
   - Domain profile (corporate networks)
   - Standard/Private profile (home networks)
   - Public profile (untrusted networks)
+  - Read from the Windows Firewall API (not from netsh's translated text),
+    so the result is correct on any Windows display language. A profile
+    whose state cannot be read is shown as [??] instead of as disabled.
 
 Phase 3: Remote Access
   - Remote Desktop (RDP) on port 3389
@@ -84,7 +87,10 @@ Also flags database/service ports if unexpectedly exposed:
 
 OUTPUT
 ------
-Creates: PortScan_COMPUTERNAME_DATE.txt on Desktop
+Creates: PortScan_COMPUTERNAME_DATE.txt on your Desktop
+  - Uses the Desktop folder Windows reports, so with OneDrive folder backup
+    the report lands in OneDrive\Desktop (the Desktop you actually see)
+  - If no Desktop folder exists, it is saved in your user profile folder
 
 Contains:
   - Full listing of all listening TCP/UDP ports

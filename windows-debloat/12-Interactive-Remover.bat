@@ -92,7 +92,7 @@ call :AskRemoveApp "Microsoft.Office.OneNote" "OneNote (Store version)" "Note-ta
 :: -------------------------------------------------------------------------
 
 call :AskRemoveApp "Microsoft.WindowsAlarms" "Alarms & Clock" "Alarms, world clock, timer, stopwatch." "No - safe to remove if you don't need it" "N"
-call :AskRemoveApp "Microsoft.WindowsCamera" "Camera" "Camera app for webcam and built-in cameras." "Maybe - needed if you use your camera" "Y"
+call :AskRemoveApp "Microsoft.WindowsCamera" "Camera" "Camera app for webcam and built-in cameras." "Maybe - needed if you use your camera" "N"
 call :AskRemoveApp "Microsoft.WindowsMaps" "Maps" "Offline maps and navigation." "No - safe to remove, use Google Maps in browser" "N"
 call :AskRemoveApp "Microsoft.WindowsSoundRecorder" "Voice Recorder" "Simple audio recording app." "No - safe to remove" "N"
 call :AskRemoveApp "Microsoft.MSPaint" "Paint 3D" "3D version of Paint (NOT classic mspaint.exe)." "No - classic Paint (mspaint.exe) still works" "N"
@@ -110,10 +110,10 @@ echo --- Xbox Apps (skip all if you play PC games) ---
 echo/
 
 call :AskRemoveApp "Microsoft.XboxApp" "Xbox Console Companion" "Manage Xbox profile, friends, achievements." "Maybe - needed for Xbox social features" "N"
-call :AskRemoveApp "Microsoft.XboxGameOverlay" "Xbox Game Bar Overlay" "In-game overlay (Win+G) for screenshots, recording." "YES - breaks Game Bar if removed" "Y"
-call :AskRemoveApp "Microsoft.XboxGamingOverlay" "Xbox Gaming Overlay" "Additional Game Bar components." "YES - breaks Game Bar if removed" "Y"
+call :AskRemoveApp "Microsoft.XboxGameOverlay" "Xbox Game Bar Overlay" "In-game overlay (Win+G) for screenshots, recording." "YES - breaks Game Bar if removed" "N"
+call :AskRemoveApp "Microsoft.XboxGamingOverlay" "Xbox Gaming Overlay" "Additional Game Bar components." "YES - breaks Game Bar if removed" "N"
 call :AskRemoveApp "Microsoft.Xbox.TCUI" "Xbox TCUI" "Xbox text/voice chat UI components." "Maybe - Xbox party chat affected" "N"
-call :AskRemoveApp "Microsoft.XboxIdentityProvider" "Xbox Identity Provider" "Xbox Live sign-in for games." "YES - Xbox Live games won't authenticate" "Y"
+call :AskRemoveApp "Microsoft.XboxIdentityProvider" "Xbox Identity Provider" "Xbox Live sign-in for games." "YES - Xbox Live games won't authenticate" "N"
 call :AskRemoveApp "Microsoft.XboxSpeechToTextOverlay" "Xbox Speech to Text" "Voice-to-text in Xbox party chat." "No - safe to remove" "N"
 
 :: -------------------------------------------------------------------------
@@ -129,7 +129,7 @@ call :AskRemoveApp "*Facebook*" "Facebook" "Facebook app." "No - safe to remove,
 call :AskRemoveApp "*Twitter*" "Twitter/X" "Twitter app." "No - safe to remove, use browser" "N"
 call :AskRemoveApp "*Spotify*" "Spotify" "Music streaming app." "No - safe to remove, reinstall from spotify.com if needed" "N"
 call :AskRemoveApp "*Netflix*" "Netflix" "Video streaming app." "No - safe to remove, use browser" "N"
-call :AskRemoveApp "*Dolby*" "Dolby Audio" "Audio enhancement software." "Maybe - audio features affected on some devices" "Y"
+call :AskRemoveApp "*Dolby*" "Dolby Audio" "Audio enhancement software." "Maybe - audio features affected on some devices" "N"
 call :AskRemoveApp "*Disney*" "Disney+" "Video streaming app." "No - safe to remove, use browser" "N"
 call :AskRemoveApp "*Amazon*" "Amazon Apps" "Amazon shopping/Prime Video." "No - safe to remove, use browser" "N"
 call :AskRemoveApp "*TikTok*" "TikTok" "Video app." "No - safe to remove" "N"
@@ -212,33 +212,41 @@ set "DESC=%~3"
 set "BREAKS=%~4"
 set "DEFAULT=%~5"
 
-:: Check if app is installed
-powershell -Command "if (Get-AppxPackage -Name '%PKG%' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }" >nul 2>&1
+:: Check if app is installed for any user (removal below uses -AllUsers too)
+powershell -NoProfile -Command "if (Get-AppxPackage -AllUsers -Name '%PKG%' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }" >nul 2>&1
 if %errorlevel% neq 0 (
     goto :eof
 )
 
+:: NAME/DESC/BREAKS are read with !VAR! so a ")" or "&" in a value
+:: (e.g. "MSN News (Bing News)", "Movies & TV") cannot break the parser.
 echo ---------------------------------------------------------------------------
-echo  %NAME%
+echo  !NAME!
 echo ---------------------------------------------------------------------------
-echo  What it is: %DESC%
-echo  Will removing break anything? %BREAKS%
+echo  What it is: !DESC!
+echo  Will removing break anything? !BREAKS!
 echo/
 
+:: set /p keeps the old value when the user just presses Enter, so clear it first
 if /i "%DEFAULT%"=="Y" (
+    set "CHOICE="
     set /p "CHOICE=  Remove this app? [Y/n]: "
 ) else (
+    set "CHOICE="
     set /p "CHOICE=  Remove this app? [y/N]: "
 )
 
-if "%CHOICE%"=="" set "CHOICE=%DEFAULT%"
+if not defined CHOICE set "CHOICE=%DEFAULT%"
 
-if /i "%CHOICE%"=="Y" (
-    echo  Removing %NAME%...
-    powershell -Command "Get-AppxPackage -Name '%PKG%' -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue" >nul 2>&1
-    powershell -Command "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -Like '%PKG%' | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue" >nul 2>&1
-    echo  Removed.
-    set /a "REMOVED_COUNT+=1"
+if /i "!CHOICE!"=="Y" (
+    echo  Removing !NAME!...
+    powershell -NoProfile -Command "$ok = $true; foreach ($p in @(Get-AppxPackage -AllUsers -Name '%PKG%')) { try { Remove-AppxPackage -Package $p.PackageFullName -AllUsers -ErrorAction Stop } catch { $ok = $false } }; Get-AppxProvisionedPackage -Online | Where-Object DisplayName -Like '%PKG%' | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null; if ($ok) { exit 0 } else { exit 1 }" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo  Could not remove - it may be running or protected by Windows. Close it or restart, then try again.
+    ) else (
+        echo  Removed.
+        set /a "REMOVED_COUNT+=1"
+    )
 ) else (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"
@@ -255,33 +263,39 @@ set "DESC=%~3"
 set "BREAKS=%~4"
 set "DEFAULT=%~5"
 
-:: Check if app is installed
-powershell -Command "if (Get-AppxPackage -Name '%PKG%' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }" >nul 2>&1
+:: Check if app is installed for any user (removal below uses -AllUsers too)
+powershell -NoProfile -Command "if (Get-AppxPackage -AllUsers -Name '%PKG%' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }" >nul 2>&1
 if %errorlevel% neq 0 (
     goto :eof
 )
 
 echo ---------------------------------------------------------------------------
-echo  *** CAUTION *** %NAME%
+echo  *** CAUTION *** !NAME!
 echo ---------------------------------------------------------------------------
-echo  What it is: %DESC%
-echo  Will removing break anything? %BREAKS%
+echo  What it is: !DESC!
+echo  Will removing break anything? !BREAKS!
 echo/
 
+:: Always defaults to N (keep); clear CHOICE so Enter cannot reuse an earlier Y
 if /i "%DEFAULT%"=="Y" (
+    set "CHOICE="
     set /p "CHOICE=  Remove this app? (NOT recommended) [y/N]: "
 ) else (
+    set "CHOICE="
     set /p "CHOICE=  Remove this app? (NOT recommended) [y/N]: "
 )
 
-if "%CHOICE%"=="" set "CHOICE=N"
+if not defined CHOICE set "CHOICE=N"
 
-if /i "%CHOICE%"=="Y" (
-    echo  Removing %NAME%...
-    powershell -Command "Get-AppxPackage -Name '%PKG%' -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue" >nul 2>&1
-    powershell -Command "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -Like '%PKG%' | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue" >nul 2>&1
-    echo  Removed.
-    set /a "REMOVED_COUNT+=1"
+if /i "!CHOICE!"=="Y" (
+    echo  Removing !NAME!...
+    powershell -NoProfile -Command "$ok = $true; foreach ($p in @(Get-AppxPackage -AllUsers -Name '%PKG%')) { try { Remove-AppxPackage -Package $p.PackageFullName -AllUsers -ErrorAction Stop } catch { $ok = $false } }; Get-AppxProvisionedPackage -Online | Where-Object DisplayName -Like '%PKG%' | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null; if ($ok) { exit 0 } else { exit 1 }" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo  Could not remove - it may be running or protected by Windows. Close it or restart, then try again.
+    ) else (
+        echo  Removed.
+        set /a "REMOVED_COUNT+=1"
+    )
 ) else (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"
@@ -302,32 +316,45 @@ set "DESC=%~3"
 set "BREAKS=%~4"
 set "DEFAULT=%~5"
 
-:: Check if feature is enabled
-dism /online /Get-FeatureInfo /FeatureName:%FEAT% 2>nul | find "State : Enabled" >nul
+:: Check if feature is enabled. The State enum is compared instead of parsing
+:: "State : Enabled" from dism.exe, whose text is translated on non-English Windows.
+powershell -NoProfile -Command "if ((Get-WindowsOptionalFeature -Online -FeatureName '%FEAT%' -ErrorAction SilentlyContinue).State -eq 'Enabled') { exit 0 } else { exit 1 }" >nul 2>&1
 if %errorlevel% neq 0 (
     goto :eof
 )
 
 echo ---------------------------------------------------------------------------
-echo  %NAME%
+echo  !NAME!
 echo ---------------------------------------------------------------------------
-echo  What it is: %DESC%
-echo  Will removing break anything? %BREAKS%
+echo  What it is: !DESC!
+echo  Will removing break anything? !BREAKS!
 echo/
 
+:: set /p keeps the old value when the user just presses Enter, so clear it first
 if /i "%DEFAULT%"=="Y" (
+    set "CHOICE="
     set /p "CHOICE=  Remove this feature? [Y/n]: "
 ) else (
+    set "CHOICE="
     set /p "CHOICE=  Remove this feature? [y/N]: "
 )
 
-if "%CHOICE%"=="" set "CHOICE=%DEFAULT%"
+if not defined CHOICE set "CHOICE=%DEFAULT%"
 
-if /i "%CHOICE%"=="Y" (
-    echo  Removing %NAME%... ^(this may take a moment^)
+if /i "!CHOICE!"=="Y" (
+    echo  Removing !NAME!... ^(this may take a moment^)
+    REM DISM returns 0 = done, 3010 = done but a restart is required, anything else = failed
     dism /online /Disable-Feature /FeatureName:%FEAT% /NoRestart >nul 2>&1
-    echo  Removed ^(restart required to complete^).
-    set /a "REMOVED_COUNT+=1"
+    set "DISM_RC=!errorlevel!"
+    if "!DISM_RC!"=="0" (
+        echo  Removed.
+        set /a "REMOVED_COUNT+=1"
+    ) else if "!DISM_RC!"=="3010" (
+        echo  Removed ^(restart required to complete^).
+        set /a "REMOVED_COUNT+=1"
+    ) else (
+        echo  Could not remove ^(DISM error !DISM_RC!^).
+    )
 ) else (
     echo  Skipped.
     set /a "SKIPPED_COUNT+=1"

@@ -19,6 +19,11 @@ HOW TO USE
 Output file is saved to your Desktop:
   - FirmwareInfo_COMPUTERNAME.txt
 
+The script saves to your real Desktop folder, even when it has been moved
+(for example to C:\Users\<you>\OneDrive\Desktop by OneDrive folder backup).
+If no Desktop folder exists, the file goes to your user profile folder
+(C:\Users\<you>). The full path is shown at the end of the scan.
+
 
 BEFORE YOU RUN
 --------------
@@ -34,6 +39,10 @@ WHAT IT DETECTS
 - Audio device names and drivers
 - Storage devices and firmware revisions
 - Windows version and build
+
+All information is read with built-in PowerShell (CIM/WMI) commands, so the
+script also works on Windows 11 24H2 and later, where the old "wmic" tool
+is no longer available.
 
 
 HOW TO USE THE OUTPUT
@@ -58,7 +67,7 @@ This script only READS information and creates a text file. It makes NO
 changes to your system. Nothing to restore.
 
 To delete the report file:
-  1. Go to your Desktop
+  1. Go to your Desktop (or the folder shown at the end of the scan)
   2. Delete FirmwareInfo_*.txt
 
 

@@ -5,7 +5,8 @@
 DESCRIPTION
 -----------
 Scans all Windows scheduled tasks, categorizes them as essential, telemetry,
-bloatware, or optional, and lets you selectively disable unwanted ones.
+bloatware, optional, or unknown, and lets you selectively disable unwanted
+ones. Unknown (unrecognized) tasks are listed for review but never disabled.
 Saves a full audit report to your Desktop.
 
 
@@ -53,15 +54,18 @@ WHAT EACH CATEGORY MEANS
   - Browser update tasks (Opera, Brave, Vivaldi)
   - Java/Apple/Dropbox updaters
   - Vendor telemetry (HP, Dell, Lenovo, ASUS)
+  All tasks in this category are disabled together with one Y/N answer.
+  (OneDrive's updater is NOT in this list - it is under OPTIONAL.)
 
 [OPTIONAL] - Yellow
   Legitimate but potentially unwanted tasks:
   - Xbox/Gaming tasks (if not gaming on PC)
-  - OneDrive tasks (if not using OneDrive)
+  - OneDrive tasks, including the OneDrive updater (if not using OneDrive)
   - Edge update tasks
   - Office background tasks
   - Cortana tasks
   - Windows Update tasks (disable with caution)
+  You are asked about each of these tasks one by one.
 
 [ESSENTIAL] - Green
   Core Windows tasks that should NOT be disabled:
@@ -71,6 +75,14 @@ WHAT EACH CATEGORY MEANS
   - Time synchronization
   - Startup optimization
 
+[UNKNOWN] - White
+  Active tasks outside \Microsoft\Windows\ that match no known pattern
+  (for example third-party updaters or tasks you do not recognize).
+  They are listed with their full path and counted in the summary so you
+  can review them manually. The script never offers to disable them.
+  Unrecognized tasks are also a common place for malware to hide, so
+  look up any name you do not recognize.
+
 [WINDOWS] - Not shown individually
   Standard Microsoft\Windows tasks not matching other categories.
   Generally safe and not suggested for disabling.
@@ -79,6 +91,12 @@ WHAT EACH CATEGORY MEANS
 OUTPUT FILE
 -----------
 Saved to Desktop as: TaskAudit_COMPUTERNAME_DATE.txt
+
+The script saves to your real Desktop folder, even when it has been moved
+(for example to C:\Users\<you>\OneDrive\Desktop by OneDrive folder backup).
+If no Desktop folder exists, the report goes to your user profile folder
+(C:\Users\<you>). The full path is shown at the end of the run. If the
+report cannot be written, an [ERROR] line is shown instead.
 
 Contains:
   - Full categorized list of tasks
@@ -140,8 +158,9 @@ Don't disable without understanding:
   - Any task you don't recognize
 
 If in doubt:
-  Don't disable it. Unknown tasks are shown for information
-  but not suggested for disabling.
+  Don't disable it. Unknown tasks are shown in the [UNKNOWN] section
+  for information but not suggested for disabling. To disable one after
+  you have checked it, use Task Scheduler (taskschd.msc).
 
 
 WHEN TO USE

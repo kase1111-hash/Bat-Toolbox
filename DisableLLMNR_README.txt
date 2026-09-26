@@ -49,7 +49,9 @@ The script performs five steps:
      - HKCU WpadOverride = 1
      - HKLM WinHttp DisableWpad = 1
      - HKCU AutoDetect = 0 (disables "Automatically detect settings")
-     - Disables WinHTTP Auto-Proxy Discovery service
+     The WinHTTP Auto-Proxy service itself is not changed: Windows 10/11
+     does not let Administrators change its start type, Microsoft advises
+     against disabling it, and DisableWpad = 1 already turns off WinHTTP WPAD.
 
   4. Adds firewall rules blocking both inbound and outbound:
      - UDP 5355 (LLMNR)
@@ -104,7 +106,6 @@ Option 2: Manual Reversal
     reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Wpad" /v WpadOverride /f
     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\WinHttp" /v DisableWpad /f
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v AutoDetect /t REG_DWORD /d 1 /f
-    sc config WinHttpAutoProxySvc start= demand
 
   Step 4 - Remove firewall rules:
     netsh advfirewall firewall delete rule name="Block LLMNR (UDP 5355)"

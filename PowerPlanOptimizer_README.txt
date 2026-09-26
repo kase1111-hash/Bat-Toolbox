@@ -26,8 +26,15 @@ HOW TO USE
 
 BEFORE YOU RUN
 --------------
-Note: Power plan changes are easily reversible.
-Option [5] restores all Windows defaults.
+Note: Power plan changes are easily reversible. Option [5] switches to
+Balanced, deletes the two Bat-Toolbox plans and resets all power plans to
+the Windows defaults (see HOW TO RESTORE / UNDO for what else it does and
+does not undo). Two changes are outside the power plans:
+  - Option [1] disables the dynamic timer tick (a boot setting). Option [5]
+    asks separately whether to re-enable it.
+  - Option [4] changes the visibility of power settings in the registry. It
+    saves a backup (PowerSettings_Attributes_backup_<COMPUTERNAME>.reg)
+    first.
 
 
 PLAN COMPARISON
@@ -45,8 +52,11 @@ PLAN COMPARISON
 | Display off                | Never           | 15 min             | 5 min               |
 | Sleep                      | Never           | Never              | 30 min              |
 | Hibernate                  | Never           | Never              | Default             |
-| Network adapter            | Max Performance | Max Performance    | Moderate            |
+| Network adapter            | Max Performance | Max Performance    | Medium saving       |
 | Timer resolution           | Maximum         | Default            | Default             |
+
+On laptops (including 2-in-1s), the Maximum Performance plan turns the
+display off after 15 min on battery instead of "Never".
 
 
 WHAT EACH SETTING DOES
@@ -83,19 +93,60 @@ Hard Disk Spin-Down:
   "Never" prevents the delay when the drive wakes back up.
   (Does not affect SSDs.)
 
+NVMe Latency Tolerance (Maximum Performance plan):
+  Primary and secondary NVMe power state transition latency tolerance are
+  set to 0 ms, so NVMe drives do not enter idle power states (APST).
+
+Display / Sleep / Disk Timeouts:
+  powercfg stores these values in seconds. The script writes 900 s
+  (15 min), 300 s (5 min), 1800 s (30 min) and 1200 s (20 min).
+  Earlier versions of this script wrote the minute numbers as seconds
+  (for example, display off after 5 seconds on battery). If you ran an
+  older version, run option [1] or [2] again (or option [5]) to fix it.
+
 
 HOW TO RESTORE / UNDO
 ---------------------
 Option 1: Use menu option [5]
-  - Restores all default power plans
-  - Removes custom Maximum/Balanced Performance plans
+  - Shows all current plans and asks for confirmation first
   - Switches to Balanced plan
+  - Deletes the Bat-Toolbox Maximum/Balanced Performance plans
+  - Runs powercfg /restoredefaultschemes, which ALSO deletes any other
+    user-created or app-created plan (e.g. an Ultimate Performance copy).
+    Export a plan you want to keep first:
+      powercfg /export "C:\plan-backup.pow" <GUID>
+    and bring it back later with: powercfg /import "C:\plan-backup.pow"
+  - Asks whether to re-enable the dynamic timer tick (see below)
 
 Option 2: Control Panel
   - Control Panel > Power Options > Select a different plan
 
 Option 3: Command line
   powercfg /restoredefaultschemes
+  WARNING: this also deletes every user-created or app-created plan.
+  Export any plan you want to keep first (powercfg /export, see above).
+
+Timer change from option [1] (step 9):
+  Option [1] runs "bcdedit /set disabledynamictick yes". This is a boot
+  setting, not part of a power plan. To undo it, answer Y to the timer
+  question in option [5], or run this from an admin prompt and reboot:
+    bcdedit /deletevalue disabledynamictick
+  Note: InterruptLatencyTuning.bat and WindowsTweaks.bat set the same
+  value, so this also undoes their timer tweak.
+
+Hidden settings from option [4]:
+  Before unhiding, option [4] saves the original values to
+  PowerSettings_Attributes_backup_<COMPUTERNAME>.reg in the script folder,
+  where <COMPUTERNAME> is the name of the PC. There is one backup file per
+  PC, so a copy of Bat-Toolbox used on several PCs (USB stick, synced
+  folder) keeps a separate backup for each. An existing backup for the PC
+  is kept, so it always holds the state from before the first run.
+  To hide the settings again, double-click that file, or run from an
+  admin prompt (use the full path; an admin prompt starts in System32):
+    reg import "<script folder>\PowerSettings_Attributes_backup_<COMPUTERNAME>.reg"
+  Import only the file whose name matches this PC's own computer name
+  (to see it, run "echo %COMPUTERNAME%" in a command prompt). A backup
+  from another PC would write that PC's power settings into this one.
 
 
 HIDDEN SETTINGS (OPTION 4)
@@ -115,10 +166,17 @@ After unhiding, these appear in:
   Control Panel > Power Options > Change plan settings >
   Change advanced power settings
 
+A backup of the original values is saved first to
+PowerSettings_Attributes_backup_<COMPUTERNAME>.reg in the script folder
+(one file per PC). If the backup cannot be written (for example, a
+read-only folder), nothing is changed.
+See HOW TO RESTORE / UNDO to re-hide the settings.
+
 
 NOTES
 -----
-- Script auto-detects laptop vs desktop
+- Script auto-detects laptop vs desktop (2-in-1 convertibles, detachables
+  and tablets count as laptops)
 - Laptop users are warned about battery impact
 - Plans persist across reboots (unlike temp files)
 - Custom plans can be further tweaked in Control Panel
@@ -132,7 +190,8 @@ TIPS
 ----
 - Desktop gamers: use Maximum Performance
 - Laptop gamers: use Balanced Performance (better thermals)
-- Run option [3] to verify settings were applied
+- Run option [3] to verify settings were applied (values are shown as raw
+  hex from powercfg; timeouts are in seconds, e.g. 0x00000384 = 900 s)
 - Use option [4] to unlock all hidden settings for manual tweaking
 - Pair with InterruptLatencyTuning.bat for lowest possible latency
 - Use LatencyMon to verify improvements

@@ -14,6 +14,7 @@ These scripts make significant changes to your Windows installation. **Always cr
 2. **Start with script 00** - Always create a restore point first
 3. **Run scripts in order** - The numbering suggests the recommended order
 4. **Reboot after** - Restart your computer after running scripts
+5. **Run from the account you want to change** - Per-user tweaks (HKCU settings, OneDrive, temp/browser caches) apply to the account the elevated window runs as. If a standard user elevates with a different administrator's password, those changes land on the administrator's profile instead; scripts 04, 05, 09 and 11 detect this and ask before continuing.
 
 ---
 
@@ -24,8 +25,9 @@ These scripts make significant changes to your Windows installation. **Always cr
 **Purpose:** Creates a Windows System Restore point before making changes.
 
 **What it does:**
-- Enables System Restore if disabled
+- Enables System Restore on the Windows drive (`%SystemDrive%`) if disabled
 - Creates a restore point named "Before Windows 10 Debloat"
+- Temporarily lifts Windows' one-restore-point-per-24-hours limit (`SystemRestorePointCreationFrequency`) so the point is always created, then puts the original setting back
 
 **When to use:** ALWAYS run this first before any other scripts.
 
@@ -44,8 +46,11 @@ These scripts make significant changes to your Windows installation. **Always cr
 - Communication (Skype, People, Messaging, Your Phone)
 - Xbox apps (if you don't PC game)
 - Utilities (Maps, Alarms, Camera, Sound Recorder)
-- Microsoft apps (Office Hub, OneNote, Feedback Hub)
-- Third-party bloat (Candy Crush, Facebook, Spotify, etc.)
+- Microsoft apps (Office Hub, OneNote, Feedback Hub, Get Help, Tips)
+- Paint 3D, Wallet, Print 3D, Mobile Plans (OneConnect)
+- Third-party bloat (Candy Crush, Facebook, Spotify, etc.) - removed for all user accounts
+
+The OEM Dolby audio app is **not** removed by this script (it can control audio profiles on some laptops). Use `12-Interactive-Remover.bat` if you want to remove it.
 
 **When to use:** Safe for most users who don't use these apps.
 
@@ -72,7 +77,10 @@ These scripts make significant changes to your Windows installation. **Always cr
 - Safe if you don't use Xbox features, location services, or fax
 - Skip Xbox services if you play games on PC
 
-**Reversibility:** Run `sc config "ServiceName" start= auto` to re-enable.
+**Reversibility:** Re-enable a service with its original start type, then start it with `net start "ServiceName"`:
+- `sc config "ServiceName" start= demand` - most of these services (Manual / trigger start by default)
+- `sc config MapsBroker start= delayed-auto`
+- `sc config DiagTrack start= auto`
 
 ---
 
@@ -112,6 +120,7 @@ These scripts make significant changes to your Windows installation. **Always cr
 **When to use:** Recommended for privacy-conscious users.
 
 **Reversibility:** Changes can be reversed via Registry Editor (regedit).
+- OneDrive: `reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /f` (required before OneDrive can be used again)
 
 ---
 
@@ -166,8 +175,10 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **When to use:** Additional layer of protection after disabling services.
 
+**Warning:** Microsoft Defender detects these entries as `SettingsModifier:Win32/HostsFileHijack`. If Defender removes the "threat", it resets the hosts file to default and deletes **all** custom entries. To keep the blocks, choose **Allow on device** for the alert in Windows Security. The script checks the entries after writing them and reports an error if the write was blocked or they were removed.
+
 **Reversibility:**
-- Backup is created automatically
+- Backup is created automatically (`hosts.backup` next to the hosts file)
 - Edit `C:\Windows\System32\drivers\etc\hosts` to remove entries
 
 ---
@@ -198,14 +209,16 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **What it does:**
 - Stops and uninstalls OneDrive
-- Removes OneDrive folders
+- Removes leftover OneDrive program/cache folders
+- Removes `%UserProfile%\OneDrive` only if it is empty - it is never deleted while it contains files
 - Removes OneDrive from Explorer sidebar
 
 **When to use:** If you don't use OneDrive cloud storage.
 
-**Warning:** Any files only in OneDrive will be lost! Sync important files first.
+**Note:** Files already uploaded stay in your OneDrive account online. If OneDrive folder backup is on, your Desktop/Documents/Pictures live inside `%UserProfile%\OneDrive`; turn off folder backup in OneDrive settings first, or move what you need out of that folder afterwards and delete it manually.
 
-**Reversibility:** Re-download OneDrive from Microsoft.
+**Reversibility:** Re-download OneDrive from Microsoft. If you also ran 04-Registry-Privacy.bat, first remove its OneDrive block policy (from an elevated prompt), then sign out and back in:
+`reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /f`
 
 ---
 
@@ -228,8 +241,10 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **Reversibility:**
 - Hibernation: `powercfg /hibernate on`
-- Superfetch: `sc config SysMain start= auto && net start SysMain`
-- Search: `sc config WSearch start= auto && net start WSearch`
+- Superfetch/Prefetch: `sc config SysMain start= auto && net start SysMain`, then restore the prefetcher values the script set to 0 and restart:
+  - `reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnablePrefetcher /t REG_DWORD /d 3 /f`
+  - `reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnableSuperfetch /t REG_DWORD /d 3 /f`
+- Search: `sc config WSearch start= delayed-auto && net start WSearch`
 
 ---
 
@@ -252,7 +267,10 @@ These scripts make significant changes to your Windows installation. **Always cr
 | DNS Cache | DNS resolver cache |
 | Windows Installer | Orphaned patch cache |
 | Error Reports | Windows Error Reporting files |
-| Recent Documents | Recent files list |
+| Recent Documents | Recent files list (shortcuts in `Recent`; Quick Access pins and pinned jump-list items are kept) |
+| Disk Cleanup | Runs `cleanmgr /sagerun:100` with its temp-file, setup/upgrade-log, old ChkDsk, thumbnail and error-report handlers |
+
+Disk Cleanup is **not** set to remove Windows.old (Previous Installations), the Recycle Bin, superseded updates (Update Cleanup) or crash dumps (MEMORY.DMP / minidumps); the script clears any such flags left by older versions.
 
 **When to use:**
 - Run periodically to free up disk space
@@ -275,7 +293,8 @@ These scripts make significant changes to your Windows installation. **Always cr
 - Shows what the program/feature does
 - Warns if removal may break something
 - Asks Y/N before each removal
-- Only shows items that are actually installed
+- Only shows items that are actually installed (apps installed for any user account, features that are enabled)
+- Reports "Could not remove" instead of "Removed" when a removal fails, and does not count it
 
 **Categories covered:**
 
@@ -298,8 +317,7 @@ These scripts make significant changes to your Windows installation. **Always cr
 - When unsure what's safe to remove
 
 **Default behavior:**
-- Safe-to-remove items default to Y (remove)
-- Items that may break things default to N (keep)
+- All items default to N (keep); type Y to remove
 - Press Enter to accept the default
 
 **Reversibility:** Most apps can be reinstalled from Microsoft Store. Features can be re-enabled via DISM.
@@ -365,9 +383,10 @@ These scripts make significant changes to your Windows installation. **Always cr
 
 **Need to re-enable a service:**
 ```batch
-sc config "ServiceName" start= auto
+sc config "ServiceName" start= demand
 net start "ServiceName"
 ```
+Use `start= demand` for most services (their Windows default is Manual / trigger start); use `start= delayed-auto` for MapsBroker and WSearch, and `start= auto` for DiagTrack.
 
 ---
 

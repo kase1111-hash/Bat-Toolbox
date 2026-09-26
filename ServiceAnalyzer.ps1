@@ -138,7 +138,9 @@ $bloatwareServices = @{
     # the display-driver helper and the NVIDIA Control Panel; bulk-disabling it
     # breaks Control Panel and driver features after a reboot.
     # AMD
-    'AMD External Events Utility' = 'AMD Events - Usually not needed'
+    # NOTE: 'AMD External Events Utility' is intentionally NOT listed. It is part of
+    # the Radeon display driver (atiesrxx.exe); stopping or disabling it breaks FreeSync in
+    # fullscreen games and driver display-event/hotkey handling after a reboot.
     # Third-party antivirus
     'avast! Antivirus' = 'Avast - Windows Defender is sufficient'
     'AVG Antivirus' = 'AVG - Windows Defender is sufficient'

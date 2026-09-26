@@ -4,8 +4,12 @@
 
 echo Adding Recycle Bin to Navigation Pane...
 
-reg add "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}" /f >nul 2>&1
-reg add "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\ShellFolder" /v Attributes /t REG_DWORD /d 0x50000020 /f >nul 2>&1
+:: Remove the per-user ShellFolder Attributes override written by earlier
+:: versions of this script - it pinned nothing and changed how the shell
+:: treats the Recycle Bin for this user.
+reg delete "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\ShellFolder" /f >nul 2>&1
+:: System.IsPinnedToNameSpaceTree=1 is what pins an item to the Navigation Pane
+reg add "HKCU\Software\Classes\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}" /v "System.IsPinnedToNameSpaceTree" /t REG_DWORD /d 1 /f >nul 2>&1
 
 echo Done. Restarting Explorer...
 

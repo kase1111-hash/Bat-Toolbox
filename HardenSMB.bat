@@ -77,7 +77,6 @@ echo     Show-Setting "Require Signing       " $server.RequireSecuritySignature 
 echo     Show-Setting "Enable Signing        " $server.EnableSecuritySignature $true
 echo     Show-Setting "Encrypt Data          " $server.EncryptData $true
 echo     Show-Setting "Reject Unencrypted    " $server.RejectUnencryptedAccess $true
-echo     Show-Setting "Enable Insecure Guest " $server.EnableInsecureGuestLogons $false
 echo     Write-Host ""
 echo     if ^($server.DisableCompression -ne $null^) {
 echo         Show-Setting "Disable Compression   " $server.DisableCompression $true
@@ -124,6 +123,7 @@ echo   NAS firmware and Samba 4.2+ support signing; Samba 4.11+ supports
 echo   encryption. Windows-to-Windows file sharing is fully compatible.%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=  Apply SMB hardening? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -161,19 +161,18 @@ echo     Write-Host "  [OK] SMB server encryption enabled, unencrypted rejected"
 echo } catch {
 echo     Write-Host "  [FAIL] Could not configure SMB encryption: $_" -ForegroundColor Red
 echo }
-echo try {
-echo     # Disable insecure guest logons
-echo     Set-SmbServerConfiguration -EnableInsecureGuestLogons $false -Confirm:$false 2^>$null
-echo     Write-Host "  [OK] Insecure guest logons disabled (server)" -ForegroundColor Green
-echo } catch {
-echo     Write-Host "  [SKIP] EnableInsecureGuestLogons not available on server config" -ForegroundColor DarkGray
-echo }
 echo # Disable SMB compression ^(SMBGhost mitigation^)
 echo try {
 echo     Set-SmbServerConfiguration -DisableCompression $true -Confirm:$false 2^>$null
 echo     Write-Host "  [OK] SMB compression disabled (SMBGhost mitigation)" -ForegroundColor Green
 echo } catch {
-echo     Write-Host "  [SKIP] SMB compression setting not available on this version" -ForegroundColor DarkGray
+echo     # Windows 10 / pre-KB5016691 builds lack -DisableCompression; use the ADV200005 registry value
+echo     try {
+echo         Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' -Name DisableCompression -Value 1 -Type DWord
+echo         Write-Host "  [OK] SMB compression disabled via registry (SMBGhost mitigation)" -ForegroundColor Green
+echo     } catch {
+echo         Write-Host "  [FAIL] Could not disable SMB compression: $_" -ForegroundColor Red
+echo     }
 echo }
 ) > "%PSSCRIPT%"
 
@@ -281,16 +280,28 @@ echo   %CYAN%╚═════════════════════�
 echo/
 echo   %BOLD%%WHITE%To undo these changes:%RESET%
 echo/
+echo   %DIM%These commands restore the Windows defaults. RejectUnencryptedAccess = True and%RESET%
+echo   %DIM%RestrictAnonymousSAM = 1 are already the defaults, so they are left as they are.%RESET%
+echo/
 echo     %DIM%1.%RESET% Revert SMB server settings (PowerShell admin):
-echo        %CYAN%Set-SmbServerConfiguration -RequireSecuritySignature $false -EncryptData $false -RejectUnencryptedAccess $false -Confirm:$false%RESET%
+echo        %CYAN%Set-SmbServerConfiguration -EncryptData $false -Confirm:$false%RESET%
+echo        %CYAN%Set-SmbServerConfiguration -RequireSecuritySignature $false -Confirm:$false%RESET%
+echo        %DIM%Skip the signing line on Windows 11 24H2+ Pro/Enterprise/Education, where%RESET%
+echo        %DIM%signing is required by default.%RESET%
 echo/
 echo     %DIM%2.%RESET% Revert SMB client settings (PowerShell admin):
-echo        %CYAN%Set-SmbClientConfiguration -RequireSecuritySignature $false -EnableInsecureGuestLogons $true -Confirm:$false%RESET%
+echo        %CYAN%Set-SmbClientConfiguration -RequireSecuritySignature $false -Confirm:$false%RESET%
+echo        %DIM%Skip this on Windows 11 24H2+ Pro/Enterprise/Education, where signing is%RESET%
+echo        %DIM%required by default.%RESET%
+echo        %DIM%Only if a legacy NAS needs guest access: Set-SmbClientConfiguration -EnableInsecureGuestLogons $true%RESET%
 echo/
 echo     %DIM%3.%RESET% Revert registry keys:
-echo        %CYAN%reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymousSAM /t REG_DWORD /d 0 /f%RESET%
 echo        %CYAN%reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymous /t REG_DWORD /d 0 /f%RESET%
 echo        %CYAN%reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 3 /f%RESET%
+echo/
+echo     %DIM%4.%RESET% Re-enable SMB compression:
+echo        %CYAN%Set-SmbServerConfiguration -DisableCompression $false -Confirm:$false%RESET%   %DIM%(Windows 11)%RESET%
+echo        %CYAN%reg delete "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v DisableCompression /f%RESET%   %DIM%(Windows 10)%RESET%
 echo/
 
 pause

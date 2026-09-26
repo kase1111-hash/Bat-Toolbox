@@ -43,7 +43,7 @@ AVAILABLE PROFILES:
 3. QUALITY / CONTENT CREATION
    Goal: Maximum image quality, stable performance
    Settings:
-   - Power: Adaptive for thermal management
+   - Power: Driver default (adaptive) for thermal management
    - Low latency mode: Off
    - V-Sync: Enabled for smooth frametimes
    - Texture quality: Maximum
@@ -72,19 +72,30 @@ Windows-Level Settings:
 - Fullscreen optimization behavior
 
 NVIDIA-Specific:
-- PowerMizer / power management mode
+- PowerMizer / power management mode (Profiles 1-2 force maximum
+  performance; Profiles 3-4 remove those overrides so the driver's adaptive
+  default applies)
 - Shader cache size
+- Both are written to the NVIDIA adapter's own display-class registry key
+  (the 000N subkey whose ProviderName is NVIDIA). If that key cannot be found
+  the step is skipped. \0000 is often the Intel/AMD iGPU on laptops, so the
+  script no longer assumes \0000.
 - Telemetry opt-out
 - Background task scheduling
 - (Manual) Low latency mode, threaded optimization
 
 AMD-Specific:
 - ULPS (Ultra Low Power State)
-- Telemetry scheduled tasks
+- Update/telemetry scheduled tasks (AMDInstallLauncher, AMDLinkUpdate).
+  StartCN (starts AMD Software at logon) and StartDVR (ReLive / Instant
+  Replay) are not telemetry and are left alone.
 - (Manual) Anti-Lag, Boost, Chill, Enhanced Sync
 
 Intel-Specific:
-- Graphics power plan
+- Intel Graphics Power Plan (a Windows power option: Maximum Performance for
+  Profiles 1-3, Balanced for Profile 4, plugged-in only). Skipped if the Intel
+  driver does not expose it. The driver's FeatureTestControl value is never
+  touched.
 - (Manual) Arc Control settings, Smooth Sync
 
 
@@ -123,10 +134,13 @@ HOW TO USE:
 -----------
 1. Right-click GPUDriverOptimizer.bat
 2. Select "Run as administrator"
-3. Choose whether to create a restore point
-4. Select your desired profile (1-4)
-5. Follow any manual configuration prompts
-6. Restart when complete
+3. Select your desired profile (1-4), or 5 to exit without changes
+4. Confirm with Y to apply the profile (N exits without changes)
+5. Choose whether to create a restore point
+6. Follow any manual configuration prompts
+7. Restart when complete. If you choose to restart from the script, it waits
+   10 seconds (press Ctrl+C, then Y, to cancel) and then restarts normally,
+   so open apps can still ask you to save your work.
 
 After running:
 1. Open your GPU control panel
@@ -162,8 +176,15 @@ NVIDIA Control Panel (must be done manually):
 
    Quality:
    - Low Latency Mode: Off
-   - Power Management: Optimal Power
+   - Power Management: Normal (driver default)
    - Texture Filtering Quality: High Quality
+   - Threaded Optimization: Auto
+   - Vertical Sync: On
+
+   Power Efficient:
+   - Power Management: Adaptive / Optimal Power
+   - Shader Cache: Driver Default
+   - Texture Filtering Quality: Quality
    - Threaded Optimization: Auto
    - Vertical Sync: On
 
@@ -263,23 +284,65 @@ Intel:
 - Click "Restore Original Settings"
 
 Option 3: Manual Registry Restoration
+(Run these in an elevated Command Prompt. The "for" lines are written for the
+command prompt; inside a .bat file, write %%k and %%v instead of %k and %v.)
 
 Windows GPU settings:
   reg delete "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v "HwSchMode" /f
-  reg delete "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /f
   reg delete "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /f
+  reg add "HKCU\System\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 0 /f
+  reg delete "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehavior" /f
+  reg delete "HKCU\Software\Microsoft\GameBar" /v "AllowAutoGameMode" /f
+  reg delete "HKCU\Software\Microsoft\GameBar" /v "AutoGameModeEnabled" /f
+
+Variable refresh rate:
+  Do NOT delete DirectXUserGlobalSettings: that one value also stores Auto HDR
+  and "Optimizations for windowed games". Instead open Settings > System >
+  Display > Graphics > default graphics settings and set "Variable refresh
+  rate" back to your previous choice. (Older versions of this script replaced
+  the whole value, which reset Auto HDR and windowed-game optimizations to
+  their defaults - check those two toggles on the same page as well.)
+
+NVIDIA power and shader cache (restore):
+  These values are on the NVIDIA adapter's key, the 000N subkey of
+  HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}
+  whose ProviderName is NVIDIA. Running the script again with Profile 3 or 4
+  removes the power overrides. To remove all of them by hand (this also cleans
+  up \0000, where older versions of this script always wrote them, even when
+  \0000 was the Intel/AMD iGPU):
+  for /f "delims=" %k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" ^| findstr /r "\\[0-9][0-9][0-9][0-9]$"') do @for %v in (PerfLevelSrc PowerMizerEnable PowerMizerLevel PowerMizerLevelAC ShaderCacheSize) do @reg delete "%k" /v %v /f 2>nul
 
 NVIDIA telemetry (restore):
   reg delete "HKLM\SOFTWARE\NVIDIA Corporation\NvControlPanel2\Client" /v "OptInOrOutPreference" /f
+  for %v in (EnableRID44231 EnableRID64640 EnableRID66610) do reg delete "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "%v" /f
 
 AMD ULPS (restore):
   For each key in HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000:
   reg add "...\0000" /v "EnableULPS" /t REG_DWORD /d 1 /f
 
+Intel Graphics Power Plan (restore):
+  Set the plugged-in value back to your previous choice
+  (0 = Maximum Battery Life, 1 = Balanced, 2 = Maximum Performance), e.g.:
+  powercfg /setacvalueindex SCHEME_CURRENT 44f3beca-a7c0-460e-9df2-bb8b99e0cba6 3619c3f2-afb2-4afc-b0e9-e7fef372de36 1
+  powercfg /setactive SCHEME_CURRENT
+
+Intel FeatureTestControl (only if you ran an older version):
+  Older versions overwrote the Intel driver's FeatureTestControl value (a
+  driver feature bitmask, not a power setting) with 0 or 1 on the Intel
+  adapter key. The current version never touches it. To undo, use System
+  Restore, reinstall the Intel graphics driver, or set it back to the value
+  you had before (commonly 0x9240, or 0x9250 if Intel DPST adaptive
+  brightness had been disabled).
+
 Scheduled tasks (restore):
-  schtasks /change /tn "NvTmRepOnLogon_{...}" /enable
-  schtasks /change /tn "NvTmRep_{...}" /enable
+  schtasks /change /tn "NvTmRepOnLogon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /enable
+  schtasks /change /tn "NvTmRep_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /enable
   schtasks /change /tn "AMDInstallLauncher" /enable
+  schtasks /change /tn "AMDLinkUpdate" /enable
+  Older versions also disabled these two AMD tasks (they start AMD Software
+  at logon and ReLive / Instant Replay). Re-enable them if you ran one:
+  schtasks /change /tn "StartCN" /enable
+  schtasks /change /tn "StartDVR" /enable
 
 
 COMPETITIVE GAMING COMPLETE SETUP:

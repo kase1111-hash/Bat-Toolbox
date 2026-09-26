@@ -15,6 +15,8 @@ HOW TO USE
 3. Confirm when prompted (Y/N)
 4. Wait for all phases to complete
 5. Restart when prompted (recommended)
+   To cancel a restart that has already been scheduled, press Win+R and
+   run: shutdown /a
 
 
 BEFORE YOU RUN
@@ -37,6 +39,18 @@ WHAT GETS REMOVED
 - NVIDIA Web Helper (browser integration)
 - All NVIDIA scheduled tasks
 - Startup entries
+
+How GeForce Experience is removed:
+  GeForce Experience is an NVIDIA Installer2 package (it has no uninstall.exe
+  and is not an MSI product). The script runs the uninstaller GeForce
+  Experience registered with Windows - the UninstallString under
+    HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\
+      {B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}_Display.GFExperience
+  (RunDll32 ...\NVI2.DLL,UninstallPackage Display.GFExperience) with -silent.
+  If GeForce Experience is still registered afterwards, the script reports it
+  and leaves its program folders in place, so Apps and Features is not left
+  with a broken entry. Uninstall it from Settings > Apps in that case and
+  run the script again.
 
 WHAT STAYS INTACT
 -----------------

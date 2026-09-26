@@ -74,7 +74,9 @@ echo  %DISPNAME%
 echo --------------------------------------------------------------
 
 set "SVCNAME="
-for /f "delims=" %%N in ('powershell -NoProfile -Command "(Get-Service -DisplayName '%~1' -ErrorAction SilentlyContinue).Name" 2^>nul') do set "SVCNAME=%%N"
+:: Also match "Display Name (ShortName)" - current Edge registers its service as
+:: "Microsoft Edge Elevation Service (MicrosoftEdgeElevationService)"
+for /f "delims=" %%N in ('powershell -NoProfile -Command "(Get-Service -DisplayName '%~1','%~1 (*' -ErrorAction SilentlyContinue | Select-Object -First 1).Name" 2^>nul') do set "SVCNAME=%%N"
 
 if not defined SVCNAME (
     echo   Not found on this system.
@@ -83,8 +85,8 @@ if not defined SVCNAME (
 )
 echo   Service name : !SVCNAME!
 
-:: State
-for /f "tokens=3" %%S in ('sc query "!SVCNAME!" 2^>nul ^| findstr /I "STATE"') do (
+:: State - the line is "STATE : 4  RUNNING", so token 4 is the state name
+for /f "tokens=4" %%S in ('sc query "!SVCNAME!" 2^>nul ^| findstr /I "STATE"') do (
     echo   State        : %%S
 )
 

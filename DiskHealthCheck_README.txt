@@ -22,6 +22,12 @@ OUTPUT FILE
 -----------
 Saved to Desktop as: DiskHealth_COMPUTERNAME_DATE.txt
 
+The script saves to your real Desktop folder, even when it has been moved
+(for example to C:\Users\<you>\OneDrive\Desktop by OneDrive folder backup).
+If no Desktop folder exists, the report goes to your user profile folder
+(C:\Users\<you>). The full path is shown at the end of the run. If the
+report cannot be written, an [ERROR] line is shown instead.
+
 Contains for each drive:
   - Model, serial number, firmware version
   - Media type (SSD, HDD, NVMe) and bus type
@@ -30,6 +36,7 @@ Contains for each drive:
   - Power-on hours with age estimate
   - SSD wear level percentage
   - Read/write error counts
+  - Uncorrected (unrecoverable) read/write error count, if any
   - Power cycle count
   - Partition usage and free space
   - WMI drive status
@@ -57,6 +64,10 @@ Power-On Hours:
 Read/Write Errors:
   0        = Normal
   > 0      = Investigate - may indicate failing drive
+
+Uncorrected Read/Write Errors (ReadErrorsUncorrected + WriteErrorsUncorrected):
+  0        = Normal (not shown)
+  > 0      = CRITICAL (Red) - data the drive could not recover; back up now
 
 Drive Space:
   < 90% used  = Normal
@@ -115,9 +126,10 @@ PowerShell commands:
   Get-StorageReliabilityCounter -PhysicalDisk (Get-PhysicalDisk)
   Get-Volume
 
-Command line:
-  wmic diskdrive get model,status,size,interfacetype
-  wmic diskdrive get serialnumber,firmwarerevision
+PowerShell (WMI/CIM; the old "wmic" tool is not available on
+Windows 11 24H2 and later):
+  Get-CimInstance Win32_DiskDrive | Format-Table Model,Status,Size,InterfaceType
+  Get-CimInstance Win32_DiskDrive | Format-Table Model,SerialNumber,FirmwareRevision
 
 Third-party tools (more detailed S.M.A.R.T.):
   - CrystalDiskInfo (free)

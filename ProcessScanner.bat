@@ -328,7 +328,7 @@ echo Write-Host '===============================================================
 echo Write-Host ' [UNKNOWN] Unrecognized Processes ^(Research if concerned^)' -ForegroundColor Cyan
 echo Write-Host '============================================================================' -ForegroundColor Cyan
 echo Write-Host ''
-echo $unknownHigh = $unknown ^| Where-Object { $_.MemoryMB -gt 50 } ^| Select-Object -First 15
+echo $unknownHigh = @^($unknown ^| Where-Object { $_.MemoryMB -gt 50 } ^| Select-Object -First 15^)
 echo foreach ^($proc in $unknownHigh^) {
 echo     Write-Host "  [?] $($proc.Name)" -ForegroundColor Cyan -NoNewline
 echo     Write-Host " - $($proc.MemoryMB) MB" -ForegroundColor Gray
@@ -336,8 +336,9 @@ echo     if ^($proc.Description^) {
 echo         Write-Host "      $($proc.Description)" -ForegroundColor DarkGray
 echo     }
 echo }
-echo if ^($unknown.Count -gt 15^) {
-echo     Write-Host "  ... and $($unknown.Count - 15) more small processes" -ForegroundColor DarkGray
+echo $hiddenCount = $unknown.Count - $unknownHigh.Count
+echo if ^($hiddenCount -gt 0^) {
+echo     Write-Host "  ... and $hiddenCount more unknown processes not shown" -ForegroundColor DarkGray
 echo }
 echo Write-Host ''
 echo/
@@ -346,7 +347,10 @@ echo Write-Host " Summary: $($essential.Count) Essential, $($bloatware.Count) Bl
 echo Write-Host '============================================================================' -ForegroundColor White
 ) > "%PSSCRIPT%"
 
-:: Run the PowerShell script
+:: Run the PowerShell script. Delete any PID list left by an interrupted run
+:: first - the scan only writes the file when bloatware is found, so a stale
+:: list would otherwise be offered for termination against reused PIDs.
+del "%TEMP%\bloatware_pids.txt" 2>nul
 powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%"
 title [2/2] Process Scanner - Complete
 
@@ -357,16 +361,24 @@ if exist "%TEMP%\bloatware_pids.txt" (
 
     if !bloat_count! gtr 0 (
         echo/
+        set "killbloat="
         set /p "killbloat=Would you like to terminate bloatware processes? [Y/N]: "
         if /i "!killbloat!"=="Y" (
             echo/
             echo Terminating bloatware processes...
+            REM Only kill a PID if it still belongs to the scanned program: the
+            REM process may have exited and its PID been reused by another one.
             for /f "tokens=1,2 delims=;" %%a in ('type "%TEMP%\bloatware_pids.txt"') do (
-                taskkill /pid %%a /f >nul 2>&1
-                if not errorlevel 1 (
-                    echo   [KILLED] %%b ^(PID: %%a^)
+                tasklist /fi "PID eq %%a" /fi "IMAGENAME eq %%b.exe" /fo csv /nh 2>nul | find /i "%%b.exe" >nul
+                if errorlevel 1 (
+                    echo   [SKIPPED] %%b - PID %%a no longer belongs to this program
                 ) else (
-                    echo   [FAILED] %%b - may need admin rights or is protected
+                    taskkill /pid %%a /f >nul 2>&1
+                    if not errorlevel 1 (
+                        echo   [KILLED] %%b ^(PID: %%a^)
+                    ) else (
+                        echo   [FAILED] %%b - may need admin rights or is protected
+                    )
                 )
             )
             echo/
