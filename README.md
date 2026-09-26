@@ -133,7 +133,7 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 |-------------|--------|
 | Lenovo | Energy Management WMI / registry |
 | ASUS | ATK ACPI WMI / Battery Health Charging |
-| Microsoft Surface | UEFI Battery Limit registry |
+| Microsoft Surface | Surface UEFI / Surface app (cannot be set from Windows; the script shows the steps) |
 | HP | Instrumented BIOS WMI / Battery Health Manager |
 | Dell | DCIM WMI / Dell Command Configure (CCTK) |
 | Huawei | PC Manager registry |
@@ -149,7 +149,7 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 - Battery health and status viewer with design vs. current capacity
 - Interface detection scan to verify compatibility before applying
 
-**Note:** Most manufacturers require their companion software/driver to be installed (e.g., Lenovo Vantage, MyASUS, Dell Command | Power Manager).
+**Note:** Most manufacturers require their companion software/driver to be installed (e.g., Lenovo Vantage, MyASUS, Dell Command | Power Manager). The vendor registry fallbacks (Lenovo, ASUS, HP, Huawei, LG, Razer) are written only when the vendor's key already exists, and are reported as UNVERIFIED rather than success. The 50% option becomes 60% on ASUS and 55% on Dell, their lowest supported values.
 
 **Admin required:** Yes
 
@@ -200,7 +200,7 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 
 **Features:**
 - Scans 12+ registry locations for context menu entries
-- Uses `LegacyDisable` (non-destructive, easily reversible)
+- Hides menu verbs with `LegacyDisable`, and blocks shell-extension handlers (`...\shellex\ContextMenuHandlers`: WinZip, antivirus, 7-Zip, etc.) by adding their CLSID under `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked` - both reversible (see `ContextMenuCleaner_README.txt`)
 - Batch disable bloatware or review optional entries one by one
 - On Windows 11, offers to restore the classic full context menu
 
@@ -241,13 +241,14 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 | SSD Wear Level | Green <50%, Yellow 50-89%, Red 90%+ |
 | Power-On Hours | Reports age estimate in years |
 | Read/Write Errors | Any non-zero count flagged |
+| Uncorrected read/write errors | Any non-zero count = CRITICAL (back up now) |
 | Disk Space | Yellow >90% used, Red >95% used |
 
 **Features:**
 - Reads Windows Storage Reliability Counters (S.M.A.R.T. equivalent)
 - Shows partition usage and free space
 - WMI fallback for additional drive details
-- Saves full report to Desktop
+- Saves full report to your Desktop (including a OneDrive-redirected Desktop)
 - Clear action recommendations based on severity
 
 **Admin required:** Yes
@@ -262,10 +263,10 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 | Option | Description |
 |--------|-------------|
 | Full Diagnostic | Checks all brightness-related settings, services, and driver features |
-| Quick Fix | One-click disable of all auto-dimming features |
+| Quick Fix | Disables all auto-dimming features after a Y/N confirmation; backs up the original values first (`HKLM\SOFTWARE\BrightnessDiagnostic\Backup`) |
 | Max Brightness | Sets screen to 100% via Windows API |
 | Gamma Boost | Increases perceived brightness beyond Windows' 100% limit |
-| Reset to Default | Restores all display settings to Windows defaults |
+| Reset Display Settings | Undoes Quick Fix / Advanced fixes from the saved backup, resets gamma, sets SensrSvc back to Manual, restarts the display driver (without a backup it only re-enables adaptive brightness; without admin it only resets gamma) |
 | Advanced Options | Fine-grained control over Intel DPST, AMD Vari-Bright, Panel Self-Refresh |
 
 **What it diagnoses:**
@@ -288,7 +289,7 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 **Purpose:** Automatically organizes files into folders based on their file extension.
 
 **What it does:**
-- Scans all files in the script's directory (recursively)
+- Sorts only the files directly in the script's folder; subfolders and their contents are left untouched
 - Creates folders named after file extensions (e.g., `PDF`, `JPG`, `DOCX`)
 - Moves files into their corresponding extension folders
 - Skips files that are already sorted or have duplicate names
@@ -319,7 +320,7 @@ Before:                    After:
 **What it does:**
 | Step | Action |
 |------|--------|
-| 1. Adapter config | Sets TcpipNetbiosOptions to Disabled on every IP-enabled adapter |
+| 1. Adapter config | Sets NetBIOS to Disabled on every adapter: via WMI on IP-enabled adapters, plus `NetbiosOptions = 2` on every NetBT interface in the registry (covers disconnected adapters too) |
 | 2. NetBT driver | Stops and disables the NetBIOS over TCP/IP transport driver |
 | 3. lmhosts service | Stops and disables the TCP/IP NetBIOS Helper service |
 | 4. Firewall rules | Adds inbound block rules for UDP 137, UDP 138, and TCP 139 |
@@ -354,7 +355,7 @@ Before:                    After:
 |------|--------|
 | 1. LLMNR | Registry: EnableMulticast = 0 via Group Policy key |
 | 2. mDNS | Registry: EnableMDNS = 0 in DNS Client parameters |
-| 3. WPAD | Registry: WpadOverride, DisableWpad, AutoDetect + disables WinHTTP Auto-Proxy service |
+| 3. WPAD | Registry: WpadOverride, DisableWpad, AutoDetect (the WinHTTP Auto-Proxy service is left alone; `DisableWpad = 1` already stops WinHTTP WPAD) |
 | 4. Firewall | Blocks inbound and outbound UDP 5353 and 5355 |
 
 **When NOT to use:**
@@ -400,10 +401,10 @@ Before:                    After:
 | 32-bit Registry (WoW64) | 32-bit apps on 64-bit Windows |
 | User Registry | Per-user installed applications |
 | Microsoft Store | AppX packages (non-framework) |
-| Windows Features | Enabled optional features |
+| Windows Features | Enabled optional features, read via WMI (`Win32_OptionalFeature`); the report notes it if they cannot be read without admin |
 | Detailed List | Name, version, and publisher info |
 
-**Output:** Creates `InstalledPrograms_COMPUTERNAME_DATE.txt` on Desktop
+**Output:** Creates `InstalledPrograms_COMPUTERNAME_DATE.txt` on your Desktop (including a OneDrive-redirected Desktop)
 
 **Sample output:**
 ```
@@ -456,7 +457,7 @@ Adobe Acrobat Reader                      | 23.006      | Adobe Inc.
 | Storage | Disk models, firmware revisions |
 | Chipset | Platform detection for driver search |
 
-**Output:** Creates `FirmwareInfo_COMPUTERNAME.txt` on Desktop
+**Output:** Creates `FirmwareInfo_COMPUTERNAME.txt` on your Desktop (including a OneDrive-redirected Desktop)
 
 **Sample output:**
 ```
@@ -534,7 +535,7 @@ DIRECT LINKS
 | Option | Best For | What It Does |
 |--------|----------|--------------|
 | 1. Disable completely | Machines that never print | Stops and disables Spooler service + registry hardening |
-| 2. Harden only | Workstations that print | Sets to Manual start + restricts dangerous features |
+| 2. Harden only | Workstations that print | Keeps Spooler on Automatic start (starts it if stopped) + restricts dangerous features |
 
 **Registry hardening (both options):**
 - Point and Print: require UAC elevation for driver install
@@ -553,7 +554,7 @@ DIRECT LINKS
 **What it configures:**
 | Category | Settings |
 |----------|----------|
-| SMB Server | Require signing, enable encryption, reject unencrypted, disable compression (SMBGhost) |
+| SMB Server | Require signing, enable encryption, reject unencrypted, disable compression (SMBGhost; on Windows 10 via the ADV200005 registry value `DisableCompression = 1`) |
 | SMB Client | Require signing, disable insecure guest logons |
 | Registry | Block anonymous SAM/share enumeration, clear null session pipes/shares, NTLMv2 only |
 
@@ -582,7 +583,7 @@ DIRECT LINKS
    - Plays audio alerts via text-to-speech
    - Shows dramatic countdown
 
-3. **Forces shutdown** after the countdown
+3. **Forces shutdown** after the countdown (a 30-second Windows shutdown timer; the owner can cancel it with `shutdown /a` during that time)
 
 **Output:** Creates `IntruderLog.txt` in the same directory with collected data.
 
@@ -608,7 +609,7 @@ DIRECT LINKS
 | System Timer | Disables dynamic tick, configures TSC over HPET |
 | Kernel Scheduler | Optimizes thread quantum, disables DPC watchdog timeout |
 | Core Parking | Disables CPU core parking and deep C-states |
-| Driver Fixes | NVIDIA telemetry, AMD ULPS, NIC interrupt moderation |
+| Driver Fixes | NVIDIA telemetry, AMD ULPS, NIC interrupt moderation / flow control / EEE, USB power management |
 | MMCSS | Optimizes Multimedia Class Scheduler for gaming |
 | Network | Disables Nagle's algorithm for lower latency |
 
@@ -641,17 +642,17 @@ DIRECT LINKS
 
 ### MemoryDiagnostic.bat
 
-**Purpose:** Shows installed RAM details (speed, slots used, single/dual channel), checks for mismatched sticks, detects XMP/DOCP status, reports current memory usage breakdown by process, and offers to schedule Windows Memory Diagnostic (mdsched.exe).
+**Purpose:** Shows installed RAM details (speed, slots used, single/dual channel), checks for mismatched sticks, compares the configured RAM speed with the module's reported maximum, reports current memory usage breakdown by process, and opens the Windows Memory Diagnostic (mdsched.exe) dialog.
 
 **Menu options:**
 | Option | Description |
 |--------|-------------|
-| Hardware info | RAM sticks, speed, slots, channel mode, XMP/DOCP status |
+| Hardware info | RAM sticks, speed, slots, channel mode, memory speed vs module max |
 | Usage breakdown | Top 25 processes by RAM, category summary (browsers, system, etc.) |
 | Configuration analysis | Scored health check (A-F grade) with recommendations |
-| Memory diagnostic | Schedule mdsched.exe for hardware RAM testing on reboot |
+| Memory diagnostic | Opens the mdsched.exe dialog to schedule a RAM test (restart now or at next boot) |
 
-**Issues detected:** Single-channel mode, mismatched sticks, XMP/DOCP not enabled, high memory usage, missing pagefile, expansion availability.
+**Issues detected:** Single-channel mode, mismatched sticks, memory running below module max (advisory - the script cannot see the XMP/DOCP/EXPO state), high memory usage, missing pagefile, expansion availability.
 
 **Admin required:** Partial (hardware info and analysis no, scheduling diagnostic yes)
 
@@ -660,6 +661,8 @@ DIRECT LINKS
 ### NetworkReset.bat
 
 **Purpose:** Performs a complete network stack reset to fix connectivity issues.
+
+**Before it starts:** Warns that static IP/gateway/DNS settings are erased and that all connections (including VPN and Remote Desktop) drop, then asks Y/N before changing anything. The adapter it cycles is the one carrying the IPv4 default route (skipped if none is found).
 
 **What it does (in order):**
 1. Releases current IP address
@@ -691,7 +694,7 @@ DIRECT LINKS
 | Phase | Description |
 |-------|-------------|
 | Listening Ports | All TCP/UDP ports with process names, suspicious port detection |
-| Firewall Status | Domain, Private, and Public profile status |
+| Firewall Status | Domain, Private, and Public profile status (read from the firewall API, so it works on any Windows language) |
 | Remote Access | RDP, SSH, WinRM, Telnet service status |
 | Established Connections | Active outbound TCP connections with process names |
 
@@ -705,7 +708,7 @@ DIRECT LINKS
 
 **Known suspicious ports flagged:** 4444 (Metasploit), 6666/6667 (IRC), 12345 (NetBus), 31337 (Back Orifice), 1337, 5555, 23 (Telnet), exposed databases (1433, 3306, 5432, 27017, 6379), and more.
 
-**Output:** Creates `PortScan_COMPUTERNAME_DATE.txt` on Desktop
+**Output:** Creates `PortScan_COMPUTERNAME_DATE.txt` on your Desktop (the OneDrive Desktop when OneDrive folder backup is on)
 
 **When to use:** Periodically for security hygiene, after installing new software, or if you suspect unauthorized network activity.
 
@@ -724,7 +727,7 @@ DIRECT LINKS
 | Apply recommended | Sets optimized fixed pagefile based on your RAM amount |
 | Custom size | Set your own initial/maximum pagefile size |
 | Move to drive | Relocate pagefile to a faster NVMe/SSD drive |
-| Disable | Remove pagefile entirely (64+ GB RAM only) |
+| Disable | Remove pagefile entirely (advised only with 64+ GB RAM; asks Y/N, then asks you to type DISABLE) |
 | Restore automatic | Return to Windows automatic management |
 
 **Size recommendations:**
@@ -733,7 +736,10 @@ DIRECT LINKS
 | 8 GB | 12-24 GB | Essential — RAM runs out fast |
 | 16 GB | 16 GB fixed | Standard safety net |
 | 32 GB | 16 GB fixed | Moderate — rarely used heavily |
-| 64+ GB | 16 GB fixed | Crash dump support |
+| 64 GB | 16 GB fixed | Minimal — rarely used |
+| 128 GB | 32 GB fixed | 25% of RAM, crash dump support |
+
+For 64 GB and above the script uses 25% of RAM.
 
 **When to use:** After a clean install, if you experience out-of-memory issues, or to optimize I/O by moving the pagefile off an HDD.
 
@@ -781,8 +787,8 @@ DIRECT LINKS
 | Maximum Performance | All power saving disabled — desktop/gaming |
 | Balanced Performance | Optimized for laptops — respects thermals/battery |
 | View current plan | Shows active plan with all key settings |
-| Unhide all settings | Makes hidden power settings visible in Control Panel |
-| Restore defaults | Removes custom plans, restores Windows defaults |
+| Unhide all settings | Makes hidden power settings visible in Control Panel; first saves `PowerSettings_Attributes_backup_<COMPUTERNAME>.reg` for undo |
+| Restore defaults | Removes the Bat-Toolbox plans and resets ALL plans with `powercfg /restoredefaultschemes` (this also deletes any other user-created plan); optionally re-enables the dynamic timer tick |
 
 **Key settings configured:**
 | Setting | Maximum Perf | Balanced (AC) |
@@ -825,7 +831,7 @@ DIRECT LINKS
 - Offers to terminate bloatware with permission
 - Links to StartupAnalyzer for permanent fixes
 
-**Admin required:** Yes (recommended)
+**Admin required:** Partial (analysis works without admin; terminating protected or elevated processes needs admin)
 
 ---
 
@@ -836,7 +842,7 @@ DIRECT LINKS
 **Categories:**
 | Category | Description |
 |----------|-------------|
-| BLOATWARE | Third-party services (Adobe updaters, vendor bloatware) - recommended to disable |
+| BLOATWARE | Third-party services (Adobe updaters, vendor bloatware) - set to Manual (stop auto-starting) |
 | TELEMETRY | Windows data collection services - can be disabled for privacy |
 | CAN BE MANUAL | Services that don't need to auto-start (Fax, RDP, Hyper-V) |
 | XBOX | Xbox-related services - disable if not gaming on PC |
@@ -853,7 +859,7 @@ DIRECT LINKS
 - Shows current service state (Running/Stopped)
 - Groups services by category with color coding
 - Asks permission before making changes
-- Only changes services to Manual (not Disabled) for safe reversal
+- Sets bloatware services to Manual (they can still start on demand); telemetry and Xbox services are set to Disabled
 
 **When to use:**
 - After a fresh Windows install
@@ -877,7 +883,8 @@ DIRECT LINKS
 | NVMe Power States | Disables PS3/PS4 states, APST, minimizes wake latency |
 | AHCI Link Power | Disables HIPM/DIPM, prevents I/O stalls |
 | PCIe ASPM | Disables Active State Power Management for storage |
-| Write Cache | Enables write-back caching, optimizes NTFS behavior |
+| Write Cache | Explains how to enable write caching in Device Manager (not changed automatically); optimizes NTFS behavior |
+| Power Plan | Activates Ultimate Performance (one reusable copy, fixed GUID) or High Performance before the storage power settings are written |
 | Queue Depth | Increases to 256 (Windows defaults are conservative) |
 | Interrupts | Disables coalescing, enables MSI-X |
 
@@ -916,9 +923,9 @@ DIRECT LINKS
 |--------|-------------|
 | Quick overview | All drives with health status and reliability counters |
 | Detailed report | Per-drive identification, errors, partitions, assessment |
-| Export report | Save full report to Desktop as text file |
+| Export report | Save full report to your Desktop (follows OneDrive redirection) as text file |
 
-**Key metrics:** Temperature (with threshold alerts), power-on hours (with usage estimates), SSD wear level (with remaining life calculation), read/write errors (corrected and uncorrected), S.M.A.R.T. failure prediction.
+**Key metrics:** Temperature (with threshold alerts), power-on hours (shown as days/years with a usage level), SSD wear level (with remaining life calculation), read/write errors (corrected and uncorrected), S.M.A.R.T. failure prediction.
 
 **Differences from DiskHealthCheck.bat:** Focuses on key reliability metrics with color-coded thresholds. Partially works without admin. Simpler and more actionable output.
 
@@ -936,15 +943,18 @@ DIRECT LINKS
 | ASUS Utilities | MyASUS, GIFTBOX, AI Suite, WebStorage, Live Update, Splendid |
 | Gaming/Audio | GameFirst, Sonic Studio, Sonic Radar, Nahimic |
 | Optional | Armoury Crate, Aura Sync, ROG software (you choose) |
-| Third-Party | McAfee, Norton, WinZip, ExpressVPN trials |
+| Third-Party (optional, separate prompt) | McAfee, Norton, WinZip, ExpressVPN, Dropbox, Spotify |
 
 **What it keeps:**
 - Hardware drivers (chipset, audio, network, Bluetooth)
 - BIOS/UEFI components
 - Basic system functionality
+- ASUS Optimization service, ASUS System Control Interface and ASUS Keyboard Hotkeys app (Fn hotkeys / OSD)
+- Armoury Crate with its services, tasks, startup entries and Store apps, if you choose to keep it
 
 **Features:**
-- Interactive prompt for Armoury Crate removal decision
+- Interactive prompts for Armoury Crate removal and for third-party software removal (both default to keep)
+- Uninstalls MSI-installed programs via `msiexec /x` (no WMIC dependency; works on Windows 11 24H2+)
 - Removes services, scheduled tasks, and startup items
 - Cleans up leftover folders
 
@@ -992,7 +1002,7 @@ DIRECT LINKS
 **What it does:**
 1. Stops all NVIDIA bloatware processes
 2. Disables telemetry and container services
-3. Runs GeForce Experience uninstaller
+3. Runs GeForce Experience's registered NVIDIA Installer2 uninstaller silently (if the uninstall fails, the GFE program folders are left in place)
 4. Removes NVIDIA scheduled tasks
 5. Cleans up registry entries
 6. Deletes leftover folders
@@ -1016,20 +1026,21 @@ DIRECT LINKS
 | Nahimic / A-Volute | Audio effects engine (causes crackling/conflicts) |
 | Sonic Studio / Sonic Radar | Spatial audio processing bloat |
 | Waves MaxxAudio / DTS | Bundled audio processing (Dell/HP) |
-| Audio Processing Objects | APO hooks in the driver chain |
+| Audio Processing Objects | Nahimic APO entries (removed where not protected by Windows) |
 | Services & Tasks | Background audio bloatware services |
 
 **What it keeps:**
 - Realtek HD Audio driver (core audio functionality)
 - Windows Audio Service
 - All audio devices and endpoints
+- Dolby Access / Dolby Audio apps (not touched)
 
 **What it does:**
 1. Stops all audio bloatware processes and services
 2. Removes Nahimic/A-Volute AppX packages
-3. Uninstalls desktop applications via WMIC
+3. Uninstalls desktop (MSI) applications with `msiexec /x` (no WMIC)
 4. Removes scheduled tasks
-5. Cleans APO entries from audio endpoint registry
+5. Finds Nahimic APO entries on audio endpoints (by resolving their CLSIDs) and removes them where Windows allows it; protected entries (the usual case) are reported, with Device Manager steps in the README
 6. Deletes leftover folders
 
 **When to use:** If you experience audio crackling, latency, or conflicts with pro audio software (DAWs, ASIO drivers). Also useful after Realtek driver updates reinstall Nahimic.
@@ -1060,14 +1071,14 @@ DIRECT LINKS
 - All other security software
 
 **What it does:**
-1. Stops all McAfee processes and services
-2. Runs WMIC uninstall for all McAfee products
-3. Removes UWP/Store versions
+1. Runs McAfee's own registered uninstallers (MSI products silently via `msiexec /x`, others via McAfee's uninstall window), and stops before any forced cleanup if a McAfee product is still installed
+2. Removes UWP/Store versions
+3. Stops leftover McAfee processes and services
 4. Disables and deletes kernel filter drivers
 5. Removes scheduled tasks
-6. Cleans registry (startup, Security Center, browser policies, context menus)
+6. Cleans registry (startup, stale Windows Security Center / WMI SecurityCenter2 entries, browser policies, context menus)
 7. Deletes leftover files and folders
-8. Re-enables Windows Defender
+8. Re-enables Windows Defender and reports whether it is active
 
 **When to use:** On any OEM PC (Dell, HP, Lenovo) that shipped with McAfee preinstalled. Also useful when McAfee survives a normal Programs & Features uninstall.
 
@@ -1084,25 +1095,25 @@ DIRECT LINKS
 **What it clears:**
 | Category | Items |
 |----------|-------|
-| Recent Files | Quick Access history, Recent Items folder |
-| Jump Lists | Taskbar right-click history per application |
+| Recent Files | Recent Items folder (Quick Access pinned and frequent folders are kept) |
+| Jump Lists | Taskbar right-click history per application, including items pinned in jump lists |
 | Explorer History | Address bar paths, search queries, Open/Save dialog history |
 | Command History | Run dialog (Win+R), PowerShell history, doskey |
 | Search History | Windows Search, Cortana local database |
 | Cache | Thumbnail cache, icon cache |
-| App History | Office, Paint, WordPad, Notepad, Media Player recent files |
-| Activity | Windows Activity Timeline, clipboard history |
+| App History | Office, Paint, WordPad, Notepad, Media Player recent files; Windows 11 Notepad unsaved tabs only after a Y/N prompt and while Notepad is closed |
+| Activity | Windows Activity Timeline, clipboard history; Activity history policy (machine-wide, admin only) |
 | Traces | Prefetch data, temp files, notification history |
 
 **What it does NOT clear:**
 - Browser history (use browser settings)
 - Installed programs and settings
 - Saved files and documents
-- Pinned Quick Access items
+- Quick Access pinned and frequent folders
 
 **When to use:** Before handing a shared computer to another user, before screen sharing or presentations, or for general privacy hygiene.
 
-**Admin required:** Partial (most items work without admin; Prefetch and system temp require admin)
+**Admin required:** Partial (most items work without admin; Activity history policy, Prefetch and system temp require admin; when elevated, the admin account must be the signed-in user)
 
 ---
 
@@ -1114,12 +1125,12 @@ DIRECT LINKS
 | Option | Description |
 |--------|-------------|
 | Create RAM disk | Choose size and drive letter, formatted as NTFS |
-| Redirect %TEMP% | Point TEMP/TMP to the RAM disk (session or permanent) |
+| Redirect %TEMP% | Open a new console window with TEMP/TMP on the RAM disk, or redirect permanently |
 | View status | Check current RAM disk and TEMP configuration |
-| Remove RAM disk | Destroy the disk and restore TEMP to default |
+| Remove RAM disk | Remove a RAMDisk-labelled disk (other drives are refused), verify it is gone, and restore the permanent TEMP/TMP to default if they point to it, even if the drive is already gone |
 | Size guide | Recommended sizes and redirection targets |
 
-**Methods:** Uses ImDisk (recommended, install separately) or built-in VHD fallback.
+**Methods:** Uses ImDisk (recommended, install separately) or a built-in VHDX fallback. The fallback is a disk-backed file (`%USERPROFILE%\AppData\Local\RAMDiskCreator\ramdisk.vhdx`) that runs at SSD/HDD speed, not RAM speed, and is not re-mounted after a reboot, but keeps its data until option [4] or a re-create.
 
 **Size recommendations:**
 | RAM | Suggested Size | Use Case |
@@ -1129,7 +1140,7 @@ DIRECT LINKS
 | 64 GB | 4-8 GB | TEMP + cache + shader cache |
 | 128 GB | 8-16 GB | Everything |
 
-**Important:** RAM disk contents are LOST on every reboot or shutdown. Only use for temporary/cache data.
+**Important:** ImDisk RAM disk contents are LOST on every reboot or shutdown (the VHDX fallback is the exception: its file keeps its contents, but the drive is not re-mounted). Only use for temporary/cache data.
 
 **Admin required:** Yes
 
@@ -1137,22 +1148,23 @@ DIRECT LINKS
 
 ### ScheduledTaskAuditor.bat
 
-**Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, or optional, and lets you selectively disable unwanted ones.
+**Purpose:** Scans all Windows scheduled tasks, categorizes them as essential, telemetry, bloatware, optional, or unknown, and lets you selectively disable unwanted ones.
 
 **Categories:**
 | Category | Description |
 |----------|-------------|
 | TELEMETRY | Microsoft data collection tasks (Compatibility Appraiser, CEIP, DiagTrack) |
 | BLOATWARE | Third-party junk tasks (Adobe updaters, Chrome update, antivirus, vendor telemetry) |
-| OPTIONAL | Legitimate but potentially unwanted (Xbox, OneDrive, Edge, Cortana, Office background) |
+| OPTIONAL | Legitimate but potentially unwanted (Xbox, OneDrive incl. its updater, Edge, Cortana, Office background) |
+| UNKNOWN | Unrecognized tasks outside `\Microsoft\Windows\` - listed with full path for manual review, never disabled |
 | ESSENTIAL | Core Windows tasks (Defender, defrag, maintenance) - never touched |
 
 **Features:**
 - Scans all scheduled tasks system-wide
 - Batch disable telemetry or bloatware categories
 - Review optional tasks one by one
-- Saves full audit report to Desktop
-- Shows re-enable command for each disabled task
+- Saves full audit report to your Desktop (including a OneDrive-redirected Desktop)
+- Shows the command to re-enable a disabled task
 
 **When to use:**
 - After a fresh Windows install
@@ -1202,10 +1214,10 @@ DIRECT LINKS
 **Features:**
 - Scans registry Run keys and Startup folders
 - Provides explanations for each program
-- Asks permission before removing anything
+- Asks permission, then disables REMOVE items the same way Task Manager does (StartupApproved registry keys); nothing is deleted and items can be re-enabled from Task Manager > Startup
 - Opens Task Manager for optional items review
 
-**Admin required:** Yes (recommended for full access)
+**Admin required:** Partial (analysis works without admin; disabling items from HKEY_LOCAL_MACHINE or the All Users Startup folder needs admin)
 
 ---
 
@@ -1237,21 +1249,21 @@ DIRECT LINKS
 |-------|-------------|
 | Network Name | SSID of the saved network |
 | Password | Plain text password (key content) |
-| Security | Authentication type (WPA2-Personal, WPA3, etc.) |
-| Cipher | Encryption cipher (CCMP, TKIP) |
+| Security | Authentication type as stored in the profile (WPA2PSK, WPA3SAE, WPA2 = Enterprise, open) |
+| Cipher | Encryption cipher (AES, TKIP, WEP, none) |
 | Auto-connect | Whether the network connects automatically |
 
-**Output:** Creates `WifiPasswords_COMPUTERNAME_DATE.txt` on Desktop
+**Output:** Creates `WifiPasswords_COMPUTERNAME_DATE.txt` on your Desktop (including a OneDrive-redirected Desktop)
 
 **Features:**
-- Exports all saved Wi-Fi profiles in one go
-- Shows open networks separately
+- Exports all saved Wi-Fi profiles in one go (reads the exported profile XML, so it works on any Windows language)
+- Shows open networks separately; networks whose key is unavailable (802.1X/Enterprise, or not elevated) are reported separately rather than as open
 - Summary with profile and password counts
-- Works without admin (but admin recommended for full access)
+- Runs without admin, but passwords of secured networks are only revealed when run as administrator
 
 **Security note:** Output contains plain text passwords. Delete after use.
 
-**Admin required:** No (recommended for full access)
+**Admin required:** Partial (network list without admin; passwords of secured networks need admin)
 
 ---
 
@@ -1263,17 +1275,17 @@ DIRECT LINKS
 | Step | Command | Purpose |
 |------|---------|---------|
 | 1 | SFC /scannow | Scan and repair Windows system files |
-| 2 | DISM /RestoreHealth | Repair the Windows component store |
+| 2 | DISM /ScanHealth, then /RestoreHealth only if the scan is not clean | Check and repair the Windows component store |
 | 3 | CHKDSK | Check disk for filesystem errors |
 
 **Smart features:**
 - Parses results to show actual status (PASS, FIXED, ISSUE, BLOCKED)
 - If SFC fails but DISM succeeds, offers to re-run SFC (often fixes it)
-- Extracts CBS log corruption entries
+- Extracts CBS log corruption entries from this SFC run
 - Offers to schedule CHKDSK /F /R if errors found
 - Saves timestamped log to Desktop
 
-**Output:** Creates `RepairKit_COMPUTERNAME_DATE.txt` on Desktop
+**Output:** Creates `RepairKit_COMPUTERNAME_DATE.txt` on your Desktop (including a OneDrive-redirected Desktop)
 
 **When to use:**
 - Random crashes or blue screens
@@ -1293,11 +1305,11 @@ DIRECT LINKS
 
 | Category | Tweaks Included |
 |----------|-----------------|
-| Performance | Disable SysMain/Superfetch, Search Indexing, Prefetch, Fast Startup, Power Throttling, NTFS optimizations |
+| Performance | Disable SysMain/Superfetch, Search Indexing, Prefetch, Fast Startup, hibernation, Power Throttling, NTFS optimizations |
 | Gaming | Disable Game DVR, Fullscreen Optimizations, HPET; Enable Hardware GPU Scheduling; CPU/GPU priority tweaks |
 | UI/Visual | Disable transparency, animations, Aero Shake; Restore classic context menu (Win11); Show clock seconds |
 | Privacy | Disable telemetry, Cortana, Bing search, Activity History, advertising ID, app suggestions |
-| Explorer | Show file extensions/hidden files, open to This PC, disable Quick Access history, remove 3D Objects |
+| Explorer | Show file extensions/hidden files, open to This PC, disable Quick Access history, remove 3D Objects; disabling folder type auto-detection resets saved folder views (backed up to a .reg file in your user folder first) |
 | Network | Disable Nagle's algorithm, network throttling, auto-tuning; Optimize DNS priority |
 | Input | Disable mouse acceleration, Sticky/Filter/Toggle Keys popups; Max keyboard repeat rate |
 
@@ -1314,6 +1326,8 @@ DIRECT LINKS
 [9] Restore Defaults
 [0] Exit
 ```
+
+Each category shows a summary of what it will change and asks Y/N before applying (Enter counts as No). [9] Restore Defaults is partial - see `WindowsTweaks_README.txt` for what it does and does not undo.
 
 **Highlights:**
 - Disables Game DVR background recording (frees GPU resources)
@@ -1374,7 +1388,7 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | 06-Remove-Features.bat | Remove optional Windows features |
 | 07-Block-Telemetry-Hosts.bat | Block telemetry via hosts file |
 | 08-Firewall-Rules.bat | Block telemetry executables |
-| 09-Uninstall-OneDrive.bat | Remove OneDrive completely |
+| 09-Uninstall-OneDrive.bat | Uninstall OneDrive and remove its program/cache folders (keeps your OneDrive files folder unless it is empty) |
 | 10-Performance-Tweaks.bat | System performance optimizations |
 | 11-Cleanup-Temp-Cache.bat | Clean temp files and browser caches |
 | 12-Interactive-Remover.bat | Guided removal with Y/N prompts |
@@ -1409,22 +1423,22 @@ The `windows-debloat/` folder contains a comprehensive set of scripts for stripp
 | PagefileTuner.bat | Yes |
 | PasswordPolicyAudit.bat | Yes |
 | PowerPlanOptimizer.bat | Yes |
-| ProcessScanner.bat | Yes |
+| ProcessScanner.bat | Partial (analysis no, terminating protected processes yes) |
 | RemoveAsusBloat.bat | Yes |
 | RemoveEOSNotification.bat | Yes |
 | RemoveMcAfeeBloat.bat | Yes |
 | RemoveNvidiaBloat.bat | Yes |
 | RemoveRealtekBloat.bat | Yes |
 | RAMDiskCreator.bat | Yes |
-| RecentActivityCleaner.bat | Partial (most no, prefetch yes) |
+| RecentActivityCleaner.bat | Partial (most no; prefetch, system temp, Activity history policy yes) |
 | RestoreRecycleBin.bat | No |
 | ScheduledTaskAuditor.bat | Yes |
 | ScreenSleepGuard.bat | No |
 | ServiceAnalyzer.bat | Yes |
-| StartupAnalyzer.bat | Yes |
+| StartupAnalyzer.bat | Partial (analysis no, changing machine-wide startup items yes) |
 | StorageLatencyTuning.bat | Yes |
 | StorageReliabilityCounter.bat | Partial (basic info no, full counters yes) |
-| WifiPasswordExporter.bat | No (recommended) |
+| WifiPasswordExporter.bat | Partial (network list no, secured-network passwords yes) |
 | WindowsRepairKit.bat | Yes |
 | WindowsTweaks.bat | Yes |
 | windows-debloat/*.bat | Yes (all) |
