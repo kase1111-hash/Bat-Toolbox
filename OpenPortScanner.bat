@@ -162,12 +162,12 @@ echo     $isWildcard = ^($addr -eq '0.0.0.0' -or $addr -eq '::'^)
 echo/
 echo     # Check suspicious ports
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
-echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
+echo         $status = "SUSPICIOUS - $($suspiciousPorts[$port])"
 echo         $color = 'Red'
 echo         $suspiciousCount++
 echo         if ^($port -in @^(4444,4445,6666,6667,1337,31337,12345,27374,3127^)^) {
 echo             $highRiskCount++
-echo             $status = "HIGH RISK - $^($suspiciousPorts[$port]^)"
+echo             $status = "HIGH RISK - $($suspiciousPorts[$port])"
 echo         }
 echo     }
 echo     # Check wildcard listeners
@@ -231,7 +231,7 @@ echo     $status = 'OK'
 echo     $color = 'Green'
 echo/
 echo     if ^($suspiciousPorts.ContainsKey^($port^)^) {
-echo         $status = "SUSPICIOUS - $^($suspiciousPorts[$port]^)"
+echo         $status = "SUSPICIOUS - $($suspiciousPorts[$port])"
 echo         $color = 'Red'
 echo         $suspiciousCount++
 echo     }
@@ -276,7 +276,7 @@ echo "$highRiskCount" ^| Out-File -FilePath "$env:TEMP\portscan_highrisk.txt" -E
 echo/
 echo # Write full results to report
 echo $results ^| ForEach-Object {
-echo     $line = "$^($_.Proto.PadRight^(7^)^)$^($_.Address.PadRight^(29^)^)$^($_.Port.ToString^(^).PadRight^(8^)^)$^($_.PID.ToString^(^).PadRight^(8^)^)$^($_.Process.PadRight^(21^)^)$^($_.Status^)"
+echo     $line = "$($_.Proto.PadRight(7))$($_.Address.PadRight(29))$($_.Port.ToString().PadRight(8))$($_.PID.ToString().PadRight(8))$($_.Process.PadRight(21))$($_.Status)"
 echo     $line
 echo } ^| Out-File -FilePath "$env:TEMP\portscan_results.txt" -Encoding ascii
 ) > "%PSSCRIPT%"
@@ -424,11 +424,11 @@ echo     try {
 echo         $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
 echo         if ^($proc^) { $procName = $proc.ProcessName }
 echo     } catch {}
-echo     $local = "$^($conn.LocalAddress^):$^($conn.LocalPort^)"
-echo     $remote = "$^($conn.RemoteAddress^):$^($conn.RemotePort^)"
+echo     $local = "$($conn.LocalAddress):$($conn.LocalPort)"
+echo     $remote = "$($conn.RemoteAddress):$($conn.RemotePort)"
 echo     $pidStr = $conn.OwningProcess.ToString^(^)
-echo     Write-Host "  $^($local.PadRight^(27^)^) $^($remote.PadRight^(27^)^) $^($pidStr.PadRight^(8^)^) $procName"
-echo     "$^($local.PadRight^(27^)^) $^($remote.PadRight^(27^)^) $^($pidStr.PadRight^(8^)^) $procName"
+echo     Write-Host "  $($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
+echo     "$($local.PadRight(27)) $($remote.PadRight(27)) $($pidStr.PadRight(8)) $procName"
 echo }
 ) > "%PSESTABLISHED%"
 

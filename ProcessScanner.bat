@@ -271,9 +271,9 @@ echo '==========================================================================
 echo ' SYSTEM OVERVIEW'
 echo '============================================================================'
 echo ''
-echo "Total Processes: $^($processes.Count^)"
-echo "Total Memory Usage: $^([math]::Round^($totalMemory,0^)^) MB"
-echo "Bloatware Memory: $^([math]::Round^($bloatwareMemory,0^)^) MB"
+echo "Total Processes: $($processes.Count)"
+echo "Total Memory Usage: $([math]::Round($totalMemory,0)) MB"
+echo "Bloatware Memory: $([math]::Round($bloatwareMemory,0)) MB"
 echo ''
 echo/
 echo if ^($highMemory.Count -gt 0^) {
@@ -283,8 +283,8 @@ echo     Write-Host '===========================================================
 echo     Write-Host ''
 echo     foreach ^($proc in $highMemory^) {
 echo         $memColor = if ^($proc.MemoryMB -gt 1000^) { 'Red' } else { 'Yellow' }
-echo         Write-Host "  $^($proc.Name^)" -ForegroundColor $memColor -NoNewline
-echo         Write-Host " - $^($proc.MemoryMB^) MB" -ForegroundColor Gray
+echo         Write-Host "  $($proc.Name)" -ForegroundColor $memColor -NoNewline
+echo         Write-Host " - $($proc.MemoryMB) MB" -ForegroundColor Gray
 echo     }
 echo     Write-Host ''
 echo }
@@ -295,13 +295,13 @@ echo     Write-Host ' [BLOATWARE] Recommended to Close/Remove' -ForegroundColor 
 echo     Write-Host '============================================================================' -ForegroundColor Red
 echo     Write-Host ''
 echo     foreach ^($proc in $bloatware^) {
-echo         Write-Host "  [X] $^($proc.Name^) ^(PID: $^($proc.Id^)^)" -ForegroundColor Red -NoNewline
-echo         Write-Host " - $^($proc.MemoryMB^) MB" -ForegroundColor Gray
-echo         Write-Host "      $^($proc.Reason^)" -ForegroundColor DarkYellow
+echo         Write-Host "  [X] $($proc.Name) (PID: $($proc.Id))" -ForegroundColor Red -NoNewline
+echo         Write-Host " - $($proc.MemoryMB) MB" -ForegroundColor Gray
+echo         Write-Host "      $($proc.Reason)" -ForegroundColor DarkYellow
 echo     }
 echo     Write-Host ''
 echo     # Save bloatware PIDs for potential termination
-echo     $bloatware ^| ForEach-Object { "$^($_.Id^);$^($_.Name^)" } ^| Out-File -FilePath "$env:TEMP\bloatware_pids.txt" -Encoding ASCII
+echo     $bloatware ^| ForEach-Object { "$($_.Id);$($_.Name)" } ^| Out-File -FilePath "$env:TEMP\bloatware_pids.txt" -Encoding ASCII
 echo } else {
 echo     Write-Host '============================================================================' -ForegroundColor Green
 echo     Write-Host ' [BLOATWARE] None Detected^^!' -ForegroundColor Green
@@ -317,9 +317,9 @@ echo     Write-Host ' [OPTIONAL] Background Programs ^(Your Choice^)' -Foregroun
 echo     Write-Host '============================================================================' -ForegroundColor Yellow
 echo     Write-Host ''
 echo     foreach ^($proc in $optional^) {
-echo         Write-Host "  [?] $^($proc.Name^)" -ForegroundColor Yellow -NoNewline
-echo         Write-Host " - $^($proc.MemoryMB^) MB" -ForegroundColor Gray
-echo         Write-Host "      $^($proc.Reason^)" -ForegroundColor DarkGray
+echo         Write-Host "  [?] $($proc.Name)" -ForegroundColor Yellow -NoNewline
+echo         Write-Host " - $($proc.MemoryMB) MB" -ForegroundColor Gray
+echo         Write-Host "      $($proc.Reason)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ''
 echo }
@@ -330,19 +330,19 @@ echo Write-Host '===============================================================
 echo Write-Host ''
 echo $unknownHigh = $unknown ^| Where-Object { $_.MemoryMB -gt 50 } ^| Select-Object -First 15
 echo foreach ^($proc in $unknownHigh^) {
-echo     Write-Host "  [?] $^($proc.Name^)" -ForegroundColor Cyan -NoNewline
-echo     Write-Host " - $^($proc.MemoryMB^) MB" -ForegroundColor Gray
+echo     Write-Host "  [?] $($proc.Name)" -ForegroundColor Cyan -NoNewline
+echo     Write-Host " - $($proc.MemoryMB) MB" -ForegroundColor Gray
 echo     if ^($proc.Description^) {
-echo         Write-Host "      $^($proc.Description^)" -ForegroundColor DarkGray
+echo         Write-Host "      $($proc.Description)" -ForegroundColor DarkGray
 echo     }
 echo }
 echo if ^($unknown.Count -gt 15^) {
-echo     Write-Host "  ... and $^($unknown.Count - 15^) more small processes" -ForegroundColor DarkGray
+echo     Write-Host "  ... and $($unknown.Count - 15) more small processes" -ForegroundColor DarkGray
 echo }
 echo Write-Host ''
 echo/
 echo Write-Host '============================================================================' -ForegroundColor White
-echo Write-Host " Summary: $^($essential.Count^) Essential, $^($bloatware.Count^) Bloatware, $^($optional.Count^) Optional, $^($unknown.Count^) Unknown" -ForegroundColor White
+echo Write-Host " Summary: $($essential.Count) Essential, $($bloatware.Count) Bloatware, $($optional.Count) Optional, $($unknown.Count) Unknown" -ForegroundColor White
 echo Write-Host '============================================================================' -ForegroundColor White
 ) > "%PSSCRIPT%"
 

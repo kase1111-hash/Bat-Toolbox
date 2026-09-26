@@ -311,8 +311,8 @@ echo if ^($keepList.Count -eq 0^) {
 echo     Write-Host '  No essential startup programs found.' -ForegroundColor Gray
 echo } else {
 echo     foreach ^($item in $keepList^) {
-echo         Write-Host "  [OK] $^($item.Name^)" -ForegroundColor Green
-echo         Write-Host "       $^($item.Reason^)" -ForegroundColor DarkGray
+echo         Write-Host "  [OK] $($item.Name)" -ForegroundColor Green
+echo         Write-Host "       $($item.Reason)" -ForegroundColor DarkGray
 echo     }
 echo }
 echo/
@@ -326,8 +326,8 @@ echo     Write-Host '  No optional startup programs found.' -ForegroundColor Gra
 echo } else {
 echo     $i = 1
 echo     foreach ^($item in $optionalList^) {
-echo         Write-Host "  [$i] $^($item.Name^)" -ForegroundColor Yellow
-echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkGray
+echo         Write-Host "  [$i] $($item.Name)" -ForegroundColor Yellow
+echo         Write-Host "      $($item.Reason)" -ForegroundColor DarkGray
 echo         $i++
 echo     }
 echo }
@@ -341,8 +341,8 @@ echo if ^($unknownList.Count -eq 0^) {
 echo     Write-Host '  No unknown startup programs found.' -ForegroundColor Gray
 echo } else {
 echo     foreach ^($item in $unknownList^) {
-echo         Write-Host "  [?] $^($item.Name^)" -ForegroundColor Cyan
-echo         Write-Host "      Path: $^($item.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [?] $($item.Name)" -ForegroundColor Cyan
+echo         Write-Host "      Path: $($item.Path)" -ForegroundColor DarkGray
 echo     }
 echo }
 echo/
@@ -356,20 +356,20 @@ echo     Write-Host '  No bloatware found^^! Your startup is clean.' -Foreground
 echo } else {
 echo     $i = 1
 echo     foreach ^($item in $removeList^) {
-echo         Write-Host "  [$i] $^($item.Name^)" -ForegroundColor Red
-echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkYellow
+echo         Write-Host "  [$i] $($item.Name)" -ForegroundColor Red
+echo         Write-Host "      $($item.Reason)" -ForegroundColor DarkYellow
 echo         $i++
 echo     }
 echo }
 echo/
 echo # Save remove list for batch file
-echo $removeList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_REMOVE%' -Encoding ASCII
-echo $optionalList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_OPTIONAL%' -Encoding ASCII
+echo $removeList ^| ForEach-Object { "$($_.Location);$($_.Name);$($_.Path)" } ^| Out-File -FilePath '%TEMP_REMOVE%' -Encoding ASCII
+echo $optionalList ^| ForEach-Object { "$($_.Location);$($_.Name);$($_.Path)" } ^| Out-File -FilePath '%TEMP_OPTIONAL%' -Encoding ASCII
 echo/
 echo # Output counts
 echo ''
 echo '============================================================================'
-echo " Summary: $^($keepList.Count^) Keep, $^($optionalList.Count^) Optional, $^($unknownList.Count^) Unknown, $^($removeList.Count^) Remove"
+echo " Summary: $($keepList.Count) Keep, $($optionalList.Count) Optional, $($unknownList.Count) Unknown, $($removeList.Count) Remove"
 echo '============================================================================'
 ) > "%PSSCRIPT%"
 

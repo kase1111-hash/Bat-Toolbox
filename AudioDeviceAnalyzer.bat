@@ -79,7 +79,7 @@ set "PSDEVICES=%TEMP%\audio_devices.ps1"
 echo $ErrorActionPreference = 'SilentlyContinue'
 echo/
 echo # Use WMI for audio device enumeration
-echo Write-Host "  PLAYBACK DEVICES ^(Speakers/Headphones^)" -ForegroundColor White
+echo Write-Host "  PLAYBACK DEVICES (Speakers/Headphones)" -ForegroundColor White
 echo Write-Host "  ----------------------------------------"
 echo Write-Host ""
 echo/
@@ -89,11 +89,11 @@ echo     $idx = 0
 echo     foreach ^($dev in $playback^) {
 echo         $idx++
 echo         $statusColor = if ^($dev.Status -eq 'OK'^) { 'Green' } else { 'Red' }
-echo         Write-Host "  [$idx] $^($dev.Name^)" -ForegroundColor White
-echo         Write-Host "      Manufacturer:  $^($dev.Manufacturer^)"
-echo         Write-Host "      Status:        $^($dev.Status^)" -ForegroundColor $statusColor
-echo         Write-Host "      PNP Device ID: $^($dev.PNPDeviceID^)"
-echo         if ^($dev.StatusInfo^) { Write-Host "      Status Info:   $^($dev.StatusInfo^)" }
+echo         Write-Host "  [$idx] $($dev.Name)" -ForegroundColor White
+echo         Write-Host "      Manufacturer:  $($dev.Manufacturer)"
+echo         Write-Host "      Status:        $($dev.Status)" -ForegroundColor $statusColor
+echo         Write-Host "      PNP Device ID: $($dev.PNPDeviceID)"
+echo         if ^($dev.StatusInfo^) { Write-Host "      Status Info:   $($dev.StatusInfo)" }
 echo         Write-Host ""
 echo     }
 echo } else {
@@ -101,7 +101,7 @@ echo     Write-Host "  No sound devices found via WMI." -ForegroundColor Red
 echo }
 echo/
 echo # Get more detail via registry
-echo Write-Host "  AUDIO ENDPOINTS ^(from Registry^)" -ForegroundColor White
+echo Write-Host "  AUDIO ENDPOINTS (from Registry)" -ForegroundColor White
 echo Write-Host "  ---------------------------------"
 echo Write-Host ""
 echo/
@@ -112,7 +112,7 @@ echo function Get-AudioEndpoints^($regPath, $type^) {
 echo     $endpoints = Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue
 echo     $count = 0
 echo     foreach ^($ep in $endpoints^) {
-echo         $props = Get-ItemProperty -Path "$^($ep.PSPath^)\Properties" -ErrorAction SilentlyContinue
+echo         $props = Get-ItemProperty -Path "$($ep.PSPath)\Properties" -ErrorAction SilentlyContinue
 echo         $state = ^(Get-ItemProperty -Path $ep.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
 echo/
 echo         # Device name from property store
@@ -128,7 +128,7 @@ echo             1 { 'Active' }
 echo             2 { 'Disabled' }
 echo             4 { 'Not Present' }
 echo             8 { 'Unplugged' }
-echo             default { "Unknown ^($state^)" }
+echo             default { "Unknown ($state)" }
 echo         }
 echo         $stateColor = switch ^($state^) {
 echo             1 { 'Green' }
@@ -153,7 +153,7 @@ echo $outCount = Get-AudioEndpoints $renderKey 'OUT'
 echo if ^($outCount -eq 0^) { Write-Host "  No output endpoints found." }
 echo/
 echo Write-Host ""
-echo Write-Host "  -- Input Devices ^(Microphones^) --" -ForegroundColor Cyan
+echo Write-Host "  -- Input Devices (Microphones) --" -ForegroundColor Cyan
 echo $inCount = Get-AudioEndpoints $captureKey 'IN'
 echo if ^($inCount -eq 0^) { Write-Host "  No input endpoints found." }
 echo/
@@ -214,7 +214,7 @@ echo         Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f $class, $provider, $v
 echo     }
 echo } else {
 echo     Write-Host "  Could not enumerate audio drivers." -ForegroundColor Yellow
-echo     Write-Host "  ^(May require admin privileges^)"
+echo     Write-Host "  (May require admin privileges)"
 echo }
 echo/
 echo Write-Host ""
@@ -260,7 +260,7 @@ echo foreach ^($ap in $audioProcs^) {
 echo     $found = Get-Process ^| Where-Object { $_.ProcessName -match $ap.Pattern }
 echo     if ^($found^) {
 echo         $foundAny = $true
-echo         Write-Host ^("  [RUNNING] {0} ^({1} processes^)" -f $ap.Name, $found.Count^) -ForegroundColor Green
+echo         Write-Host ^("  [RUNNING] {0} ({1} processes)" -f $ap.Name, $found.Count^) -ForegroundColor Green
 echo     }
 echo }
 echo if ^(-not $foundAny^) {
@@ -301,7 +301,7 @@ echo     Write-Host " - OK" -ForegroundColor Green
 echo     $ok += "Windows Audio Service is running"
 echo } else {
 echo     Write-Host " - NOT RUNNING" -ForegroundColor Red
-echo     $issues += "Windows Audio Service ^(Audiosrv^) is not running"
+echo     $issues += "Windows Audio Service (Audiosrv) is not running"
 echo }
 echo/
 echo # Check 2: AudioEndpointBuilder
@@ -323,12 +323,12 @@ echo     $badDevs = $soundDevs ^| Where-Object { $_.Status -ne 'OK' }
 echo     if ^($badDevs^) {
 echo         Write-Host " - ISSUES FOUND" -ForegroundColor Yellow
 echo         foreach ^($bd in $badDevs^) {
-echo             $warnings += "Sound device '$^($bd.Name^)' status: $^($bd.Status^)"
+echo             $warnings += "Sound device '$($bd.Name)' status: $($bd.Status)"
 echo         }
 echo     } else {
 echo         $devCount = $soundDevs.Count
-echo         Write-Host " - OK ^($devCount device^(s^)^)" -ForegroundColor Green
-echo         $ok += "$devCount sound device^(s^) with OK status"
+echo         Write-Host " - OK ($devCount device(s))" -ForegroundColor Green
+echo         $ok += "$devCount sound device(s) with OK status"
 echo     }
 echo } else {
 echo     Write-Host " - NO DEVICES" -ForegroundColor Red
@@ -341,7 +341,7 @@ echo $enhancementsFound = $false
 echo $renderKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render'
 echo $renderDevices = Get-ChildItem -Path $renderKey -ErrorAction SilentlyContinue
 echo foreach ^($ep in $renderDevices^) {
-echo     $fxProps = Get-ItemProperty -Path "$^($ep.PSPath^)\FxProperties" -ErrorAction SilentlyContinue
+echo     $fxProps = Get-ItemProperty -Path "$($ep.PSPath)\FxProperties" -ErrorAction SilentlyContinue
 echo     if ^($fxProps^) {
 echo         $enhancementsFound = $true
 echo     }
@@ -360,7 +360,7 @@ echo # Check via registry for render devices
 echo foreach ^($ep in $renderDevices^) {
 echo     $state = ^(Get-ItemProperty -Path $ep.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
 echo     if ^($state -eq 1^) {
-echo         $props = Get-ItemProperty -Path "$^($ep.PSPath^)\Properties" -ErrorAction SilentlyContinue
+echo         $props = Get-ItemProperty -Path "$($ep.PSPath)\Properties" -ErrorAction SilentlyContinue
 echo         # Property {b3f8fa53-0004-438e-9003-51a46e139bfc},3 is exclusive mode flag
 echo     }
 echo }
@@ -370,16 +370,16 @@ echo/
 echo # Check 6: Sample rate mismatches
 echo Write-Host "  [CHECK 6] Sample Rate Configuration" -NoNewline
 echo Write-Host " - Check Sound Settings manually" -ForegroundColor Yellow
-echo $warnings += "Sample rate: Ensure all devices use the same rate ^(e.g., 48000 Hz^)"
+echo $warnings += "Sample rate: Ensure all devices use the same rate (e.g., 48000 Hz)"
 echo/
 echo # Check 7: Multiple audio drivers
 echo Write-Host "  [CHECK 7] Multiple Audio Drivers" -NoNewline
 echo $audioDriverCount = ^(Get-CimInstance Win32_SoundDevice^).Count
 echo if ^($audioDriverCount -gt 3^) {
-echo     Write-Host " - MULTIPLE DRIVERS ^($audioDriverCount^)" -ForegroundColor Yellow
-echo     $warnings += "Multiple audio drivers installed ^($audioDriverCount^) - may cause conflicts"
+echo     Write-Host " - MULTIPLE DRIVERS ($audioDriverCount)" -ForegroundColor Yellow
+echo     $warnings += "Multiple audio drivers installed ($audioDriverCount) - may cause conflicts"
 echo } else {
-echo     Write-Host " - OK ^($audioDriverCount driver^(s^)^)" -ForegroundColor Green
+echo     Write-Host " - OK ($audioDriverCount driver(s))" -ForegroundColor Green
 echo }
 echo/
 echo # Check 8: Common problematic software
@@ -405,15 +405,15 @@ echo     Write-Host " - OK" -ForegroundColor Green
 echo }
 echo/
 echo # Check 9: High DPC latency ^(audio stuttering indicator^)
-echo Write-Host "  [CHECK 9] Audio Latency ^(DPC^)" -NoNewline
+echo Write-Host "  [CHECK 9] Audio Latency (DPC)" -NoNewline
 echo try {
 echo     $dpc = ^(Get-Counter '\Processor^(_Total^)\%% DPC Time' -ErrorAction Stop^).CounterSamples[0].CookedValue
 echo     $dpcRound = [math]::Round^($dpc, 1^)
 echo     if ^($dpc -gt 5^) {
-echo         Write-Host " - HIGH ^($dpcRound%%^)" -ForegroundColor Yellow
-echo         $warnings += "High DPC time ^($dpcRound%%^) - may cause audio stuttering"
+echo         Write-Host " - HIGH ($dpcRound%%)" -ForegroundColor Yellow
+echo         $warnings += "High DPC time ($dpcRound%%) - may cause audio stuttering"
 echo     } else {
-echo         Write-Host " - OK ^($dpcRound%%^)" -ForegroundColor Green
+echo         Write-Host " - OK ($dpcRound%%)" -ForegroundColor Green
 echo     }
 echo } catch {
 echo     Write-Host " - Could not measure" -ForegroundColor Yellow
@@ -424,15 +424,15 @@ echo Write-Host "  [CHECK 10] Recent Audio Errors in Event Log" -NoNewline
 echo $audioErrors = Get-WinEvent -FilterHashtable @{ LogName='System'; Level=2; ProviderName='*audio*' } -MaxEvents 10 -ErrorAction SilentlyContinue
 echo if ^($audioErrors^) {
 echo     $errCount = $audioErrors.Count
-echo     Write-Host " - $errCount ERROR^(S^) FOUND" -ForegroundColor Red
-echo     $issues += "Recent audio errors in Event Log ^($errCount in System log^)"
+echo     Write-Host " - $errCount ERROR(S) FOUND" -ForegroundColor Red
+echo     $issues += "Recent audio errors in Event Log ($errCount in System log)"
 echo     foreach ^($err in $audioErrors ^| Select-Object -First 3^) {
 echo         $msgLen = [math]::Min^(80, $err.Message.Length^)
 echo         $msgSnip = $err.Message.Substring^(0, $msgLen^)
-echo         Write-Host "    - $^($err.TimeCreated^): $msgSnip..." -ForegroundColor Red
+echo         Write-Host "    - $($err.TimeCreated): $msgSnip..." -ForegroundColor Red
 echo     }
 echo } else {
-echo     Write-Host " - OK ^(no recent errors^)" -ForegroundColor Green
+echo     Write-Host " - OK (no recent errors)" -ForegroundColor Green
 echo }
 echo/
 echo Write-Host ""
@@ -442,17 +442,17 @@ echo Write-Host "  ============================================" -ForegroundColo
 echo Write-Host ""
 echo/
 echo if ^($issues.Count -gt 0^) {
-echo     Write-Host "  ISSUES ^($^($issues.Count^)^):" -ForegroundColor Red
+echo     Write-Host "  ISSUES ($($issues.Count)):" -ForegroundColor Red
 echo     foreach ^($i in $issues^) { Write-Host "    [^!] $i" -ForegroundColor Red }
 echo     Write-Host ""
 echo }
 echo if ^($warnings.Count -gt 0^) {
-echo     Write-Host "  WARNINGS ^($^($warnings.Count^)^):" -ForegroundColor Yellow
+echo     Write-Host "  WARNINGS ($($warnings.Count)):" -ForegroundColor Yellow
 echo     foreach ^($w in $warnings^) { Write-Host "    [~] $w" -ForegroundColor Yellow }
 echo     Write-Host ""
 echo }
 echo if ^($ok.Count -gt 0^) {
-echo     Write-Host "  OK ^($^($ok.Count^)^):" -ForegroundColor Green
+echo     Write-Host "  OK ($($ok.Count)):" -ForegroundColor Green
 echo     foreach ^($o in $ok^) { Write-Host "    [+] $o" -ForegroundColor Green }
 echo     Write-Host ""
 echo }
@@ -621,7 +621,7 @@ if "%fixChoice%"=="2" (
     echo $devices = Get-ChildItem -Path $renderKey -ErrorAction SilentlyContinue
     echo $count = 0
     echo foreach ^($dev in $devices^) {
-    echo     $fxPath = "$^($dev.PSPath^)\FxProperties"
+    echo     $fxPath = "$($dev.PSPath)\FxProperties"
     echo     if ^(Test-Path $fxPath^) {
     echo         # Remove audio effect properties to disable enhancements
     echo         $props = Get-ItemProperty -Path $fxPath -ErrorAction SilentlyContinue
@@ -637,7 +637,7 @@ if "%fixChoice%"=="2" (
     echo     $state = ^(Get-ItemProperty -Path $dev.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
     echo     if ^($state -eq 1^) {
     echo         # Try to set the disable enhancements flag
-    echo         $propPath = "$^($dev.PSPath^)\Properties"
+    echo         $propPath = "$($dev.PSPath)\Properties"
     echo         if ^(Test-Path $propPath^) {
     echo             # {24dbb0fc-9311-4b3d-9cf0-18ff155639d4},5 = DisableEnhancements
     echo             Set-ItemProperty -Path $propPath -Name '{24dbb0fc-9311-4b3d-9cf0-18ff155639d4},5' -Value 1 -Type DWord -ErrorAction SilentlyContinue
@@ -646,8 +646,8 @@ if "%fixChoice%"=="2" (
     echo }
     echo/
     echo Write-Host ""
-    echo Write-Host "Enhancements disabled for $count endpoint^(s^)." -ForegroundColor Green
-    echo Write-Host "Restart audio services ^(option 1^) or reboot for full effect."
+    echo Write-Host "Enhancements disabled for $count endpoint(s)." -ForegroundColor Green
+    echo Write-Host "Restart audio services (option 1) or reboot for full effect."
     ) > "!PSDISABLE!"
 
     powershell -ExecutionPolicy Bypass -File "!PSDISABLE!" 2>nul

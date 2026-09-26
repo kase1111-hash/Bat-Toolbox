@@ -492,7 +492,7 @@ echo if ^($cpAC^) {
 echo     $val = ^($cpAC -split ': '^)[1].Trim^(^)
 echo     Write-Host "  Min cores unparked:     $val"
 echo } else {
-echo     Write-Host "  Core parking data not available ^(may be hidden^)"
+echo     Write-Host "  Core parking data not available (may be hidden)"
 echo }
 echo/
 echo # USB selective suspend
@@ -502,7 +502,7 @@ echo $usbAC = $usbOut ^| Select-String 'Current AC Power Setting Index'
 echo if ^($usbAC^) {
 echo     $val = ^($usbAC -split ': '^)[1].Trim^(^)
 echo     $status = if ^($val -eq '0x00000000'^) { 'Disabled' } else { 'Enabled' }
-echo     Write-Host "  USB Selective Suspend:   $status ^($val^)"
+echo     Write-Host "  USB Selective Suspend:   $status ($val)"
 echo }
 ) > "!PSPLAN!"
 

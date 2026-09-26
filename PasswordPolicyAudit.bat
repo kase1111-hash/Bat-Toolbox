@@ -324,8 +324,8 @@ echo     $pwdExpires = $_.PasswordExpires
 echo     $pwdRequired = $_.PasswordRequired
 echo     $name = $_.Name.PadRight^(25^)
 echo     $statusStr = $status.PadRight^(10^)
-echo     Write-Host "   $name $statusStr Last Logon: $^($lastLogon.PadRight^(12^)^) Pwd Set: $^($pwdSet.PadRight^(12^)^) Pwd Required: $pwdRequired"
-echo     "$name $statusStr Last Logon: $^($lastLogon.PadRight^(12^)^) Pwd Set: $^($pwdSet.PadRight^(12^)^) Pwd Required: $pwdRequired"
+echo     Write-Host "   $name $statusStr Last Logon: $($lastLogon.PadRight(12)) Pwd Set: $($pwdSet.PadRight(12)) Pwd Required: $pwdRequired"
+echo     "$name $statusStr Last Logon: $($lastLogon.PadRight(12)) Pwd Set: $($pwdSet.PadRight(12)) Pwd Required: $pwdRequired"
 echo }
 ) > "%PSUSERS%"
 
@@ -342,7 +342,7 @@ echo $noPwd = Get-LocalUser ^| Where-Object { $_.Enabled -eq $true -and $_.Passw
 echo if ^($noPwd^) {
 echo     foreach ^($u in $noPwd^) {
 echo         Write-Host "   [FAIL] $^($u.Name^) - no password required^!" -ForegroundColor Red
-echo         "[FAIL] $^($u.Name^) - no password required"
+echo         "[FAIL] $($u.Name) - no password required"
 echo     }
 echo     exit 1
 echo } else {

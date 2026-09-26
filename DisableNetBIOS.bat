@@ -70,7 +70,7 @@ echo     switch ^($tcpSetting^) {
 echo         0 { $status = 'Default ^(DHCP-controlled^)'; $color = 'Yellow' }
 echo         1 { $status = 'Enabled'; $color = 'Red' }
 echo         2 { $status = 'Disabled'; $color = 'Green' }
-echo         default { $status = "Unknown ^($tcpSetting^)"; $color = 'Yellow' }
+echo         default { $status = "Unknown ($tcpSetting)"; $color = 'Yellow' }
 echo     }
 echo     Write-Host "  Adapter: " -NoNewline
 echo     Write-Host "$name" -ForegroundColor Cyan
@@ -135,14 +135,14 @@ echo         if ^($result.ReturnValue -eq 0^) {
 echo             Write-Host "Disabled" -ForegroundColor Green
 echo             $changed++
 echo         } else {
-echo             Write-Host "Failed ^(code $^($result.ReturnValue^)^)" -ForegroundColor Red
+echo             Write-Host "Failed (code $($result.ReturnValue))" -ForegroundColor Red
 echo             $failed++
 echo         }
 echo     }
 echo }
 echo Write-Host ""
-echo if ^($changed -gt 0^) { Write-Host "  $changed adapter^(s^) updated." -ForegroundColor Green }
-echo if ^($failed -gt 0^) { Write-Host "  $failed adapter^(s^) failed." -ForegroundColor Red }
+echo if ^($changed -gt 0^) { Write-Host "  $changed adapter(s) updated." -ForegroundColor Green }
+echo if ^($failed -gt 0^) { Write-Host "  $failed adapter(s) failed." -ForegroundColor Red }
 ) > "%PSSCRIPT%"
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PSSCRIPT%"

@@ -120,7 +120,7 @@ echo         if ^($success^) {
 echo             Write-Host "  Removed." -ForegroundColor Green
 echo             $removedCount++
 echo         } else {
-echo             Write-Host "  Could not remove ^(may require restart or already removed^)." -ForegroundColor DarkYellow
+echo             Write-Host "  Could not remove (may require restart or already removed)." -ForegroundColor DarkYellow
 echo             $skippedCount++
 echo         }
 echo     }
@@ -135,7 +135,7 @@ echo     $packages = Get-AppxPackage -Name $pattern -ErrorAction SilentlyContinu
 echo     $provPackages = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^| Where-Object DisplayName -Like $pattern
 echo/
 echo     foreach ^($pkg in $packages^) {
-echo         Write-Host "Removing $^($pkg.Name^)..." -ForegroundColor Yellow
+echo         Write-Host "Removing $($pkg.Name)..." -ForegroundColor Yellow
 echo         try {
 echo             Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
 echo             Write-Host "  Removed." -ForegroundColor Green

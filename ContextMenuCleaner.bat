@@ -190,8 +190,8 @@ echo $bloat = $uniqueEntries ^| Where-Object { $_.Category -eq 'BLOATWARE' -and 
 echo if ^($bloat^) {
 echo     Write-Host "[BLOATWARE] - Recommended for removal:" -ForegroundColor Red
 echo     foreach ^($e in $bloat^) {
-echo         Write-Host "  [-] $^($e.DisplayName^)" -ForegroundColor Red
-echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [-] $($e.DisplayName)" -ForegroundColor Red
+echo         Write-Host "      $($e.Path)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -201,8 +201,8 @@ echo $optional = $uniqueEntries ^| Where-Object { $_.Category -eq 'OPTIONAL' -an
 echo if ^($optional^) {
 echo     Write-Host "[OPTIONAL] - Can be removed if unwanted:" -ForegroundColor Yellow
 echo     foreach ^($e in $optional^) {
-echo         Write-Host "  [?] $^($e.DisplayName^)" -ForegroundColor Yellow
-echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [?] $($e.DisplayName)" -ForegroundColor Yellow
+echo         Write-Host "      $($e.Path)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -210,9 +210,9 @@ echo/
 echo # Show essential
 echo $keep = $uniqueEntries ^| Where-Object { $_.Category -eq 'KEEP' -and $_.Status -eq 'Active' }
 echo if ^($keep^) {
-echo     Write-Host "[KEEP] - Essential entries ^(will not be touched^):" -ForegroundColor Green
+echo     Write-Host "[KEEP] - Essential entries (will not be touched):" -ForegroundColor Green
 echo     foreach ^($e in $keep^) {
-echo         Write-Host "  [+] $^($e.DisplayName^)" -ForegroundColor Green
+echo         Write-Host "  [+] $($e.DisplayName)" -ForegroundColor Green
 echo     }
 echo     Write-Host ""
 echo }
@@ -222,7 +222,7 @@ echo $disabled = $uniqueEntries ^| Where-Object { $_.Status -eq 'Disabled' }
 echo if ^($disabled^) {
 echo     Write-Host "[DISABLED] - Already hidden:" -ForegroundColor DarkGray
 echo     foreach ^($e in $disabled^) {
-echo         Write-Host "  [x] $^($e.DisplayName^)" -ForegroundColor DarkGray
+echo         Write-Host "  [x] $($e.DisplayName)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -231,12 +231,12 @@ echo Write-Host "===============================================================
 echo Write-Host " SUMMARY" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo Write-Host "  Total entries found: $^($uniqueEntries.Count^)"
+echo Write-Host "  Total entries found: $($uniqueEntries.Count)"
 echo $activeBloat = @^($bloat^).Count
 echo $activeOptional = @^($optional^).Count
 echo if ^($activeBloat -gt 0^) { Write-Host "  Bloatware:  $activeBloat entries" -ForegroundColor Red }
 echo if ^($activeOptional -gt 0^) { Write-Host "  Optional:   $activeOptional entries" -ForegroundColor Yellow }
-echo Write-Host "  Essential:  $^(@^($keep^).Count^) entries" -ForegroundColor Green
+echo Write-Host "  Essential:  $(@($keep).Count) entries" -ForegroundColor Green
 echo Write-Host ""
 echo/
 echo # Offer to disable bloatware entries
@@ -246,11 +246,11 @@ echo     $answer = Read-Host "Disable all BLOATWARE context menu entries? [Y/N]"
 echo     if ^($answer -eq 'Y'^) {
 echo         foreach ^($e in $bloat^) {
 echo             try {
-echo                 $regPath = "Registry::$^($e.Path^)"
+echo                 $regPath = "Registry::$($e.Path)"
 echo                 New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
-echo                 Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
+echo                 Write-Host "  [OK] Disabled: $($e.DisplayName)" -ForegroundColor Green
 echo             } catch {
-echo                 Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red
+echo                 Write-Host "  [FAIL] Could not disable: $($e.DisplayName) - $($_.Exception.Message)" -ForegroundColor Red
 echo             }
 echo         }
 echo         Write-Host ""
@@ -264,15 +264,15 @@ echo     $answer = Read-Host "Review OPTIONAL entries one by one? [Y/N]"
 echo     if ^($answer -eq 'Y'^) {
 echo         Write-Host ""
 echo         foreach ^($e in $optional^) {
-echo             $choice = Read-Host "Disable '$^($e.DisplayName^)'? [Y/N/Q to quit]"
+echo             $choice = Read-Host "Disable '$($e.DisplayName)'? [Y/N/Q to quit]"
 echo             if ^($choice -eq 'Q'^) { break }
 echo             if ^($choice -eq 'Y'^) {
 echo                 try {
-echo                     $regPath = "Registry::$^($e.Path^)"
+echo                     $regPath = "Registry::$($e.Path)"
 echo                     New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
-echo                     Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
+echo                     Write-Host "  [OK] Disabled: $($e.DisplayName)" -ForegroundColor Green
 echo                 } catch {
-echo                     Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red
+echo                     Write-Host "  [FAIL] Could not disable: $($e.DisplayName) - $($_.Exception.Message)" -ForegroundColor Red
 echo                 }
 echo             }
 echo         }
@@ -301,7 +301,7 @@ echo             Write-Host ""
 echo             Write-Host "  [OK] Classic context menu restored." -ForegroundColor Green
 echo             Write-Host "       Restart Explorer or reboot to apply." -ForegroundColor Yellow
 echo         } catch {
-echo             Write-Host "  [FAIL] Could not restore classic menu: $^($_.Exception.Message^)" -ForegroundColor Red
+echo             Write-Host "  [FAIL] Could not restore classic menu: $($_.Exception.Message)" -ForegroundColor Red
 echo         }
 echo     }
 echo }
