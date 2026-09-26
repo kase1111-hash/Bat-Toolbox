@@ -227,9 +227,10 @@ if %errorlevel%==0 (
 :: "succeed" without anything reading the value.
 reg query "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" >nul 2>&1
 if %errorlevel% neq 0 goto ASUS_FAIL
-reg add "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
+reg add "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" /v "ChargeLimit" /t REG_DWORD /d %asusVal% /f >nul 2>&1
 if %errorlevel% neq 0 goto ASUS_FAIL
 echo %YELLOW%[UNVERIFIED] Value written for ASUS Battery Health Charging - open MyASUS to confirm the limit.%RESET%
+if "%limit%"=="50" echo %YELLOW%[NOTE] ASUS supports 60%% as its lowest limit, so 60%% was written instead of 50%%.%RESET%
 echo %YELLOW%[NOTE] Requires ASUS System Control Interface driver.%RESET%
 goto SET_UNVERIFIED
 

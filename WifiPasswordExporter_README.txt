@@ -43,7 +43,8 @@ Sample output:
 
 Networks without a readable password are labelled instead of being listed
 as open networks:
-  (none - open network)                    - no security at all
+  (none - open / Enhanced Open network)    - no password (open or OWE
+                                             Enhanced Open network)
   (not available - run as administrator
    to reveal it)                           - secured, but Windows only
                                              reveals the key when elevated

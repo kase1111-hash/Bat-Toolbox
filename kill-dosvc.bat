@@ -16,7 +16,8 @@ REM  What gets touched:
 REM    1) WaaSMedicSvc:                 Stop + Start=4 (with ownership escalation)
 REM    2) DoSvc:                        Stop + Start=4
 REM    3) DODownloadMode policy:        0 (HTTP-only, no peering)
-REM    4) WaaSMedic scheduled tasks:    Disabled
+REM    4) Scheduled tasks:              Disabled where permitted: WaaSMedic\PerformRemediation,
+REM                                     UpdateOrchestrator\USO_BootRebootTask, WindowsUpdate\Scheduled Start
 REM    5) HOSTS file:                   Null-route DO-specific endpoints
 REM    6) Firewall:                     Block svchost service=DoSvc + TCP 7680
 REM
@@ -220,6 +221,8 @@ REM    netsh advfirewall firewall delete rule name="BLOCK DoSvc service"
 REM    netsh advfirewall firewall delete rule name="BLOCK DO P2P port 7680 in"
 REM    netsh advfirewall firewall delete rule name="BLOCK DO P2P port 7680 out"
 REM    copy /Y "%SystemRoot%\System32\drivers\etc\hosts.bak.dosvc" "%SystemRoot%\System32\drivers\etc\hosts"
-REM    REM Re-enable scheduled tasks: schtasks /Change /TN "<task path>" /Enable
+REM    schtasks /Change /TN "\Microsoft\Windows\WindowsUpdate\Scheduled Start" /Enable
+REM    schtasks /Change /TN "\Microsoft\Windows\UpdateOrchestrator\USO_BootRebootTask" /Enable
+REM    schtasks /Change /TN "\Microsoft\Windows\WaaSMedic\PerformRemediation" /Enable
 REM    REM then reboot
 REM ===========================================================================

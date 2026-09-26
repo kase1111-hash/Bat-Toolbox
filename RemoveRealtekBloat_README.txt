@@ -41,7 +41,10 @@ WHAT GETS REMOVED
 - Related services, scheduled tasks, and startup entries
 - Desktop (MSI) versions of the above are uninstalled silently with
   msiexec /x (found in Apps & features; WMIC is no longer used, as it is
-  not available on Windows 11 24H2 and later)
+  not available on Windows 11 24H2 and later). If msiexec fails (for
+  example 1618 = another installation is in progress), the script prints
+  "Could not uninstall: <name> [msiexec exit N]" instead; run the script
+  again later or uninstall it from Settings > Apps > Installed apps
 
 WHAT STAYS INTACT
 -----------------

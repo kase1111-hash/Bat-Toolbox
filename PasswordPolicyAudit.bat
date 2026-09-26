@@ -409,14 +409,15 @@ echo   %WHITE%Local Administrators group members:%RESET%
 
 set "adminGroup=Administrators"
 for /f "delims=" %%g in ('powershell -NoProfile -Command "(New-Object Security.Principal.SecurityIdentifier 'S-1-5-32-544').Translate([Security.Principal.NTAccount]).Value.Split('\')[1]" 2^>nul') do set "adminGroup=%%g"
+:: net prints a localized "command completed" message as its last line, so
+:: stay one line behind and never print the final line.
+set "prevMember="
 for /f "skip=6 tokens=*" %%a in ('net localgroup "%adminGroup%" 2^>nul') do (
-    echo %%a | find "The command completed" >nul 2>&1
-    if errorlevel 1 (
-        if not "%%a"=="" (
-            echo    %%a
-            (echo    %%a) >> "%REPORT%"
-        )
+    if defined prevMember (
+        echo    !prevMember!
+        (echo    !prevMember!) >> "%REPORT%"
     )
+    set "prevMember=%%a"
 )
 
 echo/

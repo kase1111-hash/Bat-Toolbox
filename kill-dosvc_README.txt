@@ -21,7 +21,11 @@ WHAT GETS TOUCHED
                                 escalation if the direct write is blocked
   2) DoSvc:                     stop + Start=4 (Disabled)
   3) DODownloadMode policy:     0 (HTTP only, no peering)
-  4) WaaSMedic scheduled tasks: disabled
+  4) Scheduled tasks:           disabled where Windows allows it (protected or
+                                missing tasks are reported as [skip]):
+                                  \Microsoft\Windows\WaaSMedic\PerformRemediation
+                                  \Microsoft\Windows\UpdateOrchestrator\USO_BootRebootTask
+                                  \Microsoft\Windows\WindowsUpdate\Scheduled Start
   5) HOSTS file:                null-routes common DO endpoints to 0.0.0.0
   6) Firewall:                  blocks svchost service=DoSvc + TCP 7680 in/out
 
@@ -62,8 +66,11 @@ Run as Administrator:
   netsh advfirewall firewall delete rule name="BLOCK DO P2P port 7680 out"
   copy /Y "%SystemRoot%\System32\drivers\etc\hosts.bak.dosvc" "%SystemRoot%\System32\drivers\etc\hosts"
 
-Re-enable any scheduled task that was disabled:
-  schtasks /Change /TN "<task path>" /Enable
+Re-enable the scheduled tasks the script disabled (a task that was skipped or
+does not exist just prints an error, which is harmless):
+  schtasks /Change /TN "\Microsoft\Windows\WindowsUpdate\Scheduled Start" /Enable
+  schtasks /Change /TN "\Microsoft\Windows\UpdateOrchestrator\USO_BootRebootTask" /Enable
+  schtasks /Change /TN "\Microsoft\Windows\WaaSMedic\PerformRemediation" /Enable
 
 Then reboot.
 

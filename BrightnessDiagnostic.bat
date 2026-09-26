@@ -166,7 +166,8 @@ echo   %WHITE%*%RESET% Sensor Monitoring Service (SensrSvc): stopped and disable
 echo   %WHITE%*%RESET% Intel DPST: bit 0x10 set in FeatureTestControl (Intel adapters only)
 echo   %WHITE%*%RESET% CABC: KMD_EnableBrightnessInterface2 = 0 on display adapter 0000
 echo/
-echo   The original values are backed up first. Option [5] restores them.
+echo   Power plan and display driver values are backed up first; option [5] restores them.
+echo   Option [5] sets SensrSvc to Manual, the Windows default, not its previous start type.
 echo/
 set "confirm="
 set /p "confirm=Apply these changes? (Y/N): "
@@ -228,7 +229,8 @@ echo %GREEN%====================================================================
 echo/
 echo   All auto-dimming features have been disabled.
 echo   %YELLOW%NOTE:%RESET% A restart may be required for all changes to take effect.
-echo   To undo: option [5] Reset Display Settings restores the backed-up values.
+echo   To undo: option [5] restores the backed-up power plan and driver values
+echo   and sets SensrSvc to Manual, the Windows default.
 echo/
 echo   If brightness still dims, check:
 echo   %WHITE%*%RESET% GPU control panel (NVIDIA/AMD/Intel) for power saving

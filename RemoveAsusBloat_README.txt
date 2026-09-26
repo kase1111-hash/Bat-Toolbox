@@ -116,8 +116,10 @@ How desktop programs are uninstalled:
   on Windows 11 24H2 and later. Only MSI-installed programs are removed this
   way; a program with its own installer (for example McAfee LiveSafe) may
   need its vendor's uninstaller or removal tool - see MCAFEE COMPLETE REMOVAL.
-  The script prints "Uninstalled: <name> [exit N]" for each product it
-  removes (exit 0 or 3010 means success).
+  The script prints "Uninstalled: <name>" for each product it removes. If
+  msiexec fails (for example 1618 = another installation is in progress),
+  it prints "Could not uninstall: <name> [msiexec exit N]" instead; run the
+  script again later or uninstall it from Settings > Apps > Installed apps.
   "ROG" and "AURA" are matched as whole words only, so unrelated programs
   whose names merely contain those letters ("Program...", "Laura...") are
   not touched.

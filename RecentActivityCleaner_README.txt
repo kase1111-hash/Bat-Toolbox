@@ -17,9 +17,14 @@ HOW TO USE
 3. Confirm when prompted (Y/N)
 4. If Windows 11 Notepad has saved tab state, answer whether unsaved Notepad
    tabs may be deleted too (Y/N)
-5. Wait for all phases to complete. Explorer (taskbar and desktop) is stopped
+5. On Windows 11, answer whether the File Explorer Recent files list may be
+   cleared too (Y/N). Windows 11 stores that list and your File Explorer
+   Favorites (pinned files) in ONE file: Y clears the Recent files list AND
+   removes every Favorite; N keeps both, so the whole File Explorer Recent
+   files list stays. Windows 10 does not ask and always clears it
+6. Wait for all phases to complete. Explorer (taskbar and desktop) is stopped
    at the start of Phase 6 and started again at the end
-6. If the window is closed before the end, start Explorer again with
+7. If the window is closed before the end, start Explorer again with
    Ctrl+Shift+Esc > Run new task > explorer
 
 IMPORTANT - standard (non-admin) accounts:
@@ -40,6 +45,8 @@ them first:
   - Pinned items in taskbar jump lists (right-click menu pins are removed)
   - Unsaved Notepad tabs (Windows 11) - you will be asked before they are
     deleted, and they are skipped while Notepad is running
+  - File Explorer Favorites (pinned files, Windows 11) - removed only if you
+    answer Y to clearing the File Explorer Recent files list
 
 
 WHAT GETS CLEARED
@@ -49,19 +56,23 @@ Phase 1: Recent Files and Quick Access
   - Note: Quick Access pinned and frequent folders are kept. Windows stores
     both in one file (AutomaticDestinations\f01b4d95cf55d32a...), so the
     frequent folders cannot be cleared without losing the pins
-  - Note: File Explorer Favorites (pinned files, Windows 11) are kept too.
-    They are stored in AutomaticDestinations\5f7b5f1e01b83767..., a file that
-    also holds Explorer's own recent/pinned file entries. Deleting it would
-    remove every Favorite, so it is kept and some recent-file entries may
-    still appear in File Explorer Home / Quick Access
+  - File Explorer Recent files list (AutomaticDestinations\5f7b5f1e01b83767...,
+    deleted in Phase 2):
+      Windows 10: this is the Quick Access Recent files list. It is always
+        cleared (Quick Access pins only folders there, and those are kept)
+      Windows 11: the File Explorer Home "Recent" list and your File Explorer
+        Favorites (pinned files) are this one file. It is kept unless you
+        answer Y at the start. If you answer N, the whole File Explorer Recent
+        files list stays; if you answer Y, every Favorite is removed too.
+        Files from Office.com (Microsoft account) come from the cloud and can
+        still show; turn them off in Folder Options > Privacy
 
 Phase 2: Jump Lists
   - Taskbar right-click recent files per application
   - Automatic and custom jump lists, INCLUDING items pinned inside taskbar
-    jump lists. Explorer's two files are kept (see Phase 1): the Quick Access
-    file (f01b4d95cf55d32a...) and the File Explorer Favorites file
-    (5f7b5f1e01b83767..., pinned files on Windows 11, which also holds
-    Explorer's own recent/pinned file entries)
+    jump lists. The Quick Access file (f01b4d95cf55d32a...) is always kept.
+    The File Explorer Recent files list (5f7b5f1e01b83767...) is deleted on
+    Windows 10, and on Windows 11 only if you answered Y (see Phase 1)
 
 Phase 3: Explorer History
   - Address bar typed paths (TypedPaths registry)
@@ -128,8 +139,9 @@ WHAT IS NOT CLEARED
 - Saved files and documents
 - Desktop files and shortcuts
 - Quick Access pinned and frequent folders
-- File Explorer Favorites (pinned files, Windows 11), together with the
-  Explorer recent/pinned file entries stored in the same file
+- Windows 11, if you answered N: File Explorer Favorites (pinned files) and
+  the whole File Explorer Home "Recent" files list, which share one file
+  (on Windows 10 the Quick Access Recent files list is always cleared)
 - Other system settings. The only settings changed are: device search history
   off, cloud content search off, clipboard history off, and (admin only) the
   Activity history policy. See HOW TO RESTORE / UNDO
@@ -145,6 +157,8 @@ However:
 - Thumbnail cache will rebuild as you browse folders
 - Prefetch data will rebuild as you launch programs
 - Jump lists will rebuild as you use applications
+- File Explorer Favorites removed by answering Y (Windows 11) cannot be
+  restored; pin files again with right-click > Add to favorites
 
 To restore Activity Timeline (if you used it):
   1. Sign back into your Microsoft account

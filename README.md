@@ -263,7 +263,7 @@ winget import -i InstalledPrograms_COMPUTERNAME_winget.json
 | Option | Description |
 |--------|-------------|
 | Full Diagnostic | Checks all brightness-related settings, services, and driver features |
-| Quick Fix | Disables all auto-dimming features after a Y/N confirmation; backs up the original values first (`HKLM\SOFTWARE\BrightnessDiagnostic\Backup`) |
+| Quick Fix | Disables all auto-dimming features after a Y/N confirmation; backs up the original power plan and display driver values first (`HKLM\SOFTWARE\BrightnessDiagnostic\Backup`) |
 | Max Brightness | Sets screen to 100% via Windows API |
 | Gamma Boost | Increases perceived brightness beyond Windows' 100% limit |
 | Reset Display Settings | Undoes Quick Fix / Advanced fixes from the saved backup, resets gamma, sets SensrSvc back to Manual, restarts the display driver (without a backup it only re-enables adaptive brightness; without admin it only resets gamma) |
@@ -1095,7 +1095,7 @@ For 64 GB and above the script uses 25% of RAM.
 **What it clears:**
 | Category | Items |
 |----------|-------|
-| Recent Files | Recent Items folder (Quick Access pinned and frequent folders are kept) |
+| Recent Files | Recent Items folder and the File Explorer Recent files list (on Windows 11 only after a Y/N prompt, because that list shares a file with File Explorer Favorites); Quick Access pinned and frequent folders are kept |
 | Jump Lists | Taskbar right-click history per application, including items pinned in jump lists |
 | Explorer History | Address bar paths, search queries, Open/Save dialog history |
 | Command History | Run dialog (Win+R), PowerShell history, doskey |
@@ -1110,6 +1110,7 @@ For 64 GB and above the script uses 25% of RAM.
 - Installed programs and settings
 - Saved files and documents
 - Quick Access pinned and frequent folders
+- Windows 11 File Explorer Favorites (pinned files) and the Recent files list, unless you answer Y to the prompt
 
 **When to use:** Before handing a shared computer to another user, before screen sharing or presentations, or for general privacy hygiene.
 

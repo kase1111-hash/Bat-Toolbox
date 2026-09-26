@@ -418,6 +418,17 @@ if %remove_count% gtr 0 (
             if "!loc!"=="HKLM_Run32" set "approvedKey=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32"
             if "!loc!"=="Startup_Folder" set "approvedKey=HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder"
             if "!loc!"=="Startup_Folder_All" set "approvedKey=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder"
+            REM Only write the marker when the entry exists under this exact name,
+            REM because reg add would otherwise create an unrelated value and report success
+            set "srcFound="
+            if "!loc!"=="HKCU_Run" reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="HKLM_Run" reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="HKLM_Run32" reg query "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="Startup_Folder" if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" set "srcFound=1"
+            if "!loc!"=="Startup_Folder_All" if exist "%ProgramData%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" set "srcFound=1"
+            REM A ? in the name means it was altered, and if exist would treat it as a wildcard
+            if not "!itemname:?=!"=="!itemname!" set "srcFound="
+            if not defined srcFound set "approvedKey=" & echo   [FAILED] !itemname! - not found under this name, disable it in Task Manager
             if defined approvedKey (
                 reg add "!approvedKey!" /v "!itemname!" /t REG_BINARY /d 030000000000000000000000 /f >nul 2>&1
                 if not errorlevel 1 (

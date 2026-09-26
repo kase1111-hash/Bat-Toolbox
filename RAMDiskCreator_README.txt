@@ -74,9 +74,12 @@ Built-in VHD Fallback:
     (with "Run as administrator" from another account's prompt, that is
     the admin account's profile):
       %USERPROFILE%\AppData\Local\RAMDiskCreator\ramdisk.vhdx
-    Only that account and administrators can open the folder, so other
-    users cannot read the disk contents or tamper with the helper scripts
-    the script runs from there.
+    Only that account and administrators can open this folder, so other
+    users cannot tamper with the helper scripts or open the .vhdx file
+    directly. While the disk is mounted, its drive letter (e.g. R:) is
+    visible to every user, and the default NTFS permissions let other
+    signed-in users read and change files on it - the same as an ImDisk
+    RAM disk. Do not redirect TEMP there on a PC shared with other users.
     The drive letter is not re-mounted after a reboot, but the file keeps
     its contents until you use option [4] or create the disk again
     (creating again deletes the old file).

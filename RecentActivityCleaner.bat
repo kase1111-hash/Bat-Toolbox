@@ -28,7 +28,8 @@ echo/
 echo This script clears recent activity traces and usage history from Windows.
 echo/
 echo %YELLOW%What will be CLEARED:%RESET%
-echo  - Recent files list (Quick Access / Recent Items)
+echo  - Recent files list (Recent Items and File Explorer's Recent files list.
+echo    Windows 11 stores that list with your Favorites and asks first)
 echo  - Jump lists (taskbar right-click history, INCLUDING items pinned in them)
 echo  - Explorer address bar history
 echo  - Run dialog (Win+R) history
@@ -45,7 +46,7 @@ echo  - Installed programs
 echo  - Saved files and documents
 echo  - Browser history (use browser settings for that)
 echo  - Quick Access pinned and frequent folders
-echo  - File Explorer Favorites (pinned files, Windows 11)
+echo  - File Explorer Favorites (pinned files, Windows 11) - kept unless you answer Y
 echo  - Other system settings. Only these are turned off: device search history,
 echo    cloud content search, clipboard history and, with admin, the Activity
 echo    history policy. The README explains how to turn them back on.
@@ -102,6 +103,24 @@ if exist "%tabState%\*.bin" (
     if !errorlevel! equ 1 set "clearNotepadTabs=1"
 )
 
+:: Explorer's 5f7b5f1e01b83767 jump list is the File Explorer Recent files list
+:: (Quick Access on Windows 10, Home on Windows 11). On Windows 11 the same file
+:: also holds File Explorer Favorites (pinned files), so ask before deleting it.
+:: favFile=none means "delete it" (the Phase 2 filter then matches nothing).
+set "favFile=5f7b5f1e01b83767.automaticDestinations-ms"
+set "winBuild=0"
+for /f "tokens=3" %%b in ('reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion" /v CurrentBuildNumber 2^>nul') do set "winBuild=%%b"
+if !winBuild! lss 22000 (
+    REM Windows 10 has no file Favorites: always clear its Quick Access Recent files list
+    set "favFile=none"
+) else (
+    echo/
+    echo %YELLOW%File Explorer keeps its Recent files list and your Favorites ^(pinned files^) in ONE file.%RESET%
+    echo %YELLOW%Clearing the Recent files list also removes every File Explorer Favorite.%RESET%
+    choice /c YN /m "Also clear the File Explorer Recent files list and Favorites"
+    if !errorlevel! equ 1 set "favFile=none"
+)
+
 echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Phase 1: Recent Files and Quick Access%RESET%
@@ -122,11 +141,15 @@ if exist "%AppData%\Microsoft\Windows\Recent\*" (
 :: Quick Access pinned AND frequent folders are stored together in Explorer's own
 :: jump list (AutomaticDestinations\f01b4d95cf55d32a.automaticDestinations-ms).
 :: Deleting that file would unpin every folder, so Phase 2 keeps it.
-:: File Explorer Favorites (pinned files, Windows 11) live in Explorer's other
-:: list (5f7b5f1e01b83767), which also holds Explorer's own recent/pinned file
-:: entries. Deleting it would remove every Favorite, so Phase 2 keeps it too.
+:: Explorer's other list (5f7b5f1e01b83767) holds the File Explorer Recent files
+:: list plus, on Windows 11, the File Explorer Favorites (pinned files). Phase 2
+:: deletes it on Windows 10, or on Windows 11 when the user answered Y above.
 echo       %YELLOW%- Kept Quick Access pinned and frequent folders ^(stored together in one file^)%RESET%
-echo       %YELLOW%- Kept File Explorer Favorites ^(pinned files, Windows 11^)%RESET%
+if "!favFile!"=="none" (
+    echo       %GREEN%- File Explorer Recent files list is cleared in Phase 2%RESET%
+) else (
+    echo       %YELLOW%- Kept File Explorer Recent files list and Favorites ^(one file, you answered N^)%RESET%
+)
 
 echo/
 echo %CYAN%============================================================================%RESET%
@@ -138,9 +161,9 @@ echo [2/9] Clearing jump lists (taskbar right-click history)...
 
 :: AutomaticDestinations = every app's jump list (including pinned jump-list items).
 :: f01b4d95cf55d32a is Explorer's Quick Access list (pinned AND frequent folders) - keep it.
-:: 5f7b5f1e01b83767 holds File Explorer Favorites (pinned files, Windows 11) - keep it.
+:: 5f7b5f1e01b83767 is the File Explorer Recent files list plus the Windows 11
+:: Favorites - kept only when favFile still names it (Windows 11, user answered N).
 set "qaFile=f01b4d95cf55d32a.automaticDestinations-ms"
-set "favFile=5f7b5f1e01b83767.automaticDestinations-ms"
 if exist "%AppData%\Microsoft\Windows\Recent\AutomaticDestinations\*" (
     for %%F in ("%AppData%\Microsoft\Windows\Recent\AutomaticDestinations\*") do (
         if /i not "%%~nxF"=="!qaFile!" if /i not "%%~nxF"=="!favFile!" del /f /q "%%F" >nul 2>&1
@@ -478,8 +501,9 @@ echo   Items cleared:  !success!
 echo   Items skipped:  !skipped!
 echo/
 echo What this script clears (anything skipped or in use is listed above):
-echo  - Recent files list (Quick Access pinned and frequent folders are kept, and
-echo    File Explorer Favorites - pinned files, Windows 11 - are kept)
+echo  - Recent files list (Quick Access pinned and frequent folders are kept. On
+echo    Windows 11 the File Explorer Recent files list and Favorites share one
+echo    file and are kept if you answered N)
 echo  - Taskbar jump lists, including items pinned in them
 echo  - Explorer address bar and search history
 echo  - Open/Save dialog history

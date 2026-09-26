@@ -31,6 +31,10 @@ Note: Items from HKEY_LOCAL_MACHINE and the All Users Startup folder can only
 be disabled when the script runs as administrator. Without admin they are
 reported as [FAILED] and left enabled.
 
+Items whose names contain "!" or non-English (non-ASCII) characters cannot be
+matched reliably by the script. They are reported as [FAILED] - not found
+under this name, and left enabled; disable them in Task Manager's Startup tab.
+
 
 BEFORE YOU RUN
 --------------
