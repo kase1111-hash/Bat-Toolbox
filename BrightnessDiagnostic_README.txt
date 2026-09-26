@@ -27,11 +27,36 @@ COMMON ISSUES THIS TOOL ADDRESSES
 FEATURES
 --------
 1. Full Diagnostic - Checks all brightness-related settings and services
-2. Quick Fix - One-click disable of all auto-dimming features
+2. Quick Fix - Disables all auto-dimming features after a Y/N confirmation,
+   backing up the original values first
 3. Maximum Brightness - Sets screen to 100% via Windows API
 4. Gamma Boost - Increases perceived brightness BEYOND Windows limits
-5. Reset to Default - Restores all settings to Windows defaults
-6. Advanced Options - Fine-grained control over specific features
+5. Reset Display Settings - Undoes Quick Fix and the Advanced fixes from the
+   saved backup, resets gamma (see RESTORATION below for exactly what it does)
+6. View Info - Shows current brightness level and connected monitors
+7. Advanced Options - Fine-grained control over specific features, plus an
+   exported text report (saved to your real Desktop folder, including a
+   OneDrive-redirected Desktop)
+
+WHAT QUICK FIX CHANGES
+----------------------
+Quick Fix lists these changes and asks for Y/N confirmation before applying:
+  * Active power plan, on AC and battery:
+      - "Enable adaptive brightness" (ADAPTBRIGHT) = Off
+      - "Dimmed display brightness" = 100%
+      - "Dim display after" = 0 (never)
+  * Sensor Monitoring Service (SensrSvc) stopped and set to Disabled
+  * Intel DPST: bit 0x10 is set in FeatureTestControl on each Intel display
+    adapter that already has that value. Only that bit changes; the rest of
+    the driver's feature bitmask is kept. Nothing is written if the value
+    does not exist.
+  * CABC: KMD_EnableBrightnessInterface2 = 0 on display adapter 0000
+
+Before any change, the original power plan values and display-driver values
+are saved under HKLM\SOFTWARE\BrightnessDiagnostic\Backup. If the backup
+fails, nothing is changed. Values already in the backup are never
+overwritten, so running a fix twice keeps the true originals. Advanced
+options [1] DPST, [2] Vari-Bright and [3] PSR make the same backup first.
 
 GAMMA BOOST EXPLAINED
 ---------------------
@@ -80,7 +105,8 @@ ADMIN REQUIREMENTS
 * Gamma Boost (option 4) - No admin required
 * Reset Display (option 5) - Partial admin for some features
 * View Info (option 6) - No admin required
-* Advanced Options (option 7) - Most require admin
+* Advanced Options (option 7) - [1] DPST, [2] Vari-Bright, [3] PSR and
+  [4] Reset Display Adapter require admin; [5]-[7] do not
 
 TROUBLESHOOTING
 ---------------
@@ -107,12 +133,39 @@ If brightness still dims after using Quick Fix:
 
 RESTORATION
 -----------
-To undo all changes:
-1. Run option [5] Reset Display Settings
-2. Or manually:
-   - Enable Adaptive Brightness in Settings > Display
-   - Set power plan display settings in Control Panel
-   - Enable SensrSvc service: sc config SensrSvc start= auto
+To undo Quick Fix and the Advanced fixes, run option [5] Reset Display
+Settings as administrator. It:
+  1. Resets gamma to the default (1.0)
+  2. Restores from the backup (HKLM\SOFTWARE\BrightnessDiagnostic\Backup):
+       - the power plan values "Enable adaptive brightness", "Dimmed display
+         brightness" and "Dim display after", in the plan(s) they came from
+       - the display-driver values FeatureTestControl,
+         KMD_EnableBrightnessInterface2, PP_VariBrightFeatureControl,
+         Disable_PSR and EnablePSR (values that did not exist before are
+         deleted again)
+     and then deletes the backup. If there is no backup, it only turns
+     adaptive brightness back on in the active power plan.
+     It also removes the DPST_Enabled value that older versions of this tool
+     created on adapters 0000/0001 (it is not an Intel driver setting).
+  3. Sets the Sensor Monitoring Service back to Manual, the Windows default
+  4. Restarts the display driver (needs admin and Windows 10 2004 or later)
+Restart Windows afterwards so the driver values take effect.
+
+Without admin rights, option [5] resets gamma only; steps 2-4 need admin.
+
+Changes made by an older version of this tool (before backups existed)
+cannot be restored exactly. Undo them manually:
+   - Enable Adaptive Brightness in Settings > Display (or run
+     powercfg /setacvalueindex SCHEME_CURRENT SUB_VIDEO ADAPTBRIGHT 1
+     powercfg /setdcvalueindex SCHEME_CURRENT SUB_VIDEO ADAPTBRIGHT 1
+     powercfg /setactive SCHEME_CURRENT)
+   - Set power plan display settings in Control Panel > Power Options
+   - Set SensrSvc back to its default: sc config SensrSvc start= demand
+   - Older versions set FeatureTestControl on adapters 0000/0001 to a fixed
+     0x9240 without saving the original. If you know the original value,
+     set it back with regedit under
+     HKLM\SYSTEM\CurrentControlSet\Control\Class\
+     {4d36e968-e325-11ce-bfc1-08002be10318}\000N
 
 NOTES
 -----

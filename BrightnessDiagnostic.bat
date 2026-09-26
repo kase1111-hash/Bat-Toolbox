@@ -1,5 +1,7 @@
 @echo off
-setlocal enabledelayedexpansion
+:: No delayed expansion: it would strip any "!" from the folder path in %%~dp0
+:: and every "%%PS_HELPER%%" use. Nothing in this script needs it.
+setlocal
 title Brightness Diagnostic Tool
 color 0B
 
@@ -21,7 +23,7 @@ set "PS_HELPER=%SCRIPT_DIR%BrightnessDiagnostic.ps1"
 :: Check if helper script exists
 if not exist "%PS_HELPER%" (
     color 0C
-    echo [ERROR] BrightnessDiagnostic.ps1 not found^^!
+    echo [ERROR] BrightnessDiagnostic.ps1 not found!
     echo Please ensure BrightnessDiagnostic.ps1 is in the same folder as this batch file.
     echo/
     pause
@@ -54,6 +56,7 @@ echo   %WHITE%[0]%RESET% Exit
 echo/
 echo %CYAN%============================================================================%RESET%
 echo/
+set "choice="
 set /p "choice=Select an option [0-7]: "
 
 if "%choice%"=="1" goto FULL_DIAGNOSTIC
@@ -91,16 +94,11 @@ echo/
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-sensor
 echo/
 
-:: Check adaptive brightness registry settings
-echo %YELLOW%[4/8]%RESET% Checking Adaptive Brightness Registry Settings...
+:: Windows keeps the adaptive brightness toggle in the active power plan
+:: (ADAPTBRIGHT), not in a registry flag
+echo %YELLOW%[4/8]%RESET% Checking Adaptive Brightness Power Setting...
 echo/
-for /f "tokens=3" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" /v IsEnabled 2^>nul ^| findstr /i "IsEnabled"') do (
-    if "%%a"=="0x1" (
-        echo   %YELLOW%Adaptive Brightness: ENABLED - can cause dimming%RESET%
-    ) else (
-        echo   %GREEN%Adaptive Brightness: DISABLED%RESET%
-    )
-)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-adaptive
 echo/
 
 echo %YELLOW%[5/8]%RESET% Checking Power Plan Brightness Settings...
@@ -115,9 +113,7 @@ echo/
 
 echo %YELLOW%[7/8]%RESET% Checking Intel/AMD/NVIDIA Display Power Saving...
 echo/
-for /f "tokens=3" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl 2^>nul ^| findstr /i "FeatureTestControl"') do (
-    echo   Intel DPST Registry Value: %%a
-)
+:: get-dpst prints FeatureTestControl for each Intel adapter
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action get-dpst
 echo/
 
@@ -163,35 +159,54 @@ if %errorlevel% neq 0 (
     goto MAIN_MENU
 )
 
-echo %YELLOW%[1/6]%RESET% Disabling Adaptive Brightness in registry...
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" /v IsEnabled /t REG_DWORD /d 0 /f >nul 2>&1
-if %errorlevel%==0 (
-    echo   %GREEN%[OK]%RESET% Adaptive Brightness disabled
-) else (
-    echo   %YELLOW%[SKIP]%RESET% Could not modify adaptive brightness
+echo   This will change the following settings:
+echo   %WHITE%*%RESET% Active power plan: adaptive brightness off, dimmed brightness 100%%,
+echo     and "Dim display after" set to never
+echo   %WHITE%*%RESET% Sensor Monitoring Service (SensrSvc): stopped and disabled
+echo   %WHITE%*%RESET% Intel DPST: bit 0x10 set in FeatureTestControl (Intel adapters only)
+echo   %WHITE%*%RESET% CABC: KMD_EnableBrightnessInterface2 = 0 on display adapter 0000
+echo/
+echo   Power plan and display driver values are backed up first; option [5] restores them.
+echo   Option [5] sets SensrSvc to Manual, the Windows default, not its previous start type.
+echo/
+set "confirm="
+set /p "confirm=Apply these changes? (Y/N): "
+if /i not "%confirm%"=="Y" goto MAIN_MENU
+echo/
+
+echo %YELLOW%[1/6]%RESET% Backing up current settings...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action backup-settings
+if %errorlevel% neq 0 (
+    echo   %RED%[ERROR]%RESET% Backup failed - no changes were made.
+    echo/
+    pause
+    goto MAIN_MENU
 )
 
 echo %YELLOW%[2/6]%RESET% Disabling Adaptive Brightness in active power plan...
 :: Get active power plan GUID. The label before the GUID is localized, so parse
 :: after the ':' rather than by word position (tokens=4 only works in English).
+:: PLAN_GUID is set before the block below is parsed, so %%PLAN_GUID%% is safe in it.
 set "PLAN_GUID="
 for /f "tokens=2 delims=:" %%a in ('powercfg /getactivescheme 2^>nul') do for /f "tokens=1" %%b in ("%%a") do set "PLAN_GUID=%%b"
 
 if not defined PLAN_GUID (
     echo   %RED%[WARN]%RESET% Could not determine the active power plan GUID - skipping plan tweaks.
 ) else (
-    REM Disable adaptive brightness (GUID 7516b95f-...-06167f40cc99, sub fbd9aa66-...)
-    powercfg /setacvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
-    powercfg /setdcvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
-    powercfg /setactive !PLAN_GUID! >nul 2>&1
+    REM Disable adaptive brightness: subgroup 7516b95f = Display, fbd9aa66 = ADAPTBRIGHT
+    powercfg /setacvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
+    powercfg /setdcvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 fbd9aa66-9553-4097-ba44-ed6e9d65eab8 0 >nul 2>&1
+    powercfg /setactive %PLAN_GUID% >nul 2>&1
     echo   %GREEN%[OK]%RESET% Power plan adaptive brightness disabled
 
-    echo %YELLOW%[3/6]%RESET% Setting display dim brightness to 100%%...
-    REM Set display dim brightness to 100%% (won't dim when idle)
-    powercfg /setacvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
-    powercfg /setdcvalueindex !PLAN_GUID! 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 100 >nul 2>&1
-    powercfg /setactive !PLAN_GUID! >nul 2>&1
-    echo   %GREEN%[OK]%RESET% Display dim brightness set to 100%%
+    echo %YELLOW%[3/6]%RESET% Disabling idle display dimming...
+    REM f1fbfde2 = Dimmed display brightness in percent; 17aaa29b = Dim display after in seconds, 0 = never
+    powercfg /setacvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 f1fbfde2-a960-4165-9f88-50667911ce96 100 >nul 2>&1
+    powercfg /setdcvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 f1fbfde2-a960-4165-9f88-50667911ce96 100 >nul 2>&1
+    powercfg /setacvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 0 >nul 2>&1
+    powercfg /setdcvalueindex %PLAN_GUID% 7516b95f-f776-4464-8c53-06167f40cc99 17aaa29b-8b43-4b94-aafe-35f64daaf1ee 0 >nul 2>&1
+    powercfg /setactive %PLAN_GUID% >nul 2>&1
+    echo   %GREEN%[OK]%RESET% Dimmed brightness set to 100%% and idle dim timer disabled
 )
 
 echo %YELLOW%[4/6]%RESET% Stopping Sensor Monitoring Service...
@@ -200,10 +215,8 @@ sc config SensrSvc start= disabled >nul 2>&1
 echo   %GREEN%[OK]%RESET% Sensor Monitoring Service stopped and disabled
 
 echo %YELLOW%[5/6]%RESET% Disabling Intel DPST (if present)...
-:: Disable Intel Display Power Saving Technology
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl /t REG_DWORD /d 0x9240 /f >nul 2>&1
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v DPST_Enabled /t REG_DWORD /d 0 /f >nul 2>&1
-echo   %GREEN%[OK]%RESET% Intel DPST disabled (if applicable)
+:: Sets only bit 0x10 of FeatureTestControl on Intel adapters that have the value
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action disable-dpst
 
 echo %YELLOW%[6/6]%RESET% Disabling CABC (Content Adaptive Brightness)...
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v KMD_EnableBrightnessInterface2 /t REG_DWORD /d 0 /f >nul 2>&1
@@ -216,6 +229,8 @@ echo %GREEN%====================================================================
 echo/
 echo   All auto-dimming features have been disabled.
 echo   %YELLOW%NOTE:%RESET% A restart may be required for all changes to take effect.
+echo   To undo: option [5] restores the backed-up power plan and driver values
+echo   and sets SensrSvc to Manual, the Windows default.
 echo/
 echo   If brightness still dims, check:
 echo   %WHITE%*%RESET% GPU control panel (NVIDIA/AMD/Intel) for power saving
@@ -266,6 +281,7 @@ echo   %WHITE%[0]%RESET% Back to Main Menu
 echo/
 echo %CYAN%============================================================================%RESET%
 echo/
+set "gchoice="
 set /p "gchoice=Select an option [0-6]: "
 
 if "%gchoice%"=="1" (
@@ -294,7 +310,9 @@ echo/
 echo   Enter gamma value (0.5 = darker, 1.0 = normal, 2.0 = much brighter)
 echo   Recommended range: 1.0 to 1.5
 echo/
+set "GAMMA_VALUE="
 set /p "GAMMA_VALUE=Enter gamma value: "
+if not defined GAMMA_VALUE goto GAMMA_BOOST_MENU
 goto APPLY_GAMMA
 
 :APPLY_GAMMA
@@ -339,9 +357,13 @@ echo %CYAN%=====================================================================
 echo/
 echo   This will:
 echo   %WHITE%*%RESET% Reset gamma to default (1.0)
-echo   %WHITE%*%RESET% Re-enable adaptive brightness
+echo   %WHITE%*%RESET% Restore the power plan and display driver values that were backed up
+echo     before Quick Fix or an Advanced fix ran (admin). Without a backup, only
+echo     adaptive brightness is turned back on.
+echo   %WHITE%*%RESET% Set the Sensor Monitoring Service back to Manual (Windows default)
 echo   %WHITE%*%RESET% Restart display driver
 echo/
+set "confirm="
 set /p "confirm=Are you sure you want to reset? (Y/N): "
 if /i not "%confirm%"=="Y" goto MAIN_MENU
 
@@ -349,15 +371,16 @@ echo/
 echo %YELLOW%[1/3]%RESET% Resetting gamma to default...
 powershell -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action reset-gamma
 
-echo %YELLOW%[2/3]%RESET% Re-enabling adaptive brightness...
+echo %YELLOW%[2/3]%RESET% Restoring brightness settings...
 net session >nul 2>&1
 if %errorlevel% equ 0 (
-    reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" /v IsEnabled /t REG_DWORD /d 1 /f >nul 2>&1
-    sc config SensrSvc start= auto >nul 2>&1
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action restore-settings
+    REM Windows default for SensrSvc is Manual - trigger start - not Automatic
+    sc config SensrSvc start= demand >nul 2>&1
     net start SensrSvc >nul 2>&1
-    echo   %GREEN%[OK]%RESET% Adaptive brightness re-enabled
+    echo   %GREEN%[OK]%RESET% Sensor Monitoring Service set back to Manual ^(Windows default^)
 ) else (
-    echo   %YELLOW%[SKIP]%RESET% Requires admin to re-enable adaptive brightness
+    echo   %YELLOW%[SKIP]%RESET% Requires admin to restore brightness settings
 )
 
 echo %YELLOW%[3/3]%RESET% Restarting display driver...
@@ -405,6 +428,7 @@ echo   %WHITE%[0]%RESET% Back to Main Menu
 echo/
 echo %CYAN%============================================================================%RESET%
 echo/
+set "achoice="
 set /p "achoice=Select an option [0-7]: "
 
 if "%achoice%"=="1" goto DISABLE_DPST
@@ -428,13 +452,19 @@ if %errorlevel% neq 0 (
     goto ADVANCED_MENU
 )
 
-:: Multiple registry locations for different Intel driver versions
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v FeatureTestControl /t REG_DWORD /d 0x9240 /f >nul 2>&1
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v DPST_Enabled /t REG_DWORD /d 0 /f >nul 2>&1
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v FeatureTestControl /t REG_DWORD /d 0x9240 /f >nul 2>&1
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v DPST_Enabled /t REG_DWORD /d 0 /f >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action backup-settings
+if %errorlevel% neq 0 (
+    echo %RED%[ERROR]%RESET% Backup failed - no changes were made.
+    pause
+    goto ADVANCED_MENU
+)
 
-echo %GREEN%[OK]%RESET% Intel DPST disabled. Restart required for full effect.
+:: Sets only bit 0x10 of FeatureTestControl on every Intel adapter that has the
+:: value; the rest of the driver's feature bitmask is left as it was
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action disable-dpst
+
+echo/
+echo %YELLOW%NOTE:%RESET% Restart required for full effect. Main menu option [5] undoes this.
 echo/
 pause
 goto ADVANCED_MENU
@@ -450,10 +480,20 @@ if %errorlevel% neq 0 (
     goto ADVANCED_MENU
 )
 
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action backup-settings
+if %errorlevel% neq 0 (
+    echo %RED%[ERROR]%RESET% Backup failed - no changes were made.
+    pause
+    goto ADVANCED_MENU
+)
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v PP_VariBrightFeatureControl /t REG_DWORD /d 0 /f >nul 2>&1
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v PP_VariBrightFeatureControl /t REG_DWORD /d 0 /f >nul 2>&1
+:: Adapter 0001 only if it exists - reg add would otherwise create an orphan key
+reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" >nul 2>&1
+if %errorlevel% equ 0 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0001" /v PP_VariBrightFeatureControl /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo %GREEN%[OK]%RESET% AMD Vari-Bright disabled. Restart required for full effect.
+echo      Main menu option [5] undoes this.
 echo/
 echo %YELLOW%TIP:%RESET% Also disable Vari-Bright in AMD Radeon Software:
 echo      Gaming ^> Display ^> Vari-Bright ^> OFF
@@ -472,11 +512,19 @@ if %errorlevel% neq 0 (
     goto ADVANCED_MENU
 )
 
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_HELPER%" -Action backup-settings
+if %errorlevel% neq 0 (
+    echo %RED%[ERROR]%RESET% Backup failed - no changes were made.
+    pause
+    goto ADVANCED_MENU
+)
+
 :: Intel PSR
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v Disable_PSR /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v EnablePSR /t REG_DWORD /d 0 /f >nul 2>&1
 
 echo %GREEN%[OK]%RESET% Panel Self-Refresh disabled. Restart required.
+echo      Main menu option [5] undoes this.
 echo/
 pause
 goto ADVANCED_MENU
@@ -485,7 +533,14 @@ goto ADVANCED_MENU
 cls
 echo %CYAN%Resetting Display Adapter...%RESET%
 echo/
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo %RED%[ERROR]%RESET% Requires Administrator privileges.
+    pause
+    goto ADVANCED_MENU
+)
 echo This will briefly flash your screen.
+set "confirm="
 set /p "confirm=Continue? (Y/N): "
 if /i not "%confirm%"=="Y" goto ADVANCED_MENU
 
@@ -509,7 +564,15 @@ echo %CYAN%Exporting Diagnostic Report...%RESET%
 echo/
 
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd"') do set "TODAY=%%D"
-set "REPORT_FILE=%USERPROFILE%\Desktop\BrightnessReport_%TODAY%.txt"
+:: The visible Desktop may be redirected (e.g. OneDrive Known Folder Move), so ask
+:: Windows where it is instead of assuming %%USERPROFILE%%\Desktop.
+set "DESKTOP_DIR="
+for /f "delims=" %%D in ('powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"') do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+set "REPORT_FILE=%DESKTOP_DIR%\BrightnessReport_%TODAY%.txt"
+:: Delete an older copy so the existence check below proves this run wrote it
+if exist "%REPORT_FILE%" del /f /q "%REPORT_FILE%" >nul 2>&1
 
 (
 echo ============================================================================
@@ -524,8 +587,8 @@ echo/
 echo == DISPLAY ADAPTERS ==
 powershell -Command "Get-CimInstance Win32_VideoController | Format-List Name, DriverVersion, Status, AdapterRAM"
 echo/
-echo == ADAPTIVE BRIGHTNESS REGISTRY ==
-reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AdaptiveBrightness\Status" 2>nul
+echo == ADAPTIVE BRIGHTNESS - POWER PLAN SETTING ADAPTBRIGHT ==
+powercfg /qh SCHEME_CURRENT SUB_VIDEO ADAPTBRIGHT 2>nul
 echo/
 echo == POWER PLAN DISPLAY SETTINGS ==
 powercfg /query SCHEME_CURRENT 7516b95f-f776-4464-8c53-06167f40cc99
@@ -541,8 +604,17 @@ echo == MONITORS ==
 powershell -Command "Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorID -ErrorAction SilentlyContinue | ForEach-Object { $name = ($_.UserFriendlyName | Where-Object {$_ -ne 0} | ForEach-Object {[char]$_}) -join ''; Write-Output \"Monitor: $name\" }"
 ) > "%REPORT_FILE%"
 
+:: The path is echoed in quotes because a redirected Desktop folder name can
+:: contain parentheses or an ampersand, which would break an unquoted echo.
+if not exist "%REPORT_FILE%" (
+    echo %RED%[ERROR]%RESET% Could not write the report to:
+    echo      "%REPORT_FILE%"
+    echo/
+    pause
+    goto ADVANCED_MENU
+)
 echo %GREEN%[OK]%RESET% Report saved to:
-echo      %REPORT_FILE%
+echo      "%REPORT_FILE%"
 echo/
 pause
 goto ADVANCED_MENU
@@ -552,6 +624,6 @@ goto ADVANCED_MENU
 :: ============================================================================
 :EXIT
 echo/
-echo Goodbye^!
+echo Goodbye!
 endlocal
 exit /b 0

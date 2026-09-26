@@ -30,6 +30,22 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: HKCU and %UserProfile% belong to the account this elevated window runs as.
+:: If a standard user elevated with another admin's credentials, that is NOT the
+:: signed-in user, so warn before changing the wrong account's settings.
+set "CONSOLE_USER="
+for /f "delims=" %%u in ('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystem).UserName" 2^>nul') do set "CONSOLE_USER=%%u"
+if not defined CONSOLE_USER goto :user_ok
+if /i "%CONSOLE_USER%"=="%USERDOMAIN%\%USERNAME%" goto :user_ok
+echo WARNING: This window runs as "%USERDOMAIN%\%USERNAME%", but "%CONSOLE_USER%" is signed in.
+echo Per-user settings and files will be changed for "%USERNAME%" only, NOT for "%CONSOLE_USER%".
+echo To change them for "%CONSOLE_USER%", that account must be an administrator and run this script itself.
+echo/
+choice /c YN /m "Continue anyway"
+if %errorlevel% neq 1 exit /b 1
+echo/
+:user_ok
+
 echo This script will clean the following:
 echo/
 echo  - User temp folder (%%TEMP%%)
@@ -180,9 +196,10 @@ echo ===========================================================================
 echo  [12/12] Cleaning Recent Documents List...
 echo ============================================================================
 echo Location: %AppData%\Microsoft\Windows\Recent
+:: Only the recent-item shortcuts are deleted. The AutomaticDestinations and
+:: CustomDestinations subfolders are deliberately left alone: they hold the
+:: Quick Access pinned folders and pinned jump-list items, which never come back.
 del /q /f "%AppData%\Microsoft\Windows\Recent\*" 2>nul
-del /q /f "%AppData%\Microsoft\Windows\Recent\AutomaticDestinations\*" 2>nul
-del /q /f "%AppData%\Microsoft\Windows\Recent\CustomDestinations\*" 2>nul
 echo Done.
 
 echo/
@@ -191,22 +208,26 @@ echo  Running Windows Disk Cleanup (cleanmgr)...
 echo ============================================================================
 echo Setting up automated cleanup flags...
 
-:: Set up Disk Cleanup to run silently with predefined options
+:: Set up Disk Cleanup to run silently with predefined options.
+:: First clear StateFlags0100 from every handler, so only the handlers flagged
+:: below run. Older versions of this script also flagged handlers that are no
+:: longer wanted (see NOTE below), and those flags stay in the registry.
+for /f "delims=" %%k in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches" 2^>nul ^| find /i "HKEY_LOCAL_MACHINE"') do reg delete "%%k" /v StateFlags0100 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Active Setup Temp Folders" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Downloaded Program Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Internet Cache Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Old ChkDsk Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 :: NOTE: "Previous Installations" (Windows.old, needed to roll back a feature
-:: update) and "Recycle Bin" are deliberately NOT flagged here. They are not
-:: in the confirmation list at the top of this script, so wiping them silently
-:: would be unconsented data loss. Empty the Recycle Bin manually if you want.
+:: update), "Recycle Bin", "Update Cleanup" (superseded updates could no longer
+:: be uninstalled) and "System error memory dump files" / "System error minidump
+:: files" (MEMORY.DMP and minidumps, needed to diagnose blue screens) are
+:: deliberately NOT flagged here. They are not in the confirmation list at the
+:: top of this script, so wiping them silently would be unconsented data loss.
+:: Empty the Recycle Bin manually if you want.
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Setup Log Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error memory dump files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\System error minidump files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Temporary Setup Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Archive Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Error Reporting Queue Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Windows Upgrade Log Files" /v StateFlags0100 /t REG_DWORD /d 2 /f >nul 2>&1

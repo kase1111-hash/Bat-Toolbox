@@ -47,7 +47,16 @@ title [1/2] Disk Health Check - Scanning drives...
 :: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
 :: assumes US format and yields a "/"-containing, invalid path elsewhere).
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
-set "OUTFILE=%USERPROFILE%\Desktop\DiskHealth_%COMPUTERNAME%_%TODAY%.txt"
+:: Resolve the real Desktop folder. It can be redirected (e.g. OneDrive folder
+:: backup moves it to %USERPROFILE%\OneDrive\Desktop), so %USERPROFILE%\Desktop
+:: is not always the Desktop the user sees. If that path is missing or cannot
+:: be used, fall back to %USERPROFILE%\Desktop, then to the profile folder.
+set "DESKTOP_DIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%"
+set "OUTFILE=%DESKTOP_DIR%\DiskHealth_%COMPUTERNAME%_%TODAY%.txt"
 
 echo   Results will be saved to your Desktop.
 echo/
@@ -68,7 +77,9 @@ echo # Reads S.M.A.R.T. data, temperatures, wear levels
 echo/
 echo $ErrorActionPreference = 'SilentlyContinue'
 echo/
-echo $outFile = '%OUTFILE%'
+echo # Read the path from the environment: pasting it into a quoted literal
+echo # breaks this whole script when the profile path has an apostrophe.
+echo $outFile = $env:OUTFILE
 echo $report = @^(^)
 echo/
 echo function Add-Line^($text^) {
@@ -83,7 +94,7 @@ echo }
 echo/
 echo Add-Line "============================================================================"
 echo Add-Line " Disk Health Report - $env:COMPUTERNAME"
-echo Add-Line " Date: $^(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'^)"
+echo Add-Line " Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 echo Add-Line "============================================================================"
 echo Add-Line ""
 echo/
@@ -103,18 +114,18 @@ echo/
 echo foreach ^($disk in $disks^) {
 echo     $diskIndex++
 echo     Add-Line "============================================================================"
-echo     Add-ColorLine " DISK $diskIndex: $^($disk.FriendlyName^)" "Cyan"
+echo     Add-ColorLine " DISK ${diskIndex}: $($disk.FriendlyName)" "Cyan"
 echo     Add-Line "============================================================================"
 echo     Add-Line ""
 echo/
 echo     # Basic info
 echo     $sizeGB = [math]::Round^($disk.Size / 1GB, 1^)
-echo     Add-Line "  Model:          $^($disk.FriendlyName^)"
-echo     Add-Line "  Serial:         $^($disk.SerialNumber^)"
-echo     Add-Line "  Media Type:     $^($disk.MediaType^)"
-echo     Add-Line "  Bus Type:       $^($disk.BusType^)"
+echo     Add-Line "  Model:          $($disk.FriendlyName)"
+echo     Add-Line "  Serial:         $($disk.SerialNumber)"
+echo     Add-Line "  Media Type:     $($disk.MediaType)"
+echo     Add-Line "  Bus Type:       $($disk.BusType)"
 echo     Add-Line "  Size:           $sizeGB GB"
-echo     Add-Line "  Firmware:       $^($disk.FirmwareVersion^)"
+echo     Add-Line "  Firmware:       $($disk.FirmwareVersion)"
 echo     Add-Line ""
 echo/
 echo     # Health Status
@@ -129,7 +140,7 @@ echo             Add-ColorLine "  Health Status:  [WARN] Warning - Monitor close
 echo             $warningCount++
 echo         }
 echo         'Unhealthy' {
-echo             Add-ColorLine "  Health Status:  [CRITICAL] Unhealthy - Backup immediately^^!" "Red"
+echo             Add-ColorLine "  Health Status:  [CRITICAL] Unhealthy - Backup immediately^!" "Red"
 echo             $criticalCount++
 echo         }
 echo         default {
@@ -151,7 +162,7 @@ echo         if ^($reliability.Temperature^) {
 echo             $tempC = $reliability.Temperature
 echo             $tempColor = "Green"
 echo             $tempNote = ""
-echo             if ^($tempC -ge 55^) { $tempColor = "Red"; $tempNote = " [HOT^^!]"; $warningCount++ }
+echo             if ^($tempC -ge 55^) { $tempColor = "Red"; $tempNote = " [HOT^!]"; $warningCount++ }
 echo             elseif ^($tempC -ge 45^) { $tempColor = "Yellow"; $tempNote = " [Warm]" }
 echo             Add-ColorLine "  Temperature:    ${tempC}C${tempNote}" $tempColor
 echo         }
@@ -162,9 +173,9 @@ echo             $hours = $reliability.PowerOnHours
 echo             $days = [math]::Round^($hours / 24, 0^)
 echo             $years = [math]::Round^($hours / 8760, 1^)
 echo             $hourNote = ""
-echo             if ^($hours -ge 35040^) { $hourNote = " ^(${years} years - consider replacement planning^)" }
-echo             elseif ^($hours -ge 17520^) { $hourNote = " ^(${years} years^)" }
-echo             else { $hourNote = " ^($days days^)" }
+echo             if ^($hours -ge 35040^) { $hourNote = " (${years} years - consider replacement planning)" }
+echo             elseif ^($hours -ge 17520^) { $hourNote = " (${years} years)" }
+echo             else { $hourNote = " ($days days)" }
 echo             Add-Line "  Power-On Hours: $hours$hourNote"
 echo         }
 echo/
@@ -173,7 +184,7 @@ echo         if ^($reliability.Wear -ne $null^) {
 echo             $wear = $reliability.Wear
 echo             $wearColor = "Green"
 echo             $wearNote = ""
-echo             if ^($wear -ge 90^) { $wearColor = "Red"; $wearNote = " [REPLACE SOON^^!]"; $criticalCount++ }
+echo             if ^($wear -ge 90^) { $wearColor = "Red"; $wearNote = " [REPLACE SOON^!]"; $criticalCount++ }
 echo             elseif ^($wear -ge 70^) { $wearColor = "Yellow"; $wearNote = " [Monitor]"; $warningCount++ }
 echo             elseif ^($wear -ge 50^) { $wearColor = "Yellow"; $wearNote = " [Moderate]" }
 echo             Add-ColorLine "  Wear Level:     ${wear}%%${wearNote}" $wearColor
@@ -183,7 +194,7 @@ echo         # Read/Write errors
 echo         if ^($reliability.ReadErrorsTotal -ne $null^) {
 echo             $readErrors = $reliability.ReadErrorsTotal
 echo             if ^($readErrors -gt 0^) {
-echo                 Add-ColorLine "  Read Errors:    $readErrors [Check drive^^!]" "Red"
+echo                 Add-ColorLine "  Read Errors:    $readErrors [Check drive^!]" "Red"
 echo                 $warningCount++
 echo             } else {
 echo                 Add-Line "  Read Errors:    0"
@@ -192,7 +203,7 @@ echo         }
 echo         if ^($reliability.WriteErrorsTotal -ne $null^) {
 echo             $writeErrors = $reliability.WriteErrorsTotal
 echo             if ^($writeErrors -gt 0^) {
-echo                 Add-ColorLine "  Write Errors:   $writeErrors [Check drive^^!]" "Red"
+echo                 Add-ColorLine "  Write Errors:   $writeErrors [Check drive^!]" "Red"
 echo                 $warningCount++
 echo             } else {
 echo                 Add-Line "  Write Errors:   0"
@@ -201,20 +212,18 @@ echo         }
 echo/
 echo         # Power cycles
 echo         if ^($reliability.StartStopCycleCount^) {
-echo             Add-Line "  Power Cycles:   $^($reliability.StartStopCycleCount^)"
+echo             Add-Line "  Power Cycles:   $($reliability.StartStopCycleCount)"
 echo         }
 echo/
-echo         # Unexpected shutdowns
-echo         if ^($reliability.UnrecoverableReadErrorsTotal -ne $null^) {
-echo             $unrecoverable = $reliability.UnrecoverableReadErrorsTotal
-echo             if ^($unrecoverable -gt 0^) {
-echo                 Add-ColorLine "  Unrecoverable:  $unrecoverable read errors [DATA AT RISK]" "Red"
-echo                 $criticalCount++
-echo             }
+echo         # Uncorrected read/write errors ^(data loss^)
+echo         $uncorrected = [uint64]$reliability.ReadErrorsUncorrected + [uint64]$reliability.WriteErrorsUncorrected
+echo         if ^($uncorrected -gt 0^) {
+echo             Add-ColorLine "  Uncorrected:    $uncorrected read/write errors [DATA AT RISK]" "Red"
+echo             $criticalCount++
 echo         }
 echo     } else {
 echo         Add-Line "  --- S.M.A.R.T. data not available for this drive ---"
-echo         Add-Line "  ^(Some USB drives and virtual disks don't report S.M.A.R.T.^)"
+echo         Add-Line "  (Some USB drives and virtual disks don't report S.M.A.R.T.)"
 echo     }
 echo/
 echo     Add-Line ""
@@ -231,28 +240,28 @@ echo                 $freeGB = [math]::Round^($vol.SizeRemaining / 1GB, 1^)
 echo                 $usedPct = if ^($vol.Size -gt 0^) { [math]::Round^(^($vol.Size - $vol.SizeRemaining^) / $vol.Size * 100, 0^) } else { 0 }
 echo                 $spaceColor = "Green"
 echo                 $spaceNote = ""
-echo                 if ^($usedPct -ge 95^) { $spaceColor = "Red"; $spaceNote = " [CRITICAL - Nearly full^^!]"; $warningCount++ }
+echo                 if ^($usedPct -ge 95^) { $spaceColor = "Red"; $spaceNote = " [CRITICAL - Nearly full^!]"; $warningCount++ }
 echo                 elseif ^($usedPct -ge 90^) { $spaceColor = "Yellow"; $spaceNote = " [Low space]" }
-echo                 Add-ColorLine "  $^($vol.DriveLetter^): $^($vol.FileSystemLabel^) - ${freeGB}GB free / ${totalGB}GB ^(${usedPct}%% used^)${spaceNote}" $spaceColor
+echo                 Add-ColorLine "  $($vol.DriveLetter): $($vol.FileSystemLabel) - ${freeGB}GB free / ${totalGB}GB (${usedPct}%% used)${spaceNote}" $spaceColor
 echo             }
 echo         }
 echo     }
 echo     Add-Line ""
 echo }
 echo/
-echo # WMIC fallback for additional info
+echo # Additional info from WMI ^(Win32_DiskDrive^)
 echo Add-Line "============================================================================"
-echo Add-Line " Additional Drive Information ^(WMI^)"
+echo Add-Line " Additional Drive Information (WMI)"
 echo Add-Line "============================================================================"
 echo Add-Line ""
 echo/
 echo $wmiDisks = Get-WmiObject -Class Win32_DiskDrive
 echo foreach ^($d in $wmiDisks^) {
 echo     $sizeGB = [math]::Round^($d.Size / 1GB, 1^)
-echo     Add-Line "  $^($d.Model^)"
-echo     Add-Line "    Interface: $^($d.InterfaceType^)  |  Status: $^($d.Status^)  |  Size: ${sizeGB}GB"
+echo     Add-Line "  $($d.Model)"
+echo     Add-Line "    Interface: $($d.InterfaceType)  |  Status: $($d.Status)  |  Size: ${sizeGB}GB"
 echo     if ^($d.Status -ne 'OK'^) {
-echo         Add-ColorLine "    [WARNING] Drive status is '$^($d.Status^)' - not OK^^!" "Red"
+echo         Add-ColorLine "    [WARNING] Drive status is '$^($d.Status^)' - not OK^!" "Red"
 echo         $warningCount++
 echo     }
 echo     Add-Line ""
@@ -266,7 +275,7 @@ echo Add-Line ""
 echo Add-Line "  Disks scanned:  $diskIndex"
 echo/
 echo if ^($criticalCount -gt 0^) {
-echo     Add-ColorLine "  CRITICAL:       $criticalCount issues found - BACKUP NOW^^!" "Red"
+echo     Add-ColorLine "  CRITICAL:       $criticalCount issues found - BACKUP NOW^!" "Red"
 echo     Add-Line ""
 echo     Add-ColorLine "  RECOMMENDED ACTIONS:" "Red"
 echo     Add-ColorLine "    1. Back up all important data immediately" "Red"
@@ -288,10 +297,13 @@ echo/
 echo Add-Line ""
 echo/
 echo # Save report
-echo $report ^| Out-File -FilePath $outFile -Encoding UTF8
-echo/
 echo Write-Host ""
-echo Write-Host "Report saved to: $outFile" -ForegroundColor Green
+echo try {
+echo     $report ^| Out-File -FilePath $outFile -Encoding UTF8 -ErrorAction Stop
+echo     Write-Host "Report saved to: $outFile" -ForegroundColor Green
+echo } catch {
+echo     Write-Host "[ERROR] Could not save report to $outFile" -ForegroundColor Red
+echo }
 echo Write-Host ""
 ) > "%PSSCRIPT%"
 

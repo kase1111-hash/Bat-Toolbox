@@ -70,7 +70,7 @@ echo     switch ^($tcpSetting^) {
 echo         0 { $status = 'Default ^(DHCP-controlled^)'; $color = 'Yellow' }
 echo         1 { $status = 'Enabled'; $color = 'Red' }
 echo         2 { $status = 'Disabled'; $color = 'Green' }
-echo         default { $status = "Unknown ^($tcpSetting^)"; $color = 'Yellow' }
+echo         default { $status = "Unknown ($tcpSetting)"; $color = 'Yellow' }
 echo     }
 echo     Write-Host "  Adapter: " -NoNewline
 echo     Write-Host "$name" -ForegroundColor Cyan
@@ -89,7 +89,7 @@ echo   %CYAN%──────────────────────�
 echo/
 echo   %BOLD%%WHITE%What this script does:%RESET%
 echo/
-echo     %DIM%1.%RESET% Sets NetBIOS over TCP/IP to %BOLD%Disabled%RESET% on every IP-enabled adapter
+echo     %DIM%1.%RESET% Sets NetBIOS over TCP/IP to %BOLD%Disabled%RESET% on every network adapter, including disconnected ones
 echo     %DIM%2.%RESET% Stops and disables the %BOLD%NetBT%RESET% driver service (NetBIOS over TCP/IP)
 echo     %DIM%3.%RESET% Stops and disables the %BOLD%lmhosts%RESET% service (TCP/IP NetBIOS Helper)
 echo     %DIM%4.%RESET% Adds firewall rules blocking inbound UDP 137-138 and TCP 139
@@ -99,6 +99,7 @@ echo   WINS-based printer discovery, or very old applications that rely on
 echo   NetBIOS name resolution, do NOT disable NetBIOS.%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=  Disable NetBIOS on all adapters? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -135,14 +136,20 @@ echo         if ^($result.ReturnValue -eq 0^) {
 echo             Write-Host "Disabled" -ForegroundColor Green
 echo             $changed++
 echo         } else {
-echo             Write-Host "Failed ^(code $^($result.ReturnValue^)^)" -ForegroundColor Red
+echo             Write-Host "Failed (code $($result.ReturnValue))" -ForegroundColor Red
 echo             $failed++
 echo         }
 echo     }
 echo }
 echo Write-Host ""
-echo if ^($changed -gt 0^) { Write-Host "  $changed adapter^(s^) updated." -ForegroundColor Green }
-echo if ^($failed -gt 0^) { Write-Host "  $failed adapter^(s^) failed." -ForegroundColor Red }
+echo if ^($changed -gt 0^) { Write-Host "  $changed adapter(s) updated." -ForegroundColor Green }
+echo if ^($failed -gt 0^) { Write-Host "  $failed adapter(s) failed." -ForegroundColor Red }
+echo # Also disable NetBIOS on every NetBT interface, including adapters that are disconnected right now
+echo $ifCount = 0
+echo foreach ^($nbIf in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces' -ErrorAction SilentlyContinue^) {
+echo     try { Set-ItemProperty -Path $nbIf.PSPath -Name NetbiosOptions -Value 2 -Type DWord -ErrorAction Stop; $ifCount++ } catch { }
+echo }
+echo Write-Host "  NetbiosOptions set to Disabled on $ifCount NetBT interface(s)." -ForegroundColor Green
 ) > "%PSSCRIPT%"
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PSSCRIPT%"
@@ -208,7 +215,7 @@ netsh advfirewall firewall delete rule name="Block NetBIOS-SSN (TCP 139)" >nul 2
 :: Block inbound UDP 137 (NetBIOS Name Service)
 netsh advfirewall firewall add rule name="Block NetBIOS-NS (UDP 137)" dir=in action=block protocol=UDP localport=137 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 137 %DIM%(NetBIOS Name Service)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 137 %DIM%^(NetBIOS Name Service^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 137
 )
@@ -216,7 +223,7 @@ if %errorlevel% equ 0 (
 :: Block inbound UDP 138 (NetBIOS Datagram)
 netsh advfirewall firewall add rule name="Block NetBIOS-DGM (UDP 138)" dir=in action=block protocol=UDP localport=138 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 138 %DIM%(NetBIOS Datagram)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 138 %DIM%^(NetBIOS Datagram^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for UDP 138
 )
@@ -224,7 +231,7 @@ if %errorlevel% equ 0 (
 :: Block inbound TCP 139 (NetBIOS Session)
 netsh advfirewall firewall add rule name="Block NetBIOS-SSN (TCP 139)" dir=in action=block protocol=TCP localport=139 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound TCP 139 %DIM%(NetBIOS Session)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound TCP 139 %DIM%^(NetBIOS Session^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add rule for TCP 139
 )
@@ -251,10 +258,11 @@ echo/
 echo     %DIM%1.%RESET% Re-enable NetBIOS per adapter:
 echo        %DIM%PowerShell (admin):%RESET%
 echo        %CYAN%Get-WmiObject Win32_NetworkAdapterConfiguration ^| Where {$_.IPEnabled} ^| ForEach { $_.SetTcpipNetbios(0) }%RESET%
+echo        %CYAN%Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces' ^| ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 0 }%RESET%
 echo/
 echo     %DIM%2.%RESET% Re-enable services:
 echo        %CYAN%sc config NetBT start= system%RESET%
-echo        %CYAN%sc config lmhosts start= auto%RESET%
+echo        %CYAN%sc config lmhosts start= demand%RESET%
 echo        %CYAN%sc start lmhosts%RESET%
 echo/
 echo     %DIM%3.%RESET% Remove firewall rules:

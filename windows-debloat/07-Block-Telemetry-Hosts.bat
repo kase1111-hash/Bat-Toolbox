@@ -32,6 +32,11 @@ echo/
 echo NOTE: This provides an additional layer of protection beyond
 echo disabling services and scheduled tasks.
 echo/
+echo WARNING: Microsoft Defender detects these entries as SettingsModifier:Win32/HostsFileHijack.
+echo If Defender removes that "threat", it resets the hosts file to default and deletes
+echo ALL custom entries. To keep them, choose "Allow on device" for the alert in
+echo Windows Security. Your original file stays in hosts.backup either way.
+echo/
 echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
@@ -108,7 +113,22 @@ echo 0.0.0.0 adnexus.net
 echo 0.0.0.0 adnxs.com
 echo/
 echo # ============================================================================
-) >> "%HOSTS_FILE%"
+) >> "%HOSTS_FILE%" || goto :writeFailed
+
+:: Confirm the block really landed and was not reverted right away by Defender
+echo Verifying the hosts file...
+timeout /t 5 /nobreak >nul
+findstr /C:"# Windows 10 Debloat - Telemetry Blocks" "%HOSTS_FILE%" >nul 2>&1
+if %errorlevel% neq 0 goto :writeFailed
+goto :done
+
+:writeFailed
+echo/
+echo ERROR: The entries are not in the hosts file - the write was blocked or Defender removed them.
+echo Restore your original file from "%HOSTS_FILE%.backup" if needed.
+echo/
+pause
+exit /b 1
 
 :done
 echo/

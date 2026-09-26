@@ -36,7 +36,7 @@ if errorlevel 1 (
 :: --- Source check ---
 if not exist "%PS1_SOURCE%" (
     echo [FATAL] tripwire-watcher.ps1 not found next to this bat.
-    echo         Expected: %PS1_SOURCE%
+    echo         Expected: "%PS1_SOURCE%"
     pause
     exit /b 1
 )

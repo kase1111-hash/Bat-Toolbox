@@ -59,13 +59,13 @@ echo     $expandedPath = [Environment]::ExpandEnvironmentVariables^($app.Path^)
 echo     if ^(Test-Path $expandedPath^) {
 echo         $existingRule = Get-NetFirewallRule -DisplayName $app.Name -ErrorAction SilentlyContinue
 echo         if ^($existingRule^) {
-echo             Write-Host "Rule already exists: $^($app.Name^)" -ForegroundColor Yellow
+echo             Write-Host "Rule already exists: $($app.Name)" -ForegroundColor Yellow
 echo         } else {
-echo             Write-Host "Creating rule: $^($app.Name^)" -ForegroundColor Green
+echo             Write-Host "Creating rule: $($app.Name)" -ForegroundColor Green
 echo             New-NetFirewallRule -DisplayName $app.Name -Direction Outbound -Program $expandedPath -Action Block ^| Out-Null
 echo         }
 echo     } else {
-echo         Write-Host "File not found ^(skipping^): $expandedPath" -ForegroundColor Gray
+echo         Write-Host "File not found (skipping): $expandedPath" -ForegroundColor Gray
 echo     }
 echo }
 echo Write-Host ''

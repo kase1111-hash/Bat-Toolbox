@@ -169,18 +169,22 @@ if %errorlevel%==0 (
 )
 
 :: Method 2: Lenovo registry (Conservation Mode = 1 for ~60%, 0 for 100%)
+:: Only if the Lenovo power manager key already exists: reg add would otherwise
+:: create the key and "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\Lenovo\PWRMGRV\ConfKeys\Data" >nul 2>&1
+if %errorlevel% neq 0 goto LENOVO_FAIL
 if "%limit%"=="100" (
     reg add "HKLM\SOFTWARE\Lenovo\PWRMGRV\ConfKeys\Data" /v "ChargeMode" /t REG_DWORD /d 0 /f >nul 2>&1
 ) else (
     reg add "HKLM\SOFTWARE\Lenovo\PWRMGRV\ConfKeys\Data" /v "ChargeMode" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\Lenovo\PWRMGRV\ConfKeys\Data" /v "ChargeStopPercentage" /t REG_DWORD /d %limit% /f >nul 2>&1
 )
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via Lenovo registry%RESET%
-    echo %YELLOW%[NOTE] You may need to restart for changes to take effect.%RESET%
-    goto SET_SUCCESS
-)
+if %errorlevel% neq 0 goto LENOVO_FAIL
+echo %YELLOW%[UNVERIFIED] Value written for Lenovo software - open Lenovo Vantage to confirm the threshold.%RESET%
+echo %YELLOW%[NOTE] You may need to restart for changes to take effect.%RESET%
+goto SET_UNVERIFIED
 
+:LENOVO_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure Lenovo Vantage or Lenovo Energy Management is installed.%RESET%
 goto SET_FAIL
@@ -192,39 +196,45 @@ goto SET_FAIL
 echo %CYAN%[ASUS]%RESET% Applying charge limit via ASUS Battery Health Charging...
 echo/
 
-:: ASUS uses the ATKACPI WMI interface (device ID 0x00120057)
-:: Values: 0=Full(100%), 1=Balanced(80%), 2=Maximum Lifespan(60%)
-:: Newer ASUS models support custom thresholds via registry
+:: ASUS uses the ATKACPI WMI interface: DEVS(Device_ID, Control_status) with
+:: device ID 0x00120057 (RSOC). Control_status is the charge-stop percentage
+:: itself, and the method's out value is 1 on success.
+:: MyASUS offers 60% as its lowest limit, so 50% is raised to 60%.
 
 :: Method 1: ASUS ACPI WMI
-set "asusVal=0"
-if "%limit%"=="100" set "asusVal=0"
-if "%limit%"=="90" set "asusVal=90"
-if "%limit%"=="80" set "asusVal=80"
+set "asusVal=%limit%"
 if "%limit%"=="50" set "asusVal=60"
 
+:: The out parameter is read by value, not by name, so the check does not
+:: depend on how the firmware's WMI class names it.
 powershell -NoProfile -Command ^
     "$ns = 'root\WMI'; " ^
-    "$class = Get-CimClass -Namespace $ns -ClassName AsusAtkWmi_WMNB -ErrorAction SilentlyContinue; " ^
-    "if ($class) { " ^
-    "  $inst = Get-CimInstance -Namespace $ns -ClassName AsusAtkWmi_WMNB; " ^
-    "  $params = @{ Data = [uint32]%asusVal%; Device_ID = [uint32]0x00120057 }; " ^
-    "  Invoke-CimMethod -InputObject $inst -MethodName DEVS -Arguments $params -ErrorAction Stop; " ^
-    "  Write-Host 'WMI method succeeded'; exit 0 " ^
-    "} else { exit 1 }" >nul 2>&1
+    "$inst = Get-CimInstance -Namespace $ns -ClassName AsusAtkWmi_WMNB -ErrorAction SilentlyContinue | Select-Object -First 1; " ^
+    "if (-not $inst) { exit 1 }; " ^
+    "$r = Invoke-CimMethod -InputObject $inst -MethodName DEVS -Arguments @{ Device_ID = [uint32]0x00120057; Control_status = [uint32]%asusVal% } -ErrorAction Stop; " ^
+    "$out = @($r.PSObject.Properties | Where-Object { $_.Name -ne 'PSComputerName' } | ForEach-Object { $_.Value }); " ^
+    "if ($out -contains 1) { exit 0 } else { exit 1 }" >nul 2>&1
 if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via ASUS WMI%RESET%
+    echo %GREEN%[OK] Charge limit set to %asusVal%%% via ASUS WMI%RESET%
+    if "%limit%"=="50" echo %YELLOW%[NOTE] ASUS supports 60%% as its lowest limit, so 60%% was used instead of 50%%.%RESET%
+    echo %YELLOW%[NOTE] ASUS firmware may reset this after a reboot or sleep unless MyASUS keeps it.%RESET%
+    set "limit=%asusVal%"
     goto SET_SUCCESS
 )
 
 :: Method 2: ASUS registry for Battery Health Charging
-reg add "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via ASUS registry%RESET%
-    echo %YELLOW%[NOTE] Requires ASUS System Control Interface driver.%RESET%
-    goto SET_SUCCESS
-)
+:: Only if the key already exists: reg add would otherwise create it and
+:: "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" >nul 2>&1
+if %errorlevel% neq 0 goto ASUS_FAIL
+reg add "HKLM\SOFTWARE\ASUS\ASUS Battery Health Charging" /v "ChargeLimit" /t REG_DWORD /d %asusVal% /f >nul 2>&1
+if %errorlevel% neq 0 goto ASUS_FAIL
+echo %YELLOW%[UNVERIFIED] Value written for ASUS Battery Health Charging - open MyASUS to confirm the limit.%RESET%
+if "%limit%"=="50" echo %YELLOW%[NOTE] ASUS supports 60%% as its lowest limit, so 60%% was written instead of 50%%.%RESET%
+echo %YELLOW%[NOTE] Requires ASUS System Control Interface driver.%RESET%
+goto SET_UNVERIFIED
 
+:ASUS_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure ASUS System Control Interface or MyASUS is installed.%RESET%
 goto SET_FAIL
@@ -233,27 +243,21 @@ goto SET_FAIL
 :: MICROSOFT SURFACE
 :: ============================================================================
 :SET_SURFACE
-echo %CYAN%[Surface]%RESET% Applying charge limit via Surface UEFI...
+echo %CYAN%[Surface]%RESET% Surface Battery Limit is a firmware setting.
 echo/
 
-:: Surface devices use a registry key read by the firmware
-if "%limit%"=="100" (
-    reg delete "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "EnableBatteryLimit" /f >nul 2>&1
-    echo %GREEN%[OK] Battery limit disabled - will charge to 100%%%RESET%
-    goto SET_SUCCESS
-) else (
-    reg add "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "EnableBatteryLimit" /t REG_DWORD /d 1 /f >nul 2>&1
-    reg add "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "BatteryLimitPercent" /t REG_DWORD /d %limit% /f >nul 2>&1
-    if !errorlevel!==0 (
-        echo %GREEN%[OK] Charge limit set to %limit%%% via Surface registry%RESET%
-        echo %YELLOW%[NOTE] Surface UEFI Battery Limit feature must be supported.%RESET%
-        echo %YELLOW%[NOTE] Default Surface limit is 50%%. Custom values require newer firmware.%RESET%
-        goto SET_SUCCESS
-    )
-)
+:: The Surface firmware does not read any registry value, so this cannot be
+:: set from Windows. Remove the non-functional values that earlier versions
+:: of this script wrote (they did nothing).
+reg delete "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "EnableBatteryLimit" /f >nul 2>&1
+reg delete "HKLM\SOFTWARE\Microsoft\BatteryLimit" /v "BatteryLimitPercent" /f >nul 2>&1
 
-echo %RED%[FAIL] Could not set charge limit.%RESET%
-echo %YELLOW%Ensure you have the latest Surface UEFI firmware.%RESET%
+echo %YELLOW%It cannot be changed from Windows. To set it:%RESET%
+echo   1. Shut down, then hold Volume Up and press Power to open Surface UEFI
+echo   2. Boot configuration ^> Advanced options ^> Enable Battery Limit
+echo      ^(On = stop charging at 50%%, Off = charge to 100%%^)
+echo   3. Newer models ^(e.g. Surface Pro 11, Surface Laptop 7^): Surface app ^>
+echo      Battery ^& charging ^> Charging mode ^(Limit to 80%% / Charge to 100%%^)
 goto SET_FAIL
 
 :: ============================================================================
@@ -290,13 +294,25 @@ if %errorlevel%==0 (
 )
 
 :: Method 2: HP registry policy
-reg add "HKLM\SOFTWARE\Policies\HP\HP Battery Health Manager" /v "Setting" /t REG_DWORD /d 3 /f >nul 2>&1
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit configured via HP registry policy%RESET%
-    echo %YELLOW%[NOTE] Requires HP Battery Health Manager driver.%RESET%
-    goto SET_SUCCESS
+:: Only if the policy key already exists: reg add would otherwise create it and
+:: "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\Policies\HP\HP Battery Health Manager" >nul 2>&1
+if %errorlevel% neq 0 goto HP_FAIL
+if "%limit%"=="100" (
+    REM Undo: remove the limiting policy value. reg delete returns 1 when the
+    REM value is already absent, so its result is not treated as a failure.
+    reg delete "HKLM\SOFTWARE\Policies\HP\HP Battery Health Manager" /v "Setting" /f >nul 2>&1
+    echo %GREEN%[OK] HP Battery Health Manager registry policy value removed%RESET%
+    echo %YELLOW%[UNVERIFIED] Check Battery Health Manager in BIOS Setup ^(F10^) - it may still limit charging.%RESET%
+    goto SET_UNVERIFIED
 )
+reg add "HKLM\SOFTWARE\Policies\HP\HP Battery Health Manager" /v "Setting" /t REG_DWORD /d 3 /f >nul 2>&1
+if %errorlevel% neq 0 goto HP_FAIL
+echo %YELLOW%[UNVERIFIED] HP Battery Health Manager policy value written.%RESET%
+echo %YELLOW%[NOTE] Requires HP Battery Health Manager driver.%RESET%
+goto SET_UNVERIFIED
 
+:HP_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure HP Battery Health Manager is available in BIOS.%RESET%
 echo %YELLOW%Some HP models only support this via BIOS Setup (F10 at boot).%RESET%
@@ -312,6 +328,12 @@ echo/
 :: Dell uses SMBIOS/WMI through Dell Command | Power Manager
 :: The smbios-thermal-ctl interface or WMI class Dell_SMBIOSBatteryChargeConfiguration
 
+:: Dell's custom charge range: start 50-95%, stop 55-100%, stop - start >= 5.
+:: 50% is below Dell's minimum stop value, so it is raised to 55%.
+set "dellStop=%limit%"
+if "%limit%"=="50" set "dellStop=55"
+set /a "dellStart=dellStop-5"
+
 powershell -NoProfile -Command ^
     "$ns = 'root\dcim\sysman\batterychargeconfig'; " ^
     "$class = Get-CimClass -Namespace $ns -ClassName DCIM_BatteryChargeConfiguration -ErrorAction SilentlyContinue; " ^
@@ -321,28 +343,32 @@ powershell -NoProfile -Command ^
     "    $inst.ChargeMode = 'Standard'; " ^
     "  } else { " ^
     "    $inst.ChargeMode = 'Custom'; " ^
-    "    $inst.CustomChargeEnd = %limit%; " ^
-    "    $inst.CustomChargeStart = [Math]::Max(%limit% - 5, 40); " ^
+    "    $inst.CustomChargeEnd = %dellStop%; " ^
+    "    $inst.CustomChargeStart = %dellStart%; " ^
     "  } " ^
     "  Set-CimInstance $inst -ErrorAction Stop; " ^
     "  Write-Host 'WMI method succeeded'; exit 0 " ^
     "} else { exit 1 }" >nul 2>&1
 if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via Dell WMI%RESET%
+    echo %GREEN%[OK] Charge limit set to %dellStop%%% via Dell WMI%RESET%
+    if "%limit%"=="50" echo %YELLOW%[NOTE] Dell's lowest custom limit is 55%%, so 55%% was used instead of 50%%.%RESET%
+    set "limit=%dellStop%"
     goto SET_SUCCESS
 )
 
-:: Method 2: Dell CCTK (Dell Command | Configure)
-where cctk >nul 2>&1
-if %errorlevel%==0 (
+:: Method 2: Dell CCTK (Dell Command | Configure). The installer does not add
+:: cctk.exe to PATH, so :FIND_CCTK also checks its default install folders.
+call :FIND_CCTK
+if defined CCTK (
     if "%limit%"=="100" (
-        cctk --PrimaryBattChargeCfg=Standard >nul 2>&1
+        "!CCTK!" --PrimaryBattChargeCfg=Standard >nul 2>&1
     ) else (
-        set /a "startVal=%limit%-5"
-        cctk --PrimaryBattChargeCfg=Custom:!startVal!-%limit% >nul 2>&1
+        "!CCTK!" --PrimaryBattChargeCfg=Custom:!dellStart!-!dellStop! >nul 2>&1
     )
     if !errorlevel!==0 (
-        echo %GREEN%[OK] Charge limit set to %limit%%% via Dell CCTK%RESET%
+        echo %GREEN%[OK] Charge limit set to !dellStop!%% via Dell CCTK%RESET%
+        if "%limit%"=="50" echo %YELLOW%[NOTE] Dell's lowest custom limit is 55%%, so 55%% was used instead of 50%%.%RESET%
+        set "limit=!dellStop!"
         goto SET_SUCCESS
     )
 )
@@ -361,14 +387,17 @@ goto SET_FAIL
 echo %CYAN%[Huawei]%RESET% Applying charge limit via Huawei PC Manager...
 echo/
 
+:: Only if the Huawei PC Manager key already exists: reg add would otherwise
+:: create it and "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\Huawei\PCManager\BatteryLife" >nul 2>&1
+if %errorlevel% neq 0 goto HUAWEI_FAIL
 reg add "HKLM\SOFTWARE\Huawei\PCManager\BatteryLife" /v "SmartCharge" /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Huawei\PCManager\BatteryLife" /v "MaxChargeCapacity" /t REG_DWORD /d %limit% /f >nul 2>&1
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via Huawei registry%RESET%
-    echo %YELLOW%[NOTE] Requires Huawei PC Manager to be installed.%RESET%
-    goto SET_SUCCESS
-)
+if %errorlevel% neq 0 goto HUAWEI_FAIL
+echo %YELLOW%[UNVERIFIED] Value written for Huawei PC Manager - open PC Manager to confirm the limit.%RESET%
+goto SET_UNVERIFIED
 
+:HUAWEI_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure Huawei PC Manager is installed.%RESET%
 goto SET_FAIL
@@ -413,13 +442,16 @@ goto SET_FAIL
 echo %CYAN%[LG]%RESET% Applying charge limit via LG Control Center...
 echo/
 
+:: Only if the LG Control Center key already exists: reg add would otherwise
+:: create it and "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\LG\ControlCenter\BatteryCharge" >nul 2>&1
+if %errorlevel% neq 0 goto LG_FAIL
 reg add "HKLM\SOFTWARE\LG\ControlCenter\BatteryCharge" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via LG registry%RESET%
-    echo %YELLOW%[NOTE] Requires LG Control Center to be installed.%RESET%
-    goto SET_SUCCESS
-)
+if %errorlevel% neq 0 goto LG_FAIL
+echo %YELLOW%[UNVERIFIED] Value written for LG Control Center - open LG Control Center to confirm the limit.%RESET%
+goto SET_UNVERIFIED
 
+:LG_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure LG Control Center is installed.%RESET%
 goto SET_FAIL
@@ -457,13 +489,16 @@ goto SET_FAIL
 echo %CYAN%[Razer]%RESET% Applying charge limit via Razer Synapse...
 echo/
 
+:: Only if the Razer Synapse key already exists: reg add would otherwise
+:: create it and "succeed" without anything reading the value.
+reg query "HKLM\SOFTWARE\Razer\Synapse3\BatteryDesktop" >nul 2>&1
+if %errorlevel% neq 0 goto RAZER_FAIL
 reg add "HKLM\SOFTWARE\Razer\Synapse3\BatteryDesktop" /v "ChargeLimit" /t REG_DWORD /d %limit% /f >nul 2>&1
-if %errorlevel%==0 (
-    echo %GREEN%[OK] Charge limit set to %limit%%% via Razer registry%RESET%
-    echo %YELLOW%[NOTE] Requires Razer Synapse 3 to be installed.%RESET%
-    goto SET_SUCCESS
-)
+if %errorlevel% neq 0 goto RAZER_FAIL
+echo %YELLOW%[UNVERIFIED] Value written for Razer Synapse 3 - open Synapse to confirm the limit.%RESET%
+goto SET_UNVERIFIED
 
+:RAZER_FAIL
 echo %RED%[FAIL] Could not set charge limit.%RESET%
 echo %YELLOW%Ensure Razer Synapse 3 is installed and running.%RESET%
 goto SET_FAIL
@@ -556,6 +591,35 @@ echo/
 pause
 goto MAIN_MENU
 
+:: A registry value was written for manufacturer software, but nothing confirms
+:: that the software or firmware reads it, so do not claim the limit is active.
+:SET_UNVERIFIED
+echo/
+echo %CYAN%----------------------------------------------------------------------------%RESET%
+echo %YELLOW%  A setting was written, but the charge limit could not be verified.%RESET%
+echo %YELLOW%  Check your manufacturer app or BIOS to confirm it is active.%RESET%
+echo %CYAN%----------------------------------------------------------------------------%RESET%
+echo/
+if not "%limit%"=="100" (
+    echo %WHITE%How to undo:%RESET%
+    echo   Run this script again and select option [4] to restore 100%% charging,
+    echo   or change the setting in your manufacturer app.
+    echo/
+)
+pause
+goto MAIN_MENU
+
+:: ============================================================================
+:: FIND_CCTK - locate Dell Command | Configure's cctk.exe
+:: Sets CCTK to its full path, or leaves CCTK undefined if it is not installed.
+:: ============================================================================
+:FIND_CCTK
+set "CCTK="
+if exist "%ProgramFiles(x86)%\Dell\Command Configure\X86_64\cctk.exe" set "CCTK=%ProgramFiles(x86)%\Dell\Command Configure\X86_64\cctk.exe"
+if not defined CCTK if exist "%ProgramFiles%\Dell\Command Configure\X86_64\cctk.exe" set "CCTK=%ProgramFiles%\Dell\Command Configure\X86_64\cctk.exe"
+if not defined CCTK for /f "delims=" %%p in ('where cctk 2^>nul') do set "CCTK=%%p"
+exit /b 0
+
 :: ============================================================================
 :: BATTERY STATUS
 :: ============================================================================
@@ -567,8 +631,9 @@ echo %CYAN%=====================================================================
 echo/
 
 powershell -NoProfile -Command ^
-    "$bat = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue; " ^
+    "$bats = @(Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue); $bat = $bats | Select-Object -First 1; " ^
     "if ($bat) { " ^
+    "  if ($bats.Count -gt 1) { Write-Host ('  Batteries:         ' + $bats.Count + ' (details below are for the first; capacity is combined)') }; " ^
     "  Write-Host ('  Status:            ' + $bat.Status); " ^
     "  Write-Host ('  Charge:            ' + $bat.EstimatedChargeRemaining + '%%'); " ^
     "  $statusMap = @{1='Discharging';2='AC Power';3='Fully Charged';4='Low';5='Critical';6='Charging';7='Charging/High';8='Charging/Low';9='Charging/Critical';10='Undefined';11='Partially Charged'}; " ^
@@ -578,8 +643,8 @@ powershell -NoProfile -Command ^
     "  Write-Host ('  Name:              ' + $bat.Name); " ^
     "  Write-Host ('  Device ID:         ' + $bat.DeviceID); " ^
     "  Write-Host; " ^
-    "  $fullCap = (Get-CimInstance -Namespace root\WMI -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue).FullChargedCapacity; " ^
-    "  $designCap = (Get-CimInstance -Namespace root\WMI -ClassName BatteryStaticData -ErrorAction SilentlyContinue).DesignedCapacity; " ^
+    "  $fullCap = (Get-CimInstance -Namespace root\WMI -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Measure-Object -Property FullChargedCapacity -Sum -ErrorAction SilentlyContinue).Sum; " ^
+    "  $designCap = (Get-CimInstance -Namespace root\WMI -ClassName BatteryStaticData -ErrorAction SilentlyContinue | Measure-Object -Property DesignedCapacity -Sum -ErrorAction SilentlyContinue).Sum; " ^
     "  if ($fullCap -and $designCap -and $designCap -gt 0) { " ^
     "    $health = [math]::Round(($fullCap / $designCap) * 100, 1); " ^
     "    Write-Host ('  Design Capacity:   ' + $designCap + ' mWh'); " ^
@@ -636,13 +701,7 @@ if %errorlevel%==0 (
 )
 
 echo   Surface Battery Limit...
-reg query "HKLM\SOFTWARE\Microsoft\BatteryLimit" >nul 2>&1
-if %errorlevel%==0 (
-    echo     %GREEN%[FOUND] Microsoft Surface Battery Limit registry%RESET%
-    set "found=1"
-) else (
-    echo     %WHITE%[NOT FOUND]%RESET%
-)
+echo     %WHITE%[INFO] UEFI / Surface app setting - cannot be detected from Windows%RESET%
 
 echo   HP BIOS WMI...
 powershell -NoProfile -Command "Get-CimClass -Namespace root\HP\InstrumentedBIOS -ClassName HP_BIOSSetting -ErrorAction Stop" >nul 2>&1
@@ -663,9 +722,9 @@ if %errorlevel%==0 (
 )
 
 echo   Dell CCTK...
-where cctk >nul 2>&1
-if %errorlevel%==0 (
-    echo     %GREEN%[FOUND] Dell Command ^| Configure (CCTK)%RESET%
+call :FIND_CCTK
+if defined CCTK (
+    echo     %GREEN%[FOUND] Dell Command ^| Configure ^(CCTK^)%RESET%
     set "found=1"
 ) else (
     echo     %WHITE%[NOT FOUND]%RESET%

@@ -38,7 +38,16 @@ set "RESET=%ESC%[0m"
 :: Output file. Use PowerShell for a locale-independent date (%DATE% slicing
 :: assumes US format and yields a "/"-containing, invalid path elsewhere).
 for /f %%D in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "TODAY=%%D"
-set "OUTFILE=%USERPROFILE%\Desktop\TaskAudit_%COMPUTERNAME%_%TODAY%.txt"
+:: Resolve the real Desktop folder. It can be redirected (e.g. OneDrive folder
+:: backup moves it to %USERPROFILE%\OneDrive\Desktop), so %USERPROFILE%\Desktop
+:: is not always the Desktop the user sees. If that path is missing or cannot
+:: be used, fall back to %USERPROFILE%\Desktop, then to the profile folder.
+set "DESKTOP_DIR="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP_DIR=%%D"
+if not defined DESKTOP_DIR set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%\Desktop"
+if not exist "%DESKTOP_DIR%\" set "DESKTOP_DIR=%USERPROFILE%"
+set "OUTFILE=%DESKTOP_DIR%\TaskAudit_%COMPUTERNAME%_%TODAY%.txt"
 
 echo Scanning scheduled tasks and categorizing them...
 echo Results will be saved to your Desktop.
@@ -76,7 +85,7 @@ echo     '*RealPlayer*', '*CyberLink*', '*WildTangent*',
 echo     '*Overwolf*', '*Razer*Synapse*Telemetry*',
 echo     '*Opera*', '*Brave*Update*', '*Vivaldi*Update*',
 echo     '*Java*Update*', '*Apple*Update*', '*iTunes*',
-echo     '*DropboxUpdate*', '*OneDrive*Standalone*',
+echo     '*DropboxUpdate*',
 echo     '*Samsung*Magician*Update*', '*Corsair*Update*',
 echo     '*HP*Telemetry*', '*Dell*SupportAssist*Telemetry*',
 echo     '*LenovoVantage*Telemetry*', '*ASUS*Update*'
@@ -126,7 +135,7 @@ echo $optionalList = @^(^)
 echo $unknownList = @^(^)
 echo/
 echo foreach ^($task in $allTasks^) {
-echo     $fullName = "$^($task.TaskPath^)$^($task.TaskName^)"
+echo     $fullName = "$($task.TaskPath)$($task.TaskName)"
 echo     $state = $task.State.ToString^(^)
 echo     $category = 'UNKNOWN'
 echo/
@@ -195,19 +204,19 @@ echo Write-Host ""
 echo/
 echo $report += "============================================================================"
 echo $report += " Scheduled Task Audit - $env:COMPUTERNAME"
-echo $report += " Date: $^(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'^)"
+echo $report += " Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 echo $report += "============================================================================"
 echo $report += ""
 echo/
 echo # Telemetry
 echo $activeTelemetry = @^($telemetryList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeTelemetry.Count -gt 0^) {
-echo     Write-Host "[TELEMETRY] - Data collection tasks ^(can be disabled for privacy^):" -ForegroundColor Magenta
+echo     Write-Host "[TELEMETRY] - Data collection tasks (can be disabled for privacy):" -ForegroundColor Magenta
 echo     $report += "[TELEMETRY] - Data collection tasks:"
 echo     foreach ^($t in $activeTelemetry^) {
-echo         Write-Host "  [-] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Magenta
-echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [-] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
+echo         Write-Host "  [-] $($t.Name)  ($($t.State))" -ForegroundColor Magenta
+echo         Write-Host "      $($t.FullName)" -ForegroundColor DarkGray
+echo         $report += "  [-] $($t.Name)  ($($t.State))  -  $($t.FullName)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
@@ -216,12 +225,12 @@ echo/
 echo # Bloatware
 echo $activeBloatware = @^($bloatwareList ^| Where-Object { $_.State -ne 'Disabled' }^)
 echo if ^($activeBloatware.Count -gt 0^) {
-echo     Write-Host "[BLOATWARE] - Third-party junk tasks ^(recommended to disable^):" -ForegroundColor Red
+echo     Write-Host "[BLOATWARE] - Third-party junk tasks (recommended to disable):" -ForegroundColor Red
 echo     $report += "[BLOATWARE] - Third-party junk tasks:"
 echo     foreach ^($t in $activeBloatware^) {
-echo         Write-Host "  [-] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Red
-echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [-] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
+echo         Write-Host "  [-] $($t.Name)  ($($t.State))" -ForegroundColor Red
+echo         Write-Host "      $($t.FullName)" -ForegroundColor DarkGray
+echo         $report += "  [-] $($t.Name)  ($($t.State))  -  $($t.FullName)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
@@ -233,9 +242,23 @@ echo if ^($activeOptional.Count -gt 0^) {
 echo     Write-Host "[OPTIONAL] - Can be disabled if not using these features:" -ForegroundColor Yellow
 echo     $report += "[OPTIONAL] - Can be disabled if not needed:"
 echo     foreach ^($t in $activeOptional^) {
-echo         Write-Host "  [?] $^($t.Name^)  ^($^($t.State^)^)" -ForegroundColor Yellow
-echo         Write-Host "      $^($t.FullName^)" -ForegroundColor DarkGray
-echo         $report += "  [?] $^($t.Name^)  ^($^($t.State^)^)  -  $^($t.FullName^)"
+echo         Write-Host "  [?] $($t.Name)  ($($t.State))" -ForegroundColor Yellow
+echo         Write-Host "      $($t.FullName)" -ForegroundColor DarkGray
+echo         $report += "  [?] $($t.Name)  ($($t.State))  -  $($t.FullName)"
+echo     }
+echo     Write-Host ""
+echo     $report += ""
+echo }
+echo/
+echo # Unrecognized tasks outside \Microsoft\Windows\ ^(shown for review only^)
+echo $activeUnknown = @^($unknownList ^| Where-Object { $_.Category -eq 'UNKNOWN' -and $_.State -ne 'Disabled' }^)
+echo if ^($activeUnknown.Count -gt 0^) {
+echo     Write-Host "[UNKNOWN] - Unrecognized tasks (review manually, never auto-disabled):" -ForegroundColor White
+echo     $report += "[UNKNOWN] - Unrecognized tasks (review manually):"
+echo     foreach ^($t in $activeUnknown^) {
+echo         Write-Host "  [ ] $($t.Name)  ($($t.State))" -ForegroundColor White
+echo         Write-Host "      $($t.FullName)" -ForegroundColor DarkGray
+echo         $report += "  [ ] $($t.Name)  ($($t.State))  -  $($t.FullName)"
 echo     }
 echo     Write-Host ""
 echo     $report += ""
@@ -243,8 +266,8 @@ echo }
 echo/
 echo # Essential ^(brief^)
 echo $activeEssential = @^($essentialList ^| Where-Object { $_.State -ne 'Disabled' }^)
-echo Write-Host "[ESSENTIAL] - $^($activeEssential.Count^) core tasks ^(will not be touched^)" -ForegroundColor Green
-echo $report += "[ESSENTIAL] - $^($activeEssential.Count^) core tasks ^(not touched^)"
+echo Write-Host "[ESSENTIAL] - $($activeEssential.Count) core tasks (will not be touched)" -ForegroundColor Green
+echo $report += "[ESSENTIAL] - $($activeEssential.Count) core tasks (not touched)"
 echo Write-Host ""
 echo $report += ""
 echo/
@@ -262,20 +285,22 @@ echo Write-Host "===============================================================
 echo Write-Host " SUMMARY" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo Write-Host "  Total scheduled tasks:  $^($allTasks.Count^)"
-echo Write-Host "  Telemetry ^(active^):     $^($activeTelemetry.Count^)" -ForegroundColor Magenta
-echo Write-Host "  Bloatware ^(active^):     $^($activeBloatware.Count^)" -ForegroundColor Red
-echo Write-Host "  Optional ^(active^):      $^($activeOptional.Count^)" -ForegroundColor Yellow
-echo Write-Host "  Essential ^(active^):     $^($activeEssential.Count^)" -ForegroundColor Green
+echo Write-Host "  Total scheduled tasks:  $($allTasks.Count)"
+echo Write-Host "  Telemetry (active):     $($activeTelemetry.Count)" -ForegroundColor Magenta
+echo Write-Host "  Bloatware (active):     $($activeBloatware.Count)" -ForegroundColor Red
+echo Write-Host "  Optional (active):      $($activeOptional.Count)" -ForegroundColor Yellow
+echo Write-Host "  Essential (active):     $($activeEssential.Count)" -ForegroundColor Green
+echo Write-Host "  Unknown (active):       $($activeUnknown.Count)" -ForegroundColor White
 echo Write-Host "  Already disabled:       $disabledCount" -ForegroundColor DarkGray
 echo Write-Host ""
 echo $report += ""
 echo $report += "SUMMARY"
-echo $report += "  Total tasks:       $^($allTasks.Count^)"
-echo $report += "  Telemetry:         $^($activeTelemetry.Count^) active"
-echo $report += "  Bloatware:         $^($activeBloatware.Count^) active"
-echo $report += "  Optional:          $^($activeOptional.Count^) active"
-echo $report += "  Essential:         $^($activeEssential.Count^) active"
+echo $report += "  Total tasks:       $($allTasks.Count)"
+echo $report += "  Telemetry:         $($activeTelemetry.Count) active"
+echo $report += "  Bloatware:         $($activeBloatware.Count) active"
+echo $report += "  Optional:          $($activeOptional.Count) active"
+echo $report += "  Essential:         $($activeEssential.Count) active"
+echo $report += "  Unknown:           $($activeUnknown.Count) active"
 echo $report += "  Already disabled:  $disabledCount"
 echo $report += ""
 echo/
@@ -287,11 +312,11 @@ echo     if ^($answer -eq 'Y'^) {
 echo         foreach ^($t in $activeTelemetry^) {
 echo             try {
 echo                 Disable-ScheduledTask -TaskName $t.Name -TaskPath $t.Path -ErrorAction Stop ^| Out-Null
-echo                 Write-Host "  [OK] Disabled: $^($t.Name^)" -ForegroundColor Green
-echo                 $report += "  [DISABLED] $^($t.Name^)"
+echo                 Write-Host "  [OK] Disabled: $($t.Name)" -ForegroundColor Green
+echo                 $report += "  [DISABLED] $($t.Name)"
 echo             } catch {
-echo                 Write-Host "  [FAIL] Could not disable: $^($t.Name^) - $^($_.Exception.Message^)" -ForegroundColor Red
-echo                 $report += "  [FAILED] $^($t.Name^) - $^($_.Exception.Message^)"
+echo                 Write-Host "  [FAIL] Could not disable: $($t.Name) - $($_.Exception.Message)" -ForegroundColor Red
+echo                 $report += "  [FAILED] $($t.Name) - $($_.Exception.Message)"
 echo             }
 echo         }
 echo         Write-Host ""
@@ -306,11 +331,11 @@ echo     if ^($answer -eq 'Y'^) {
 echo         foreach ^($t in $activeBloatware^) {
 echo             try {
 echo                 Disable-ScheduledTask -TaskName $t.Name -TaskPath $t.Path -ErrorAction Stop ^| Out-Null
-echo                 Write-Host "  [OK] Disabled: $^($t.Name^)" -ForegroundColor Green
-echo                 $report += "  [DISABLED] $^($t.Name^)"
+echo                 Write-Host "  [OK] Disabled: $($t.Name)" -ForegroundColor Green
+echo                 $report += "  [DISABLED] $($t.Name)"
 echo             } catch {
-echo                 Write-Host "  [FAIL] Could not disable: $^($t.Name^) - $^($_.Exception.Message^)" -ForegroundColor Red
-echo                 $report += "  [FAILED] $^($t.Name^) - $^($_.Exception.Message^)"
+echo                 Write-Host "  [FAIL] Could not disable: $($t.Name) - $($_.Exception.Message)" -ForegroundColor Red
+echo                 $report += "  [FAILED] $($t.Name) - $($_.Exception.Message)"
 echo             }
 echo         }
 echo         Write-Host ""
@@ -324,15 +349,15 @@ echo     $answer = Read-Host "Review OPTIONAL tasks one by one? [Y/N]"
 echo     if ^($answer -eq 'Y'^) {
 echo         Write-Host ""
 echo         foreach ^($t in $activeOptional^) {
-echo             $choice = Read-Host "Disable '$^($t.Name^)'? [Y/N/Q to quit]"
+echo             $choice = Read-Host "Disable '$($t.Name)'? [Y/N/Q to quit]"
 echo             if ^($choice -eq 'Q'^) { break }
 echo             if ^($choice -eq 'Y'^) {
 echo                 try {
 echo                     Disable-ScheduledTask -TaskName $t.Name -TaskPath $t.Path -ErrorAction Stop ^| Out-Null
-echo                     Write-Host "  [OK] Disabled: $^($t.Name^)" -ForegroundColor Green
-echo                     $report += "  [DISABLED] $^($t.Name^)"
+echo                     Write-Host "  [OK] Disabled: $($t.Name)" -ForegroundColor Green
+echo                     $report += "  [DISABLED] $($t.Name)"
 echo                 } catch {
-echo                     Write-Host "  [FAIL] Could not disable: $^($t.Name^) - $^($_.Exception.Message^)" -ForegroundColor Red
+echo                     Write-Host "  [FAIL] Could not disable: $($t.Name) - $($_.Exception.Message)" -ForegroundColor Red
 echo                 }
 echo             }
 echo         }
@@ -340,15 +365,24 @@ echo         Write-Host ""
 echo     }
 echo }
 echo/
-echo # Save report
-echo $report ^| Out-File -FilePath '%OUTFILE%' -Encoding UTF8
+echo # Save report. Read the path from the environment: pasting it into a quoted
+echo # literal breaks this whole script when the profile path has an apostrophe.
+echo $reportSaved = $false
+echo try {
+echo     $report ^| Out-File -FilePath $env:OUTFILE -Encoding UTF8 -ErrorAction Stop
+echo     $reportSaved = $true
+echo } catch { }
 echo/
 echo Write-Host ""
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host " Scheduled Task Auditor Complete" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo Write-Host "Report saved to: %OUTFILE%" -ForegroundColor Green
+echo if ^($reportSaved^) {
+echo     Write-Host "Report saved to: $env:OUTFILE" -ForegroundColor Green
+echo } else {
+echo     Write-Host "[ERROR] Could not save report to $env:OUTFILE" -ForegroundColor Red
+echo }
 echo Write-Host ""
 echo Write-Host "To re-enable a disabled task:" -ForegroundColor Yellow
 echo Write-Host '  schtasks /Change /TN "\Path\TaskName" /Enable' -ForegroundColor Yellow

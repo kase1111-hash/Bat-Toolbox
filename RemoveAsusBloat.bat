@@ -47,15 +47,17 @@ echo  - ASUS Live Update
 echo  - ASUS Splendid
 echo  - ASUS GlideX / ScreenXpert / Link
 echo  - ASUS Software Manager and auto-reinstallers
-echo  - Bundled third-party software [McAfee, WinZip, Norton, etc.]
+echo  - Third-party: McAfee, Norton, WinZip, ExpressVPN, Dropbox, Spotify [optional - you choose]
 echo/
 echo %GREEN%What will be KEPT:%RESET%
 echo  - Hardware drivers [chipset, audio, network, etc.]
 echo  - BIOS/firmware components
+echo  - ASUS Optimization service and ASUS Keyboard Hotkeys app [Fn hotkeys / OSD]
 echo  - Basic system functionality
 echo/
 
 :: Confirm before proceeding
+set "confirm="
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -77,7 +79,14 @@ echo  - Gaming features [ROG specific]
 echo/
 echo %YELLOW%If you use RGB lighting or custom fan profiles, you may want to KEEP it.%RESET%
 echo/
+set "remove_armoury="
 set /p "remove_armoury=Remove Armoury Crate and ROG software? [Y/N]: "
+
+:: Ask about third-party software up front so later phases never pause for input
+echo/
+echo %YELLOW%Answer N if you installed or paid for any of these yourself.%RESET%
+set "remove_thirdparty="
+set /p "remove_thirdparty=Also uninstall McAfee, Norton, WinZip, ExpressVPN, Dropbox and Spotify if installed? [Y/N]: "
 
 echo/
 echo %CYAN%============================================================================%RESET%
@@ -87,32 +96,20 @@ echo/
 
 echo [1/8] Terminating ASUS processes...
 
+:: AsusOptimization.exe is deliberately not listed: it runs AsusHotkey.exe [Fn keys]
 for %%P in (
-    "ArmouryCrate.exe"
-    "ArmouryCrate.Service.exe"
-    "ArmouryCrateControlInterface.exe"
-    "ArmourySocketServer.exe"
-    "ArmourySwAgent.exe"
-    "AsusCertService.exe"
     "AsusDownloadAgent.exe"
     "AsusLinkNear.exe"
     "AsusLinkRemote.exe"
-    "AsusOptimization.exe"
     "AsusSoftwareManager.exe"
     "AsusSoftwareManagerAgent.exe"
     "AsusSystemAnalysis.exe"
     "AsusSystemDiagnosis.exe"
-    "AsusFanControlService.exe"
     "AsusUpdateCheck.exe"
     "AsusLiveUpdate.exe"
     "GameFirstUv.exe"
-    "GameSDK.exe"
     "GlideX.exe"
-    "LightingService.exe"
     "MyASUS.exe"
-    "P508PowerAgent.exe"
-    "P513PowerAgent.exe"
-    "ROGLiveService.exe"
     "ScreenXpertService.exe"
     "ScreenXpert.exe"
     "SonicStudio3.exe"
@@ -132,31 +129,42 @@ for %%P in (
 ) do (
     taskkill /f /im %%P >nul 2>&1
 )
+:: Armoury Crate / Aura / fan-control / ROG mouse power agent processes only when the user chose to remove them
+if /i "%remove_armoury%"=="Y" (
+    for %%P in (
+        "ArmouryCrate.exe"
+        "ArmouryCrate.Service.exe"
+        "ArmouryCrateControlInterface.exe"
+        "ArmourySocketServer.exe"
+        "ArmourySwAgent.exe"
+        "AsusCertService.exe"
+        "AsusFanControlService.exe"
+        "GameSDK.exe"
+        "LightingService.exe"
+        "P508PowerAgent.exe"
+        "P513PowerAgent.exe"
+        "ROGLiveService.exe"
+    ) do (
+        taskkill /f /im %%P >nul 2>&1
+    )
+)
 echo       %GREEN%- Process termination complete%RESET%
 
 :: Stop and disable ASUS services
+:: AsusOptimization is deliberately not listed: it runs AsusHotkey.exe [Fn keys]
 echo/
 echo [2/8] Stopping and disabling ASUS services...
 
 for %%S in (
-    "ArmouryCrateControlInterface"
-    "ArmouryCrateService"
-    "ArmourySocketServer"
     "AsusAppService"
-    "AsusCertService"
-    "AsusFanControlService"
     "AsusLinkNear"
     "AsusLinkRemote"
-    "AsusOptimization"
     "AsusSoftwareManager"
     "AsusSoftwareManagerAgent"
     "AsusSystemAnalysis"
     "AsusSystemDiagnosis"
     "AsusUpdateCheck"
-    "GameSDK Service"
-    "LightingService"
     "NahimicService"
-    "ROGLiveService"
     "ScreenXpertService"
     "asus"
     "asusm"
@@ -168,6 +176,26 @@ for %%S in (
         sc stop %%S >nul 2>&1
         sc config %%S start= disabled >nul 2>&1
         echo       %GREEN%- Disabled: %%~S%RESET%
+    )
+)
+:: Armoury Crate / Aura / fan-control services only when the user chose to remove them
+if /i "%remove_armoury%"=="Y" (
+    for %%S in (
+        "ArmouryCrateControlInterface"
+        "ArmouryCrateService"
+        "ArmourySocketServer"
+        "AsusCertService"
+        "AsusFanControlService"
+        "GameSDK Service"
+        "LightingService"
+        "ROGLiveService"
+    ) do (
+        sc query %%S >nul 2>&1
+        if not errorlevel 1060 (
+            sc stop %%S >nul 2>&1
+            sc config %%S start= disabled >nul 2>&1
+            echo       %GREEN%- Disabled: %%~S%RESET%
+        )
     )
 )
 
@@ -182,29 +210,38 @@ echo [3/8] Removing ASUS AppX packages...
 :: Create PowerShell script for AppX removal
 set "PSSCRIPT=%TEMP%\remove-asus.ps1"
 
+:: Armoury Crate / Aura / ROG Store apps are only targeted when the user chose to remove them.
+:: $keepPattern also shields them - and the ASUS Keyboard Hotkeys app [Fn keys on some
+:: notebooks], which is always kept - from the broad '*ASUS*' pattern.
+set "ARMOURY_PATTERNS="
+set "PS_KEEP_ARMOURY=$true"
+if /i "%remove_armoury%"=="Y" (
+    set "ARMOURY_PATTERNS=,'*Armoury*','*ROGLiveService*','*AuraCreator*','*GamingCenter*'"
+    set "PS_KEEP_ARMOURY=$false"
+)
+
 (
+echo $keepArmoury = %PS_KEEP_ARMOURY%
+echo $keepPattern = 'KeyboardHotkeys'
+echo if ^($keepArmoury^) { $keepPattern += '^|Armoury^|AuraCreator^|ROGLive^|GamingCenter' }
 echo $packages = @^(
 echo     '*ASUS*',
-echo     '*Armoury*',
 echo     '*MyASUS*',
-echo     '*ROGLiveService*',
-echo     '*AuraCreator*',
-echo     '*GamingCenter*',
 echo     '*GlideX*',
 echo     '*ScreenXpert*',
 echo     '*DeviceInformation*',
 echo     '*ASUSPCAssistant*',
-echo     '*ASUSProductRegistration*'
+echo     '*ASUSProductRegistration*'%ARMOURY_PATTERNS%
 echo ^)
 echo/
 echo foreach ^($pattern in $packages^) {
-echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
-echo         Write-Host "       - Removing: $^($_.Name^)"
+echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| Where-Object { $_.Name -notmatch $keepPattern } ^| ForEach-Object {
+echo         Write-Host "       - Removing: $($_.Name)"
 echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
 echo     }
 echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
-echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
-echo         Write-Host "       - Deprovisioning: $^($_.DisplayName^)"
+echo         Where-Object { $_.DisplayName -like $pattern -and $_.DisplayName -notmatch $keepPattern } ^| ForEach-Object {
+echo         Write-Host "       - Deprovisioning: $($_.DisplayName)"
 echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
 echo     }
 echo }
@@ -213,66 +250,44 @@ echo }
 powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
 del "%PSSCRIPT%" 2>nul
 
-:: Uninstall using WMIC and standard uninstallers
+:: Uninstall MSI-installed programs by name (see :UninstallMsiByName) and standard uninstallers
 echo/
 echo [4/8] Removing ASUS desktop applications...
 
 :: AI Suite removal
 echo       - Checking ASUS AI Suite...
-wmic product where "name like '%%AI Suite%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS AI%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "AI Suite|ASUS AI"
 
 :: GameFirst removal
 echo       - Checking ASUS GameFirst...
-wmic product where "name like '%%GameFirst%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "GameFirst"
 
 :: Sonic Studio / Radar / Nahimic removal
 echo       - Checking ASUS Sonic Studio/Radar/Nahimic...
-wmic product where "name like '%%Sonic Studio%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%Sonic Radar%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%Nahimic%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "Sonic Studio|Sonic Radar|Nahimic"
 
 :: GlideX / ScreenXpert removal
 echo       - Checking ASUS GlideX/ScreenXpert...
-wmic product where "name like '%%GlideX%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ScreenXpert%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "GlideX|ScreenXpert"
 
 :: Other ASUS software
 echo       - Checking other ASUS software...
-wmic product where "name like '%%ASUS GIFTBOX%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS WebStorage%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Live Update%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Splendid%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Smart Gesture%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS HiPost%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS InstantOn%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Instant Connect%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Product Register%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Console%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Tutor%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Screen Saver%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS USB Charger%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "ASUS GIFTBOX|ASUS WebStorage|ASUS Live Update|ASUS Splendid|ASUS Smart Gesture|ASUS HiPost|ASUS InstantOn|ASUS Instant Connect|ASUS Product Register|ASUS Console|ASUS Tutor|ASUS Screen Saver|ASUS USB Charger"
 
 :: ASUS Software Manager and update agents (re-installers)
+:: ASUS System Control Interface is deliberately NOT removed: it provides the
+:: ASUS Optimization service that runs AsusHotkey.exe [Fn keys]
 echo       - Removing ASUS Software Manager and update agents...
-wmic product where "name like '%%ASUS Software Manager%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%AsusSoftwareManager%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS Update%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%AsusDownloadAgent%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%ASUS System Control%%'" call uninstall /nointeractive >nul 2>&1
+call :UninstallMsiByName "ASUS Software Manager|AsusSoftwareManager|ASUS Update|AsusDownloadAgent"
 
 :: Armoury Crate removal (if user chose to remove it)
 if /i "%remove_armoury%"=="Y" (
     echo/
     echo       - Removing Armoury Crate and ROG software...
-    wmic product where "name like '%%Armoury Crate%%'" call uninstall /nointeractive >nul 2>&1
-    wmic product where "name like '%%ARMOURY CRATE%%'" call uninstall /nointeractive >nul 2>&1
-    wmic product where "name like '%%ROG%%'" call uninstall /nointeractive >nul 2>&1
-    wmic product where "name like '%%AURA%%'" call uninstall /nointeractive >nul 2>&1
-    wmic product where "name like '%%Aura Sync%%'" call uninstall /nointeractive >nul 2>&1
-    wmic product where "name like '%%LightingService%%'" call uninstall /nointeractive >nul 2>&1
+    REM ROG and AURA are matched as whole words so names like "Program..." or "Laura" are not hit
+    call :UninstallMsiByName "Armoury Crate|\bROG\b|\bAURA\b|Aura Sync|LightingService"
 
-    :: Remove Armoury Crate via its uninstaller
+    REM Remove Armoury Crate via its uninstaller
     if exist "%ProgramFiles%\ASUS\ARMOURY CRATE Lite Service\Uninstall.exe" (
         start /wait "" "%ProgramFiles%\ASUS\ARMOURY CRATE Lite Service\Uninstall.exe" /silent >nul 2>&1
     )
@@ -283,7 +298,7 @@ if /i "%remove_armoury%"=="Y" (
         start /wait "" "%ProgramFiles(x86)%\ASUS\ArmouryCrate\Uninstall.exe" /silent >nul 2>&1
     )
 
-    :: Armoury Crate Uninstall Tool (official ASUS removal tool location)
+    REM Armoury Crate Uninstall Tool (official ASUS removal tool location)
     if exist "%ProgramFiles%\ASUS\Armoury Crate Uninstall Tool\ArmouryCrateUninstallTool.exe" (
         start /wait "" "%ProgramFiles%\ASUS\Armoury Crate Uninstall Tool\ArmouryCrateUninstallTool.exe" /silent >nul 2>&1
     )
@@ -295,31 +310,17 @@ echo %CYAN% Phase 3: Removing Bundled Third-Party Bloatware%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
 
-echo [5/8] Removing bundled third-party software...
+:: Only when the user explicitly opted in - these may be user-installed or paid
+if /i not "%remove_thirdparty%"=="Y" (
+    echo [5/8] Skipping third-party software [you chose to keep it]
+    goto :SkipThirdParty
+)
 
-:: McAfee removal
-echo       - Checking McAfee...
-wmic product where "name like '%%McAfee%%'" call uninstall /nointeractive >nul 2>&1
+echo [5/8] Removing third-party software...
+echo       - Checking McAfee, WinZip, Norton, ExpressVPN, Dropbox, Spotify...
+call :UninstallMsiByName "McAfee|WinZip|Norton|ExpressVPN|Dropbox|Spotify"
 
-:: WinZip removal
-echo       - Checking WinZip...
-wmic product where "name like '%%WinZip%%'" call uninstall /nointeractive >nul 2>&1
-
-:: Norton removal
-echo       - Checking Norton...
-wmic product where "name like '%%Norton%%'" call uninstall /nointeractive >nul 2>&1
-
-:: ExpressVPN trial removal
-echo       - Checking ExpressVPN...
-wmic product where "name like '%%ExpressVPN%%'" call uninstall /nointeractive >nul 2>&1
-
-:: Dropbox
-echo       - Checking Dropbox...
-wmic product where "name like '%%Dropbox%%'" call uninstall /nointeractive >nul 2>&1
-
-:: Spotify (sometimes bundled)
-echo       - Checking Spotify...
-wmic product where "name like '%%Spotify%%'" call uninstall /nointeractive >nul 2>&1
+:SkipThirdParty
 
 echo/
 echo %CYAN%============================================================================%RESET%
@@ -331,46 +332,63 @@ echo [6/8] Removing ASUS scheduled tasks...
 
 :: Remove ASUS scheduled tasks by known names
 for %%T in (
-    "\ASUS\ArmouryCrate"
-    "\ASUS\ArmouryCrateLiteService"
-    "\ASUS\ArmourySocketServer"
     "\ASUS\ASUSLiveUpdate"
     "\ASUS\ASUSSoftwareManager"
     "\ASUS\ASUSSoftwareManagerAgent"
     "\ASUS\AsusSystemAnalysis"
     "\ASUS\AsusSystemDiagnosis"
-    "\ASUS\AsusCertService"
     "\ASUS\AsusUpdateCheck"
     "\ASUS\GlideX"
     "\ASUS\ScreenXpert"
-    "\ASUS\P508PowerAgent"
-    "\ASUS\P513PowerAgent"
     "\ASUS\MyASUS"
     "\ASUS\DeviceInformation"
-    "\ArmouryCrate"
     "\AsusUpdateCheck"
     "\AsusSoftwareManager"
     "\ASUSGiftBox"
-    "\ROG Live Service"
 ) do (
     schtasks /delete /tn "%%~T" /f >nul 2>&1
     if not errorlevel 1 (
         echo       %GREEN%- Removed task: %%~T%RESET%
     )
 )
+:: Armoury Crate / ROG / ROG mouse power agent tasks only when the user chose to remove them
+if /i "%remove_armoury%"=="Y" (
+    for %%T in (
+        "\ASUS\ArmouryCrate"
+        "\ASUS\ArmouryCrateLiteService"
+        "\ASUS\ArmourySocketServer"
+        "\ASUS\AsusCertService"
+        "\ASUS\P508PowerAgent"
+        "\ASUS\P513PowerAgent"
+        "\ArmouryCrate"
+        "\ROG Live Service"
+    ) do (
+        schtasks /delete /tn "%%~T" /f >nul 2>&1
+        if not errorlevel 1 (
+            echo       %GREEN%- Removed task: %%~T%RESET%
+        )
+    )
+)
 
-:: Catch any remaining ASUS tasks by scanning the task list
+:: Catch any remaining ASUS tasks by scanning the task list.
+:: $keepPattern always spares the "ASUS Optimization ..." task that starts AsusHotkey.exe
+:: [Fn keys], and spares Armoury Crate / Aura / fan / mouse power agent tasks when the user
+:: keeps Armoury Crate.
 set "PSTASKS=%TEMP%\remove-asus-tasks.ps1"
 (
+echo $keepArmoury = %PS_KEEP_ARMOURY%
+echo $keepPattern = 'Optimization^|Hotkey'
+echo if ^($keepArmoury^) { $keepPattern += '^|Armoury^|ROGLive^|Aura^|Lighting^|AsusCert^|FanControl^|GameSDK^|PowerAgent' }
 echo Get-ScheduledTask -ErrorAction SilentlyContinue ^| Where-Object {
-echo     $_.TaskName -match 'ASUS' -or
-echo     $_.TaskName -match 'Armoury' -or
-echo     $_.TaskName -match 'AsusUpdate' -or
-echo     $_.TaskName -match 'AsusSoftwareManager' -or
-echo     $_.TaskName -match 'ROGLive' -or
-echo     $_.TaskPath -match '\\ASUS\\'
+echo     ^($_.TaskName -match 'ASUS' -or
+echo      $_.TaskName -match 'Armoury' -or
+echo      $_.TaskName -match 'AsusUpdate' -or
+echo      $_.TaskName -match 'AsusSoftwareManager' -or
+echo      $_.TaskName -match 'ROGLive' -or
+echo      $_.TaskPath -match '\\ASUS\\'^) -and
+echo     $_.TaskName -notmatch $keepPattern
 echo } ^| ForEach-Object {
-echo     Write-Host "       - Removing task: $^($_.TaskPath^)$^($_.TaskName^)"
+echo     Write-Host "       - Removing task: $($_.TaskPath)$($_.TaskName)"
 echo     Unregister-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -Confirm:$false -ErrorAction SilentlyContinue
 echo }
 ) > "%PSTASKS%"
@@ -401,7 +419,7 @@ if exist "%ProgramFiles%\ASUS\AsusDownloadAgent" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\AsusDownloadAgent" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\AsusDownloadAgent" >nul 2>&1
-    echo       %GREEN%- Removed AsusDownloadAgent (x86) directory%RESET%
+    echo       %GREEN%- Removed AsusDownloadAgent ^(x86^) directory%RESET%
 )
 
 echo       - Removing ASUS Software Manager files...
@@ -411,7 +429,7 @@ if exist "%ProgramFiles%\ASUS\AsusSoftwareManager" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\AsusSoftwareManager" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\AsusSoftwareManager" >nul 2>&1
-    echo       %GREEN%- Removed AsusSoftwareManager (x86) directory%RESET%
+    echo       %GREEN%- Removed AsusSoftwareManager ^(x86^) directory%RESET%
 )
 
 :: Remove ASUS Live Update files
@@ -422,7 +440,7 @@ if exist "%ProgramFiles%\ASUS\ASUS Live Update" (
 )
 if exist "%ProgramFiles(x86)%\ASUS\ASUS Live Update" (
     rd /s /q "%ProgramFiles(x86)%\ASUS\ASUS Live Update" >nul 2>&1
-    echo       %GREEN%- Removed ASUS Live Update (x86) directory%RESET%
+    echo       %GREEN%- Removed ASUS Live Update ^(x86^) directory%RESET%
 )
 
 :: Remove ASUS installer staging/cache directories
@@ -453,7 +471,6 @@ reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ScreenXpert"
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUS Smart Gesture" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUSWebStorage" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUS AI Suite" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ArmouryCrate" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AsusSoftwareManager" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AsusDownloadAgent" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ASUSLiveUpdate" /f >nul 2>&1
@@ -462,6 +479,7 @@ reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "GlideX" /f >
 reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ScreenXpert" /f >nul 2>&1
 
 if /i "%remove_armoury%"=="Y" (
+    reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ArmouryCrate" /f >nul 2>&1
     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "LightingService" /f >nul 2>&1
     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ROGLiveService" /f >nul 2>&1
     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AuraSync" /f >nul 2>&1
@@ -535,13 +553,13 @@ echo %CYAN%=====================================================================
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%Removal process complete^!%RESET%
+echo %GREEN%Removal process complete^^!%RESET%
 echo/
 echo What was removed:
 echo  - ASUS utility software and services
 echo  - ASUS scheduled tasks and startup items
 echo  - ASUS auto-reinstallers and update agents
-echo  - Bundled third-party software [McAfee, WinZip, etc.]
+if /i "%remove_thirdparty%"=="Y" echo  - Third-party software [McAfee, Norton, WinZip, ExpressVPN, Dropbox, Spotify]
 if /i "%remove_armoury%"=="Y" (
     echo  - Armoury Crate, Aura Sync, and ROG software
 ) else (
@@ -551,6 +569,7 @@ echo/
 echo What remains:
 echo  - Hardware drivers [chipset, audio, network, Bluetooth]
 echo  - BIOS/UEFI components
+echo  - ASUS Optimization service and Fn hotkey support
 echo  - Basic Windows functionality
 echo/
 
@@ -563,6 +582,7 @@ if /i "%remove_armoury%"=="Y" (
 echo A reboot is recommended to complete the removal process.
 echo/
 
+set "reboot="
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     echo/
@@ -577,11 +597,22 @@ exit /b 0
 :: ============================================================================
 :: Subroutine: CleanFolder
 :: ============================================================================
+:: Deliberately uses no parenthesized blocks: the folder argument is often a
+:: Program Files x86 path, and its closing parenthesis would end a block early
+:: and abort the whole script with a syntax error.
 :CleanFolder
-if exist "%~1" (
-    rd /s /q "%~1" >nul 2>&1
-    if not errorlevel 1 (
-        echo       %GREEN%- Removed: %~1%RESET%
-    )
-)
+if not exist "%~1" goto :eof
+rd /s /q "%~1" >nul 2>&1
+if exist "%~1" goto :eof
+echo       %GREEN%- Removed: "%~1"%RESET%
 goto :eof
+
+:: ============================================================================
+:: Subroutine: UninstallMsiByName
+:: ============================================================================
+:UninstallMsiByName
+REM %~1 = .NET regex matched case-insensitively against installed MSI product names.
+REM Replaces "wmic product ... call uninstall" (WMIC is not available on Windows 11 24H2+).
+set "MSI_NAME_REGEX=%~1"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$rx = $env:MSI_NAME_REGEX; $roots = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'; Get-ItemProperty -Path $roots -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -and $_.DisplayName -match $rx -and $_.WindowsInstaller -eq 1 -and $_.PSChildName -match '^\{[0-9A-Fa-f-]{36}\}$' } | Sort-Object PSChildName -Unique | ForEach-Object { $proc = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/x', $_.PSChildName, '/qn', '/norestart') -Wait -PassThru; if (@(0,1641,3010) -contains $proc.ExitCode) { Write-Host ('        Uninstalled: ' + $_.DisplayName) } else { Write-Host ('        Could not uninstall: ' + $_.DisplayName + ' [msiexec exit ' + $proc.ExitCode + ']') -ForegroundColor Yellow } }"
+exit /b 0

@@ -52,8 +52,12 @@ echo/
 echo %YELLOW%NOTE: Windows Defender will automatically enable itself after McAfee%RESET%
 echo %YELLOW%      is removed. Your system will remain protected.%RESET%
 echo/
+echo %YELLOW%NOTE: McAfee's own uninstaller runs first - follow its window if one opens.%RESET%
+echo %YELLOW%      The forced cleanup only runs once no McAfee product is installed.%RESET%
+echo/
 
 :: Confirm before proceeding
+set "confirm="
 set /p "confirm=Do you want to continue? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -66,11 +70,96 @@ set "success=0"
 
 echo/
 echo %CYAN%============================================================================%RESET%
-echo %CYAN% Phase 1: Stopping McAfee Processes and Services%RESET%
+echo %CYAN% Phase 1: Running McAfee Uninstallers%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
 
-echo [1/8] Terminating McAfee processes...
+echo [1/8] Running McAfee's own registered uninstallers...
+
+:: McAfee LiveSafe / Total Protection, WebAdvisor and True Key are not MSI
+:: packages, so Win32_Product (the old "wmic product ... call uninstall") never
+:: saw them. Run the uninstaller each McAfee product registered in Apps and
+:: Features instead (msiexec /x for the MSI ones), then check what is left.
+:: The forced service, driver, registry and file cleanup below only runs once
+:: no McAfee product is registered as installed, because force-deleting a live,
+:: self-protected McAfee install leaves it half-removed and unrepairable.
+set "PSUNINSTALL=%TEMP%\mcafee-uninstall.ps1"
+(
+echo # Exit code 0 = no McAfee product is registered as installed, 1 = some remain.
+echo $keys = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+echo function Get-McAfeeEntries {
+echo     Get-ItemProperty -Path $keys -ErrorAction SilentlyContinue ^|
+echo         Where-Object { $_.DisplayName -match 'McAfee^|True ?Key^|WebAdvisor^|SiteAdvisor' -and $_.UninstallString }
+echo }
+echo foreach ^($e in @^(Get-McAfeeEntries^)^) {
+echo     # Skip entries already removed by an earlier uninstaller in this loop
+echo     if ^(-not ^(Test-Path -LiteralPath $e.PSPath^)^) { continue }
+echo     $cmd = if ^($e.QuietUninstallString^) { $e.QuietUninstallString } else { $e.UninstallString }
+echo     # MSI: uninstall silently. Otherwise quote an unquoted "C:\Program Files\...exe" path for cmd.
+echo     $q = [string][char]34
+echo     if ^($cmd -match 'msiexec' -and $e.PSChildName -match '^^\{[0-9A-Fa-f-]{36}\}$'^) { $cmd = "msiexec.exe /x $($e.PSChildName) /qn /norestart" } elseif ^(-not $cmd.TrimStart^(^).StartsWith^($q^) -and $cmd -match '^^\s*^(.+?\.exe^)^(.*^)$'^) { $cmd = $q + $Matches[1] + $q + $Matches[2] }
+echo     Write-Host "       - Uninstalling: $($e.DisplayName) (follow the McAfee window if one opens)"
+echo     Start-Process -FilePath $env:ComSpec -ArgumentList "/d /s /c `"$cmd`"" -Wait
+echo }
+echo $left = @^(Get-McAfeeEntries^)
+echo foreach ^($e in $left^) { Write-Host "       - Still installed: $($e.DisplayName)" -ForegroundColor Red }
+echo if ^($left.Count -gt 0^) { exit 1 }
+echo exit 0
+) > "%PSUNINSTALL%"
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PSUNINSTALL%" 2>nul
+if %errorlevel% neq 0 (
+    del "%PSUNINSTALL%" 2>nul
+    echo/
+    echo       %RED%- McAfee is still installed, so the forced cleanup was NOT run.%RESET%
+    echo       %YELLOW%  If the McAfee uninstaller asked for a restart, restart and run this script again.%RESET%
+    echo       %YELLOW%  Otherwise uninstall it from Settings ^> Apps, or with McAfee's MCPR removal%RESET%
+    echo       %YELLOW%  tool, then run this script again to remove the leftovers.%RESET%
+    echo/
+    pause
+    exit /b 1
+)
+del "%PSUNINSTALL%" 2>nul
+echo       %GREEN%- No McAfee product is registered as installed any more%RESET%
+set /a success+=1
+
+echo/
+echo [2/8] Removing McAfee AppX packages...
+
+:: Remove UWP/Store versions
+set "PSSCRIPT=%TEMP%\remove-mcafee.ps1"
+
+(
+echo $packages = @^(
+echo     '*McAfee*',
+echo     '*mcafee*',
+echo     '*TrueKey*'
+echo ^)
+echo/
+echo foreach ^($pattern in $packages^) {
+echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
+echo         Write-Host "       - Removing: $($_.Name)"
+echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
+echo     }
+echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
+echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
+echo         Write-Host "       - Deprovisioning: $($_.DisplayName)"
+echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
+echo     }
+echo }
+) > "%PSSCRIPT%"
+
+powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
+del "%PSSCRIPT%" 2>nul
+set /a success+=1
+
+echo/
+echo %CYAN%============================================================================%RESET%
+echo %CYAN% Phase 2: Stopping Leftover McAfee Processes and Services%RESET%
+echo %CYAN%============================================================================%RESET%
+echo/
+
+echo [3/8] Terminating McAfee processes...
 
 for %%P in (
     "McCSPServiceHost.exe"
@@ -118,7 +207,7 @@ echo       %GREEN%- Process termination complete%RESET%
 set /a success+=1
 
 echo/
-echo [2/8] Stopping and disabling McAfee services...
+echo [4/8] Stopping and disabling McAfee services...
 
 for %%S in (
     "McAfee SiteAdvisor Service"
@@ -127,7 +216,6 @@ for %%S in (
     "mccspsvc"
     "McNaiAnn"
     "McNASvc"
-    "mcods"
     "McODS"
     "McOobeSv2"
     "McProxy"
@@ -156,64 +244,14 @@ for %%S in (
     if not errorlevel 1060 (
         sc stop %%S >nul 2>&1
         sc config %%S start= disabled >nul 2>&1
-        echo       %GREEN%- Disabled service: %%~S%RESET%
-        set /a success+=1
+        if errorlevel 1 (
+            echo       %RED%- Could not disable %%~S ^(access denied or blocked by McAfee self-protection^)%RESET%
+        ) else (
+            echo       %GREEN%- Disabled service: %%~S%RESET%
+            set /a success+=1
+        )
     )
 )
-
-echo/
-echo %CYAN%============================================================================%RESET%
-echo %CYAN% Phase 2: Running McAfee Uninstallers%RESET%
-echo %CYAN%============================================================================%RESET%
-echo/
-
-echo [3/8] Running McAfee built-in uninstallers...
-
-:: Try WMIC uninstall for all McAfee products
-echo       - Uninstalling McAfee LiveSafe / Total Protection...
-wmic product where "name like '%%McAfee%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%mcafee%%'" call uninstall /nointeractive >nul 2>&1
-
-echo       - Uninstalling McAfee WebAdvisor...
-wmic product where "name like '%%WebAdvisor%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%SiteAdvisor%%'" call uninstall /nointeractive >nul 2>&1
-
-echo       - Uninstalling McAfee True Key...
-wmic product where "name like '%%True Key%%'" call uninstall /nointeractive >nul 2>&1
-wmic product where "name like '%%TrueKey%%'" call uninstall /nointeractive >nul 2>&1
-
-echo       %GREEN%- WMIC uninstall pass complete%RESET%
-set /a success+=1
-
-echo/
-echo [4/8] Removing McAfee AppX packages...
-
-:: Remove UWP/Store versions
-set "PSSCRIPT=%TEMP%\remove-mcafee.ps1"
-
-(
-echo $packages = @^(
-echo     '*McAfee*',
-echo     '*mcafee*',
-echo     '*TrueKey*'
-echo ^)
-echo/
-echo foreach ^($pattern in $packages^) {
-echo     Get-AppxPackage -AllUsers -Name $pattern -ErrorAction SilentlyContinue ^| ForEach-Object {
-echo         Write-Host "       - Removing: $^($_.Name^)"
-echo         Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
-echo     }
-echo     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue ^|
-echo         Where-Object DisplayName -Like $pattern ^| ForEach-Object {
-echo         Write-Host "       - Deprovisioning: $^($_.DisplayName^)"
-echo         Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue ^| Out-Null
-echo     }
-echo }
-) > "%PSSCRIPT%"
-
-powershell -ExecutionPolicy Bypass -File "%PSSCRIPT%" 2>nul
-del "%PSSCRIPT%" 2>nul
-set /a success+=1
 
 echo/
 echo %CYAN%============================================================================%RESET%
@@ -243,8 +281,12 @@ for %%D in (
     if not errorlevel 1060 (
         sc stop %%D >nul 2>&1
         sc config %%D start= disabled >nul 2>&1
-        echo       %GREEN%- Disabled driver/service: %%~D%RESET%
-        set /a success+=1
+        if errorlevel 1 (
+            echo       %RED%- Could not disable %%~D ^(access denied or blocked by McAfee self-protection^)%RESET%
+        ) else (
+            echo       %GREEN%- Disabled driver/service: %%~D%RESET%
+            set /a success+=1
+        )
     )
 )
 
@@ -325,7 +367,7 @@ echo     $_.TaskName -match 'mcafee' -or
 echo     $_.TaskName -match 'TrueKey' -or
 echo     $_.TaskPath -match '\\McAfee\\'
 echo } ^| ForEach-Object {
-echo     Write-Host "       - Removing task: $^($_.TaskPath^)$^($_.TaskName^)"
+echo     Write-Host "       - Removing task: $($_.TaskPath)$($_.TaskName)"
 echo     Unregister-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -Confirm:$false -ErrorAction SilentlyContinue
 echo }
 ) > "%PSTASKS%"
@@ -363,11 +405,12 @@ reg delete "HKLM\SOFTWARE\McAfee" /f >nul 2>&1
 reg delete "HKLM\SOFTWARE\WOW6432Node\McAfee" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\McAfee" /f >nul 2>&1
 
-:: Remove McAfee from Windows Security Center registration
+:: Remove stale McAfee registrations from Windows Security Center.
+:: Windows 10/11 keep third-party antivirus/firewall registrations in WMI
+:: root\SecurityCenter2 (the old "Security Center\Monitoring" registry keys are
+:: Windows XP-era and unused). Only entries whose name contains McAfee are removed.
 echo       - Removing Security Center registration...
-reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfee" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfeeAntiSpyware" /f >nul 2>&1
-reg delete "HKLM\SOFTWARE\Microsoft\Security Center\Monitoring\McAfeeFirewall" /f >nul 2>&1
+powershell -NoProfile -Command "foreach ($c in 'AntiVirusProduct','AntiSpywareProduct','FirewallProduct') { Get-CimInstance -Namespace root/SecurityCenter2 -ClassName $c -ErrorAction SilentlyContinue | Where-Object { $_.displayName -like '*McAfee*' } | Remove-CimInstance -ErrorAction SilentlyContinue }" >nul 2>&1
 
 :: Remove McAfee browser extension policies.
 :: IMPORTANT: Only the McAfee WebAdvisor entries are removed - the whole
@@ -456,15 +499,22 @@ sc start WinDefend >nul 2>&1
 sc config WdNisSvc start= auto >nul 2>&1
 sc start WdNisSvc >nul 2>&1
 
-echo       %GREEN%- Windows Defender re-enabled%RESET%
-set /a success+=1
+:: WinDefend is a protected service, so the sc calls above can be denied.
+:: Report what Defender actually says instead of assuming it worked.
+powershell -NoProfile -Command "try { if ((Get-MpComputerStatus -ErrorAction Stop).AntivirusEnabled) { exit 0 } } catch {} ; exit 1" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo       %YELLOW%- Windows Defender is not active yet - restart, then check Windows Security%RESET%
+) else (
+    echo       %GREEN%- Windows Defender is active%RESET%
+    set /a success+=1
+)
 
 echo/
 echo %CYAN%============================================================================%RESET%
 echo %CYAN% Summary%RESET%
 echo %CYAN%============================================================================%RESET%
 echo/
-echo %GREEN%Removal process complete^!%RESET%
+echo %GREEN%Removal process complete^^!%RESET%
 echo Successful operations: %success%
 echo/
 echo What was removed:
@@ -478,11 +528,12 @@ echo  - McAfee context menu handlers
 echo  - McAfee registry entries and leftover files
 echo/
 echo What was restored:
-echo  - Windows Defender (re-enabled automatically)
+echo  - Windows Defender (re-enable requested - see Phase 7 above for its state)
 echo  - Windows Firewall
 echo/
-echo %YELLOW%NOTE: Windows Defender is now your active antivirus protection.%RESET%
-echo %YELLOW%      Open Windows Security to verify it is running properly.%RESET%
+echo %YELLOW%NOTE: After the restart, open Windows Security and confirm Windows Defender%RESET%
+echo %YELLOW%      is on. If McAfee is still listed there as your antivirus, run%RESET%
+echo %YELLOW%      McAfee's MCPR removal tool.%RESET%
 echo/
 echo %YELLOW%NOTE: Some OEM recovery partitions may reinstall McAfee after a%RESET%
 echo %YELLOW%      Windows reset. This script can be run again if needed.%RESET%
@@ -490,6 +541,7 @@ echo/
 echo A reboot is recommended to complete the removal process.
 echo/
 
+set "reboot="
 set /p "reboot=Would you like to restart now? [Y/N]: "
 if /i "%reboot%"=="Y" (
     echo/
@@ -505,11 +557,12 @@ exit /b 0
 :: Subroutine: CleanFolder
 :: ============================================================================
 :CleanFolder
-if exist "%~1" (
-    rd /s /q "%~1" >nul 2>&1
-    if not errorlevel 1 (
-        echo       %GREEN%- Removed: %~1%RESET%
-        set /a success+=1
-    )
-)
+:: No ( ) block here: the folder argument is often "C:\Program Files (x86)\..."
+:: and its ")" would close a block early and abort the whole script. RD does
+:: not reset ERRORLEVEL on success, so check whether the folder is really gone.
+if not exist "%~1\" goto :eof
+rd /s /q "%~1" >nul 2>&1
+if exist "%~1\" goto :eof
+echo       %GREEN%- Removed: %~1%RESET%
+set /a success+=1
 goto :eof

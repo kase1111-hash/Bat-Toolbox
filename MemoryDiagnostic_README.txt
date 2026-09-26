@@ -5,9 +5,10 @@
 DESCRIPTION
 -----------
 Shows installed RAM details (speed, slots used, single/dual channel), checks
-for mismatched sticks, detects XMP/DOCP status, reports current memory usage
-breakdown by process, provides a configuration grade, and offers to schedule
-Windows Memory Diagnostic (mdsched.exe) for next reboot.
+for mismatched sticks, compares the configured RAM speed with the module's
+reported maximum, reports current memory usage breakdown by process, provides
+a configuration grade, and opens the Windows Memory Diagnostic (mdsched.exe)
+dialog so you can schedule a RAM test.
 
 
 HOW TO USE
@@ -26,12 +27,12 @@ Without admin:
   - RAM hardware info (sticks, speed, capacity, manufacturer)
   - Channel mode detection
   - Mismatch detection
-  - XMP/DOCP status
+  - Memory speed vs module maximum
   - Memory usage by process
 
 With admin:
   - All above features
-  - Schedule Windows Memory Diagnostic (mdsched.exe)
+  - Open Windows Memory Diagnostic (mdsched.exe) to schedule a RAM test
   - View previous diagnostic results
 
 
@@ -42,7 +43,9 @@ Option 1: Hardware Info
   - Shows slot usage (e.g., "2 of 4 slots filled")
   - Detects channel mode (single/dual/quad)
   - Flags mismatched sticks (different speeds or capacities)
-  - Detects if XMP/DOCP/EXPO is enabled
+  - Compares configured RAM speed with the module's BIOS-reported maximum
+    (cannot confirm XMP/EXPO state; CPU/platform limits also lower speed)
+  - Memory type names include DDR-DDR5 and LPDDR-LPDDR5
   - Warns about single-channel mode
 
 Option 2: Usage Breakdown
@@ -53,15 +56,18 @@ Option 2: Usage Breakdown
 
 Option 3: Configuration Analysis
   - Scores your memory configuration (A-F grade)
-  - Checks: total RAM, channel mode, stick matching, XMP/DOCP,
+  - Checks: total RAM, channel mode, stick matching, memory speed,
     expansion slots, current usage, pagefile
   - Lists issues and specific recommendations
 
 Option 4: Windows Memory Diagnostic
-  - Schedule hardware RAM test for next reboot
-  - Option to restart immediately or schedule for later
-  - View results from previous diagnostic runs
-  - Tests all RAM addresses with multiple patterns
+  - [1] / [2] open the Windows Memory Diagnostic dialog (mdsched.exe) and
+    tell you which choice to pick there: "Restart now and check for
+    problems" or "Check for problems the next time I start my computer".
+    Nothing is scheduled or restarted until you choose in that dialog;
+    cancelling it changes nothing
+  - [3] View results from previous diagnostic runs
+  - The test checks all RAM addresses with multiple patterns
 
 
 WHAT THE ANALYSIS CHECKS
@@ -71,7 +77,7 @@ WHAT THE ANALYSIS CHECKS
 | Total RAM       | 16+ GB                  | <8 GB                      |
 | Channel Mode    | Dual or Quad            | Single                     |
 | Stick Matching  | Same speed + capacity   | Mixed speeds or capacities |
-| XMP/DOCP        | Running at rated speed  | Below rated speed          |
+| Memory Speed    | At module max           | Below module max           |
 | Current Usage   | <75%                    | >90%                       |
 | Pagefile        | Configured, low usage   | Missing or >50% used       |
 
@@ -83,10 +89,17 @@ Single-Channel Mode:
   - Fix: Add a matching stick in the correct slot (consult motherboard manual)
   - Performance impact: 10-30% in bandwidth-sensitive tasks
 
-XMP/DOCP Not Enabled:
-  - RAM running below rated speed
-  - Fix: Enter BIOS > enable XMP (Intel) or DOCP/EXPO (AMD)
-  - Example: DDR4-3200 running at 2133 MHz
+Memory Speed Below Module Max:
+  - The configured speed is lower than the maximum speed the BIOS reports
+    for the module (SMBIOS "Speed"). That value is usually the JEDEC speed,
+    not the XMP/EXPO profile speed, so the script cannot tell whether
+    XMP/DOCP/EXPO is on: a kit with XMP off can still show "At module max"
+  - Common causes: memory profile off in BIOS, or the CPU/chipset capping
+    memory speed (e.g. DDR4-3200 SO-DIMMs on a CPU limited to 2933)
+  - Desktops: check the BIOS memory profile (XMP on Intel, DOCP/EXPO on AMD)
+  - Laptops and locked chipsets often cap speed and offer no XMP option;
+    the script does not recommend a BIOS change for laptops
+  - Advisory only: this check does not lower the grade
 
 Mismatched Sticks:
   - All sticks run at the slowest speed
@@ -112,7 +125,15 @@ Run mdsched.exe if you experience:
 HOW TO UNDO
 -----------
 This script is read-only (diagnostic only) — no system changes are made.
-Option 4 schedules a diagnostic but does not modify Windows settings.
+Option 4 only opens the Windows Memory Diagnostic dialog. If you choose to
+test there, Windows sets up a one-time boot into the memory tester, which
+runs once and then returns to normal startup; nothing else is modified.
+
+Older versions of this script also ran "bcdedit /set {memdiag} locale en-US"
+(forcing the memory tester to English) without saying so. To restore your
+language, run this in an administrator Command Prompt, replacing de-DE
+with your own locale (the "locale" line of "bcdedit /enum {current}"):
+  bcdedit /set {memdiag} locale de-DE
 
 
 NOTES
@@ -120,7 +141,8 @@ NOTES
 - Uses Win32_PhysicalMemory WMI class for hardware info
 - Channel mode is inferred from stick count (exact detection requires
   motherboard-specific data)
-- XMP/DOCP detection compares ConfiguredClockSpeed vs Speed
+- The memory speed check compares ConfiguredClockSpeed with Speed (the
+  BIOS-reported module maximum); it cannot read the XMP/EXPO profile
 - Memory Diagnostic (mdsched) runs before Windows loads — takes 10-30 min
 - mdsched results are stored in the Windows System event log
 - Some virtual machines may not report all RAM details
@@ -130,7 +152,8 @@ TIPS
 ----
 - Check option [1] after installing new RAM to verify speed and channel mode
 - Run option [3] periodically to check memory health
-- If XMP is not enabled, you're leaving free performance on the table
+- On desktops, check that XMP/DOCP/EXPO is enabled in the BIOS if your kit
+  is rated above the speed shown (laptops usually have no such option)
 - Use option [2] to find memory-hungry processes to close
 - For laptops, check if slots are soldered (no upgrade possible)
 - If memory diagnostic finds errors:

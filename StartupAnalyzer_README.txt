@@ -11,6 +11,10 @@ Scans all Windows startup programs and categorizes them into four groups:
   - REMOVE: Known bloatware recommended for removal
 
 Offers to automatically disable bloatware items with your permission.
+Items are disabled the same way Task Manager does it (a "disabled" marker in
+the StartupApproved registry keys). Nothing is deleted: the Run values and
+Startup-folder shortcuts stay in place, so every item can be re-enabled from
+Task Manager's Startup tab.
 
 
 HOW TO USE
@@ -19,8 +23,17 @@ HOW TO USE
 2. Select "Run as administrator" (recommended for full access)
 3. Wait for the scan to complete
 4. Review the categorized list
-5. When prompted, choose whether to remove bloatware items (Y/N)
+5. When prompted, choose whether to disable the [REMOVE] items (Y/N)
+   (pressing Enter without an answer counts as No)
 6. Optionally review optional items in Task Manager
+
+Note: Items from HKEY_LOCAL_MACHINE and the All Users Startup folder can only
+be disabled when the script runs as administrator. Without admin they are
+reported as [FAILED] and left enabled.
+
+Items whose names contain "!" or non-English (non-ASCII) characters cannot be
+matched reliably by the script. They are reported as [FAILED] - not found
+under this name, and left enabled; disable them in Task Manager's Startup tab.
 
 
 BEFORE YOU RUN
@@ -85,13 +98,24 @@ Option 2: System Restore
   3. Follow the wizard
 
 Option 3: Registry (Manual)
-  If you know the exact registry values:
+  The script does not delete any Run values or shortcuts. It disables an item
+  by writing a REG_BINARY value named after the item (the Run value name, or
+  the shortcut file name such as Discord.lnk) whose data starts with 03 to
+  one of these keys:
+     HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run
+       (items from HKCU\...\Run)
+     HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run
+       (items from HKLM\...\Run)
+     HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32
+       (items from HKLM\SOFTWARE\WOW6432Node\...\Run)
+     HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder
+       (items from your Startup folder)
+     HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder
+       (items from the All Users Startup folder)
+  To re-enable an item:
   1. Press Win+R, type "regedit", press Enter
-  2. Navigate to:
-     HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
-     or
-     HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
-  3. Add the value back
+  2. Navigate to the matching key above
+  3. Delete the item's value (or change its first byte from 03 to 02)
 
 Option 4: Reinstall the Program
   Most programs add themselves back to startup when reinstalled

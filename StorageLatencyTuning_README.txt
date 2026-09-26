@@ -26,7 +26,8 @@ WHAT IT OPTIMIZES:
    - Why: Link power states add wake latency to every I/O operation
 
 3. Write Cache Optimization
-   - Enables write-back caching policy
+   - Explains how to enable write-back caching (Device Manager > Policies);
+     not changed automatically
    - Optimizes NTFS behavior (disables last access timestamps)
    - Disables 8.3 filename creation overhead
    - Why: Stable write caching prevents random latency spikes
@@ -38,10 +39,26 @@ WHAT IT OPTIMIZES:
    - Why: NVMe supports 64K queues × 64K entries, underutilization = waste
 
 5. Power Plan Optimization
-   - Activates Ultimate/High Performance plan
+   - Activates the Ultimate Performance plan (or High Performance if Ultimate
+     is unavailable) BEFORE any power setting is written, so the NVMe, AHCI,
+     PCIe ASPM and disk idle settings apply to the plan that stays active.
+     Plans are selected by GUID, so this works on non-English Windows.
+   - The Ultimate Performance copy always uses the GUID
+     3ff9831b-6f80-4830-8178-736cd4229e7b, so running the script again reuses
+     it instead of adding another duplicate plan
+   - If neither plan can be activated (e.g. Modern Standby laptops), the
+     current plan is kept and the settings are written to it
+   - The plan that was active before is printed at the start ("Previous plan")
    - Exposes hidden NVMe power options in Control Panel
    - Disables disk idle timeouts
    - Why: Balanced/Power Saver plans throttle storage
+
+6. Additional Storage Optimizations
+   - Prefetch/Superfetch are disabled only when the disk holding the Windows
+     drive is an SSD
+   - The ScheduledDefrag task is disabled only when EVERY physical disk is an
+     SSD; with any HDD (or unknown media type) it is kept, because it also
+     defragments HDDs
 
 
 TECHNICAL BACKGROUND:
@@ -86,7 +103,9 @@ HOW TO USE:
 2. Select "Run as administrator"
 3. Choose whether to create a restore point (recommended)
 4. Confirm you want to apply optimizations
-5. Restart when prompted
+5. Restart when prompted. The restart is scheduled 30 seconds ahead; press A
+   at the prompt to abort it (Ctrl+C does NOT cancel a scheduled restart -
+   use "shutdown /a" if the prompt is gone)
 
 Verification:
 - Run CrystalDiskMark before and after
@@ -104,38 +123,65 @@ Option 1: System Restore
 
 Option 2: Manual Restoration
 
-A. NVMe Power States (restore power saving):
-   powercfg /setacvalueindex SCHEME_CURRENT 0012ee47-9041-4b5d-9b77-535fba8b1442 d639518a-e56d-4345-8af2-b9f32fb26109 100
+A. Switch back to your previous power plan FIRST:
+   The script switched to Ultimate Performance (or High Performance) before
+   writing any power setting, and printed the plan that was active before it
+   ran ("Previous plan"). If that is a different plan from the one the
+   script activated, your previous plan was not changed, so switching back
+   restores its storage power settings. Balanced:
+   powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e
+   Optional - remove the Ultimate Performance copy the script created
+   (it must not be the active plan):
+   powercfg /delete 3ff9831b-6f80-4830-8178-736cd4229e7b
+
+B. Restore storage power settings - only needed if the script printed
+   "Keeping current power plan" (it then changed your current plan), if the
+   previous plan already was the plan the script activated (e.g. a second
+   run), or if you ran an older version of this script, which changed the
+   plan that was active before it ran:
+   powercfg /restoredefaultschemes
+   (Resets NVMe idle timeout, NOPPME, AHCI LPM, PCIe ASPM and disk idle on
+   every built-in plan, removes the Ultimate Performance copy, and leaves
+   Balanced active. Custom plans are deleted.)
+   Manual alternative, with the changed plan active (AC and DC):
+   powercfg /setacvalueindex SCHEME_CURRENT 0012ee47-9041-4b5d-9b77-535fba8b1442 d639518a-e56d-4345-8af2-b9f32fb26109 200
+   powercfg /setdcvalueindex SCHEME_CURRENT 0012ee47-9041-4b5d-9b77-535fba8b1442 d639518a-e56d-4345-8af2-b9f32fb26109 100
+   powercfg /setacvalueindex SCHEME_CURRENT SUB_DISK DISKIDLE 1200
+   powercfg /setdcvalueindex SCHEME_CURRENT SUB_DISK DISKIDLE 600
+   (AHCI LPM 0b2d69d7-a2a1-449c-9680-f91c70521c60 and PCIe ASPM
+   ee12f906-d277-404b-b6da-e5fa1a576df5: set AC and DC back to your plan's
+   defaults in Power Options, or use /restoredefaultschemes)
    powercfg /setactive SCHEME_CURRENT
 
-B. AHCI Link Power Management (re-enable):
+C. Modern Standby storage D3 (restore sleep power saving):
+   reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Storage" /v StorageD3InModernStandby /f
+   The script also set EnableIdlePowerManagement = 0 in each storage
+   device's ...\Device Parameters\StorPort key under
+   HKLM\SYSTEM\CurrentControlSet\Enum; System Restore (Option 1) reverts it.
+
+D. AHCI registry (re-enable link power management):
    reg delete "HKLM\SYSTEM\CurrentControlSet\Services\storahci\Parameters\Device" /v "EnableHIPM" /f
    reg delete "HKLM\SYSTEM\CurrentControlSet\Services\storahci\Parameters\Device" /v "EnableDIPM" /f
-   powercfg /setacvalueindex SCHEME_CURRENT SUB_DISK 0b2d69d7-a2a1-449c-9680-f91c70521c60 1
-   powercfg /setactive SCHEME_CURRENT
+   reg delete "HKLM\SYSTEM\CurrentControlSet\Services\storahci\Parameters\Device" /v "EnableAN" /f
 
-C. PCIe ASPM (re-enable):
-   powercfg /setacvalueindex SCHEME_CURRENT 501a4d13-42af-4429-9fd1-a8218c268e20 ee12f906-d277-404b-b6da-e5fa1a576df5 2
-   powercfg /setactive SCHEME_CURRENT
-
-D. Queue Depth (restore defaults):
+E. Queue Depth and interrupt coalescing (restore defaults):
    reg delete "HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device" /v "IoQueueDepth" /f
    reg delete "HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device" /v "IoCoalescingEnabled" /f
+   reg delete "HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device" /v "InterruptCoalescingEnabled" /f
+   reg delete "HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters" /v "IoLatencyCap" /f
 
-E. File System (restore defaults):
+F. File System (restore defaults):
    fsutil behavior set disablelastaccess 2
    fsutil behavior set disable8dot3 2
    fsutil behavior set memoryusage 1
 
-F. Prefetch (re-enable):
+G. Prefetch (re-enable):
    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 3 /f
    reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnableSuperfetch" /t REG_DWORD /d 3 /f
 
-G. Scheduled Defrag (re-enable):
+H. Scheduled Defrag (re-enable; the script disables it only when every
+   disk is an SSD):
    schtasks /change /tn "\Microsoft\Windows\Defrag\ScheduledDefrag" /enable
-
-H. Power Plan (restore Balanced):
-   powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e
 
 
 EXPECTED RESULTS:
@@ -173,7 +219,8 @@ COMPATIBILITY:
 - Windows 10 (1903+)
 - Windows 11 (all versions)
 - Works with all NVMe and SATA SSDs
-- Safe for HDDs (some settings won't apply)
+- Safe for HDDs (some settings won't apply; scheduled defrag is kept when
+  any HDD is present)
 
 
 TROUBLESHOOTING:
@@ -183,7 +230,9 @@ Issue: Drive runs warmer than before
 Fix: This is expected. Monitor temps; if >70°C under load, improve airflow
 
 Issue: Laptop battery drains faster
-Fix: Run restore commands above, or create a separate "Battery" power plan
+Fix: Run restore steps A-C above (switch plans back first, then restore the
+     AC and DC storage settings and Modern Standby D3), or create a separate
+     "Battery" power plan
 
 Issue: No improvement in benchmarks
 Fix: Your drive may already be optimized, or bottleneck is elsewhere (CPU/RAM)

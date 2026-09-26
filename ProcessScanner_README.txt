@@ -16,6 +16,13 @@ HOW TO USE
 3. Wait for the scan to complete
 4. Review the categorized list
 5. When prompted, choose whether to terminate bloatware (Y/N)
+   (pressing Enter without an answer counts as No)
+
+Before terminating, the script checks that each PID still belongs to the
+program that was detected. If the program has exited and Windows has given
+its PID to a different process, that entry is shown as [SKIPPED] and nothing
+is killed. A PID list left behind by an interrupted run is deleted at the
+start of every scan, so only the current scan's results can be terminated.
 
 
 BEFORE YOU RUN
@@ -52,7 +59,8 @@ HIGH MEMORY USAGE (Over 500MB):
   - Hardware monitors (HWiNFO, Afterburner)
 
 [UNKNOWN] - Cyan:
-  Processes not in our database. Shows larger ones (>50MB).
+  Processes not in our database. Shows up to 15 of the larger ones (>50MB)
+  and a count of the unknown processes that are not listed.
   Research before terminating:
   1. Right-click process in Task Manager
   2. Select "Search online"

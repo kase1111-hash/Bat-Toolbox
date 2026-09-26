@@ -26,21 +26,34 @@ echo Creating system restore point...
 echo This may take a few minutes.
 echo/
 
-:: Enable System Restore if disabled
-powershell -Command "Enable-ComputerRestore -Drive 'C:\'" 2>nul
+:: Enable System Restore on the Windows drive if disabled (not always C:)
+powershell -NoProfile -Command "Enable-ComputerRestore -Drive '%SystemDrive%\'" 2>nul
 
-:: Remove the 24-hour throttle. By default Windows refuses to create a second
-:: restore point within 24 hours (SystemRestorePointCreationFrequency) and
-:: Checkpoint-Computer reports that as a *warning* while still exiting 0 - which
+:: Remove the 24-hour throttle for this run only. By default Windows refuses to
+:: create a second restore point within 24 hours (SystemRestorePointCreationFrequency)
+:: and Checkpoint-Computer reports that as a *warning* while still exiting 0 - which
 :: would make this script claim success with no restore point actually created.
-:: Setting the frequency to 0 forces creation every time this safety-net runs.
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" /v SystemRestorePointCreationFrequency /t REG_DWORD /d 0 /f >nul 2>&1
+:: The original value is saved here and put back right after the restore point.
+set "SR_KEY=HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+set "OLD_FREQ="
+for /f "tokens=3" %%v in ('reg query "%SR_KEY%" /v SystemRestorePointCreationFrequency 2^>nul ^| find "REG_DWORD"') do set "OLD_FREQ=%%v"
+reg add "%SR_KEY%" /v SystemRestorePointCreationFrequency /t REG_DWORD /d 0 /f >nul 2>&1
 
 :: Create the restore point, then verify one was actually added (do not trust
-:: the exit code, which is 0 even when creation is skipped).
-powershell -NoProfile -Command "$before = @(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before Windows 10 Debloat' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $before) { exit 0 } else { exit 1 }"
+:: the exit code, which is 0 even when creation is skipped). Compare the newest
+:: SequenceNumber, not the count: when shadow storage is full Windows deletes the
+:: oldest point to make room, so the count can stay the same after a success.
+powershell -NoProfile -Command "$before = (@(Get-ComputerRestorePoint) | Measure-Object -Property SequenceNumber -Maximum).Maximum; Checkpoint-Computer -Description 'Before Windows 10 Debloat' -RestorePointType 'MODIFY_SETTINGS'; $after = (@(Get-ComputerRestorePoint) | Measure-Object -Property SequenceNumber -Maximum).Maximum; if ($after -and $after -gt $before) { exit 0 } else { exit 1 }"
+set "RP_RESULT=%errorlevel%"
 
-if %errorlevel% equ 0 (
+:: Put the creation throttle back the way it was
+if defined OLD_FREQ (
+    reg add "%SR_KEY%" /v SystemRestorePointCreationFrequency /t REG_DWORD /d %OLD_FREQ% /f >nul 2>&1
+) else (
+    reg delete "%SR_KEY%" /v SystemRestorePointCreationFrequency /f >nul 2>&1
+)
+
+if "%RP_RESULT%"=="0" (
     echo/
     echo ============================================================================
     echo  SUCCESS: Restore point created successfully!
@@ -58,7 +71,7 @@ if %errorlevel% equ 0 (
     echo This might happen if:
     echo  - System Restore is disabled
     echo  - Not enough disk space
-    echo  - A restore point was created recently (Windows limits frequency)
+    echo  - A restore point was created recently ^(Windows limits frequency^)
     echo/
     echo Proceed with caution or try again later.
     echo/

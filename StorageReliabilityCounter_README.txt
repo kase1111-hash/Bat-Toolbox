@@ -29,7 +29,7 @@ Without admin:
 
 With admin (recommended):
   - Temperature readings
-  - Power-on hours with usage estimates
+  - Power-on hours (shown as days/years with a usage level)
   - SSD wear level with remaining life estimate
   - Read/write error counters (corrected and uncorrected)
   - Start/stop cycle count
@@ -77,6 +77,11 @@ Detailed Report:
 Export:
   - Text file on Desktop with full report
   - Named: StorageReliability_COMPUTERNAME_DATE.txt
+  - Saved to your real Desktop folder, including a Desktop redirected by
+    OneDrive "Back up Desktop" (falls back to %USERPROFILE%\Desktop)
+  - An earlier report from the same day is replaced
+  - If the file cannot be written, an [ERROR] message is shown instead of
+    "Report saved to"
 
 
 DIFFERENCES FROM DiskHealthCheck.bat

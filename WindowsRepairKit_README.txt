@@ -41,13 +41,22 @@ WHAT EACH CHECK DOES
   - FIXED: Found and repaired corrupt files
   - ISSUE: Found corrupt files but could not repair (DISM may help)
   - BLOCKED: Could not run, pending operations require reboot
+    ("could not perform the requested operation" or "a system repair
+    pending which requires reboot to complete")
 
-[2] DISM /RestoreHealth - Deployment Image Servicing
-  Repairs the Windows component store itself. Downloads correct file
-  versions from Windows Update if needed.
+  Results are detected from SFC's English output. On other display
+  languages the summary shows CHECK LOG - read the log file instead.
+
+[2] DISM /ScanHealth + /RestoreHealth - Deployment Image Servicing
+  First runs DISM /ScanHealth to check the Windows component store. Only
+  if the scan does not report the store as clean does it run
+  DISM /RestoreHealth, which repairs the store and downloads correct file
+  versions from Windows Update if needed. (/RestoreHealth reports
+  "completed successfully" even when nothing was wrong, so the script
+  scans first to tell a healthy store from a repaired one.)
 
   Possible results:
-  - PASS: No component store corruption
+  - PASS: No component store corruption (scan was clean, no repair run)
   - FIXED: Component store was repaired
   - ERROR: Could not repair (may need Windows install media)
 
@@ -57,14 +66,19 @@ WHAT EACH CHECK DOES
 
   Possible results:
   - PASS: No filesystem errors
-  - ISSUE: Errors found - offers to schedule repair for next reboot
+  - ISSUE: Problems found (chkdsk reports "found problems", "errors",
+    "must be fixed offline" / "spotfix", or exit code 3) - offers to
+    schedule CHKDSK /F /R for the next reboot (asks Y/N first)
+  - INFO: Scan finished with no recognized problem message but did not
+    report "found no problems" - review the log
 
 
 SMART FEATURES
 --------------
 - If SFC finds unrepairable files and DISM succeeds, the script offers
   to re-run SFC (DISM often fixes the underlying cause)
-- Parses the CBS.log for actual corruption entries
+- Parses the CBS.log for corruption entries written during this SFC run
+  (older entries from earlier runs are ignored)
 - Extracts bad sector count from CHKDSK output
 - Saves everything to a timestamped log file on your Desktop
 
@@ -73,10 +87,15 @@ OUTPUT FILE
 -----------
 Saved to Desktop as: RepairKit_COMPUTERNAME_DATE.txt
 
+The script saves to your real Desktop folder, even when it has been moved
+(for example to C:\Users\<you>\OneDrive\Desktop by OneDrive folder backup).
+If no Desktop folder exists, the log goes to your user profile folder
+(C:\Users\<you>). The full path is shown before the checks start.
+
 Contains:
   - Results from each check
-  - CBS log error entries (last 50 relevant lines)
-  - Full DISM output
+  - CBS log entries from this SFC run (last 50 relevant lines)
+  - DISM /ScanHealth output, and the /RestoreHealth output if it ran
   - CHKDSK disk statistics
   - Timestamps for start and completion
 
@@ -87,7 +106,9 @@ SFC and DISM only replace corrupted files with correct versions.
 These operations are generally safe and don't need undoing.
 
 If CHKDSK /F /R was scheduled:
-  - Cancel before reboot: chkntfs /x C:
+  - Cancel before reboot: chkntfs /x C:   (use your system drive letter)
+    IMPORTANT: this exclusion stays in effect until you undo it. After the
+    next restart, restore normal boot-time checking with:  chkntfs /d
   - Or simply reboot and let it run (recommended)
 
 Option: System Restore

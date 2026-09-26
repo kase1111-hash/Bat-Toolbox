@@ -115,6 +115,30 @@ echo if ^(-not ^(Test-Path 'HKCR:'^)^) {
 echo     New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT ^| Out-Null
 echo }
 echo/
+echo # LegacyDisable only hides static verbs under ...\shell\verb. Shell-extension
+echo # handlers under ...\shellex\ContextMenuHandlers ignore it; they are turned
+echo # off by listing their CLSID under Shell Extensions\Blocked.
+echo $blockedKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked'
+echo function Get-HandlerClsid^($path^) {
+echo     $leaf = ^($path -split '\\'^)[-1]
+echo     if ^($leaf -match '^^\{[0-9A-Fa-f-]{36}\}$'^) { return $leaf }
+echo     $regKey = Get-Item -LiteralPath "Registry::$path" -ErrorAction SilentlyContinue
+echo     if ^(-not $regKey^) { return $null }
+echo     $clsid = ^([string]$regKey.GetValue^(''^)^).Trim^(^)
+echo     if ^($clsid -match '^^\{[0-9A-Fa-f-]{36}\}$'^) { return $clsid }
+echo     return $null
+echo }
+echo function Disable-Entry^($e^) {
+echo     if ^($e.Path -match '\\shellex\\'^) {
+echo         $clsid = Get-HandlerClsid $e.Path
+echo         if ^(-not $clsid^) { throw 'No CLSID found for this shell-extension handler' }
+echo         if ^(-not ^(Test-Path -LiteralPath $blockedKey^)^) { New-Item -Path $blockedKey -Force -ErrorAction Stop ^| Out-Null }
+echo         New-ItemProperty -LiteralPath $blockedKey -Name $clsid -Value $e.Name -PropertyType String -Force -ErrorAction Stop ^| Out-Null
+echo     } else {
+echo         New-ItemProperty -LiteralPath "Registry::$($e.Path)" -Name 'LegacyDisable' -Value '' -PropertyType String -Force -ErrorAction Stop ^| Out-Null
+echo     }
+echo }
+echo/
 echo Write-Host ""
 echo Write-Host "Scanning registry for context menu entries..." -ForegroundColor Cyan
 echo Write-Host ""
@@ -133,20 +157,26 @@ echo             $name = $key.PSChildName
 echo             $displayName = $name
 echo/
 echo             # Try to get a display name
-echo             $muiVerb = ^(Get-ItemProperty -Path $key.PSPath -Name 'MUIVerb' -ErrorAction SilentlyContinue^).MUIVerb
-echo             if ^($muiVerb -and $muiVerb -notmatch '^@'^) { $displayName = $muiVerb }
+echo             $muiVerb = ^(Get-ItemProperty -LiteralPath $key.PSPath -Name 'MUIVerb' -ErrorAction SilentlyContinue^).MUIVerb
+echo             if ^($muiVerb -and $muiVerb -notmatch '^^@'^) { $displayName = $muiVerb }
 echo/
-echo             $defaultVal = ^(Get-ItemProperty -Path $key.PSPath -Name '^(Default^)' -ErrorAction SilentlyContinue^).'^(Default^)'
+echo             $defaultVal = ^(Get-ItemProperty -LiteralPath $key.PSPath -Name '^(Default^)' -ErrorAction SilentlyContinue^).'^(Default^)'
 echo             if ^($defaultVal -and -not $muiVerb^) { $displayName = $defaultVal }
 echo/
 echo             # Check if entry is hidden/disabled
-echo             $legacyDisable = ^(Get-ItemProperty -Path $key.PSPath -Name 'LegacyDisable' -ErrorAction SilentlyContinue^)
-echo             $extended = ^(Get-ItemProperty -Path $key.PSPath -Name 'Extended' -ErrorAction SilentlyContinue^)
-echo             $programmaticOnly = ^(Get-ItemProperty -Path $key.PSPath -Name 'ProgrammaticAccessOnly' -ErrorAction SilentlyContinue^)
+echo             $legacyDisable = ^(Get-ItemProperty -LiteralPath $key.PSPath -Name 'LegacyDisable' -ErrorAction SilentlyContinue^)
+echo             $extended = ^(Get-ItemProperty -LiteralPath $key.PSPath -Name 'Extended' -ErrorAction SilentlyContinue^)
+echo             $programmaticOnly = ^(Get-ItemProperty -LiteralPath $key.PSPath -Name 'ProgrammaticAccessOnly' -ErrorAction SilentlyContinue^)
 echo/
 echo             $status = 'Active'
-echo             if ^($legacyDisable -or $programmaticOnly^) { $status = 'Disabled' }
-echo             if ^($extended^) { $status = 'Shift+Click only' }
+echo             if ^($key.PSPath -match '\\shellex\\'^) {
+echo                 # Handlers ignore LegacyDisable/Extended - check the Blocked list instead
+echo                 $blockedClsid = Get-HandlerClsid ^($key.PSPath -replace 'Microsoft\.PowerShell\.Core\\Registry::', ''^)
+echo                 if ^($blockedClsid -and ^(Get-ItemProperty -LiteralPath $blockedKey -Name $blockedClsid -ErrorAction SilentlyContinue^)^) { $status = 'Disabled' }
+echo             } else {
+echo                 if ^($legacyDisable -or $programmaticOnly^) { $status = 'Disabled' }
+echo                 if ^($extended^) { $status = 'Shift+Click only' }
+echo             }
 echo/
 echo             # Categorize
 echo             $category = 'UNKNOWN'
@@ -190,8 +220,8 @@ echo $bloat = $uniqueEntries ^| Where-Object { $_.Category -eq 'BLOATWARE' -and 
 echo if ^($bloat^) {
 echo     Write-Host "[BLOATWARE] - Recommended for removal:" -ForegroundColor Red
 echo     foreach ^($e in $bloat^) {
-echo         Write-Host "  [-] $^($e.DisplayName^)" -ForegroundColor Red
-echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [-] $($e.DisplayName)" -ForegroundColor Red
+echo         Write-Host "      $($e.Path)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -201,8 +231,8 @@ echo $optional = $uniqueEntries ^| Where-Object { $_.Category -eq 'OPTIONAL' -an
 echo if ^($optional^) {
 echo     Write-Host "[OPTIONAL] - Can be removed if unwanted:" -ForegroundColor Yellow
 echo     foreach ^($e in $optional^) {
-echo         Write-Host "  [?] $^($e.DisplayName^)" -ForegroundColor Yellow
-echo         Write-Host "      $^($e.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [?] $($e.DisplayName)" -ForegroundColor Yellow
+echo         Write-Host "      $($e.Path)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -210,9 +240,9 @@ echo/
 echo # Show essential
 echo $keep = $uniqueEntries ^| Where-Object { $_.Category -eq 'KEEP' -and $_.Status -eq 'Active' }
 echo if ^($keep^) {
-echo     Write-Host "[KEEP] - Essential entries ^(will not be touched^):" -ForegroundColor Green
+echo     Write-Host "[KEEP] - Essential entries (will not be touched):" -ForegroundColor Green
 echo     foreach ^($e in $keep^) {
-echo         Write-Host "  [+] $^($e.DisplayName^)" -ForegroundColor Green
+echo         Write-Host "  [+] $($e.DisplayName)" -ForegroundColor Green
 echo     }
 echo     Write-Host ""
 echo }
@@ -222,7 +252,7 @@ echo $disabled = $uniqueEntries ^| Where-Object { $_.Status -eq 'Disabled' }
 echo if ^($disabled^) {
 echo     Write-Host "[DISABLED] - Already hidden:" -ForegroundColor DarkGray
 echo     foreach ^($e in $disabled^) {
-echo         Write-Host "  [x] $^($e.DisplayName^)" -ForegroundColor DarkGray
+echo         Write-Host "  [x] $($e.DisplayName)" -ForegroundColor DarkGray
 echo     }
 echo     Write-Host ""
 echo }
@@ -231,12 +261,12 @@ echo Write-Host "===============================================================
 echo Write-Host " SUMMARY" -ForegroundColor Cyan
 echo Write-Host "============================================================================" -ForegroundColor White
 echo Write-Host ""
-echo Write-Host "  Total entries found: $^($uniqueEntries.Count^)"
+echo Write-Host "  Total entries found: $($uniqueEntries.Count)"
 echo $activeBloat = @^($bloat^).Count
 echo $activeOptional = @^($optional^).Count
 echo if ^($activeBloat -gt 0^) { Write-Host "  Bloatware:  $activeBloat entries" -ForegroundColor Red }
 echo if ^($activeOptional -gt 0^) { Write-Host "  Optional:   $activeOptional entries" -ForegroundColor Yellow }
-echo Write-Host "  Essential:  $^(@^($keep^).Count^) entries" -ForegroundColor Green
+echo Write-Host "  Essential:  $(@($keep).Count) entries" -ForegroundColor Green
 echo Write-Host ""
 echo/
 echo # Offer to disable bloatware entries
@@ -246,11 +276,10 @@ echo     $answer = Read-Host "Disable all BLOATWARE context menu entries? [Y/N]"
 echo     if ^($answer -eq 'Y'^) {
 echo         foreach ^($e in $bloat^) {
 echo             try {
-echo                 $regPath = "Registry::$^($e.Path^)"
-echo                 New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
-echo                 Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
+echo                 Disable-Entry $e
+echo                 Write-Host "  [OK] Disabled: $($e.DisplayName)" -ForegroundColor Green
 echo             } catch {
-echo                 Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red
+echo                 Write-Host "  [FAIL] Could not disable: $($e.DisplayName) - $($_.Exception.Message)" -ForegroundColor Red
 echo             }
 echo         }
 echo         Write-Host ""
@@ -264,15 +293,14 @@ echo     $answer = Read-Host "Review OPTIONAL entries one by one? [Y/N]"
 echo     if ^($answer -eq 'Y'^) {
 echo         Write-Host ""
 echo         foreach ^($e in $optional^) {
-echo             $choice = Read-Host "Disable '$^($e.DisplayName^)'? [Y/N/Q to quit]"
+echo             $choice = Read-Host "Disable '$($e.DisplayName)'? [Y/N/Q to quit]"
 echo             if ^($choice -eq 'Q'^) { break }
 echo             if ^($choice -eq 'Y'^) {
 echo                 try {
-echo                     $regPath = "Registry::$^($e.Path^)"
-echo                     New-ItemProperty -LiteralPath $regPath -Name 'LegacyDisable' -Value '' -PropertyType String -Force ^| Out-Null
-echo                     Write-Host "  [OK] Disabled: $^($e.DisplayName^)" -ForegroundColor Green
+echo                     Disable-Entry $e
+echo                     Write-Host "  [OK] Disabled: $($e.DisplayName)" -ForegroundColor Green
 echo                 } catch {
-echo                     Write-Host "  [FAIL] Could not disable: $^($e.DisplayName^) - $^($_.Exception.Message^)" -ForegroundColor Red
+echo                     Write-Host "  [FAIL] Could not disable: $($e.DisplayName) - $($_.Exception.Message)" -ForegroundColor Red
 echo                 }
 echo             }
 echo         }
@@ -295,13 +323,13 @@ echo     $w11answer = Read-Host "Restore the full classic context menu? [Y/N]"
 echo     if ^($w11answer -eq 'Y'^) {
 echo         try {
 echo             $regPath = 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32'
-echo             New-Item -Path $regPath -Force ^| Out-Null
-echo             Set-ItemProperty -Path $regPath -Name '^(Default^)' -Value '' -Force
+echo             New-Item -Path $regPath -Force -ErrorAction Stop ^| Out-Null
+echo             Set-ItemProperty -LiteralPath $regPath -Name '^(Default^)' -Value '' -Force -ErrorAction Stop
 echo             Write-Host ""
 echo             Write-Host "  [OK] Classic context menu restored." -ForegroundColor Green
 echo             Write-Host "       Restart Explorer or reboot to apply." -ForegroundColor Yellow
 echo         } catch {
-echo             Write-Host "  [FAIL] Could not restore classic menu: $^($_.Exception.Message^)" -ForegroundColor Red
+echo             Write-Host "  [FAIL] Could not restore classic menu: $($_.Exception.Message)" -ForegroundColor Red
 echo         }
 echo     }
 echo }

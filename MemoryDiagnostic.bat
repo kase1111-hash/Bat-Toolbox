@@ -88,7 +88,7 @@ echo/
 echo Write-Host "  SYSTEM SUMMARY" -ForegroundColor White
 echo Write-Host "  ---------------"
 echo Write-Host "  Total Physical RAM:   $totalGB GB"
-echo Write-Host "  Used:                 $usedGB GB ^($usedPct%%^)"
+echo Write-Host "  Used:                 $usedGB GB ($usedPct%%)"
 echo Write-Host "  Free:                 $freeGB GB"
 echo Write-Host ""
 echo/
@@ -107,9 +107,9 @@ echo Write-Host ""
 echo/
 echo # Determine channel mode
 echo if ^($slotsFilled -ge 4 -and ^($slotsFilled %% 4^) -eq 0^) {
-echo     $channelMode = "Quad-Channel ^(possible^)"
+echo     $channelMode = "Quad-Channel (possible)"
 echo } elseif ^($slotsFilled -ge 2 -and ^($slotsFilled %% 2^) -eq 0^) {
-echo     $channelMode = "Dual-Channel ^(likely^)"
+echo     $channelMode = "Dual-Channel (likely)"
 echo } else {
 echo     $channelMode = "Single-Channel"
 echo }
@@ -122,14 +122,19 @@ echo $types = $sticks ^| Select-Object -ExpandProperty SMBIOSMemoryType -Unique
 echo/
 echo $isMatched = ^($speeds.Count -eq 1 -and $capacities.Count -eq 1^)
 echo/
-echo # Memory type name
+echo # Memory type name ^(SMBIOS Type 17 memory type codes^)
 echo $typeNames = @{
-echo     20 = 'DDR'
-echo     21 = 'DDR2'
-echo     22 = 'DDR2 FB-DIMM'
+echo     18 = 'DDR'
+echo     19 = 'DDR2'
+echo     20 = 'DDR2 FB-DIMM'
 echo     24 = 'DDR3'
 echo     26 = 'DDR4'
+echo     27 = 'LPDDR'
+echo     28 = 'LPDDR2'
+echo     29 = 'LPDDR3'
+echo     30 = 'LPDDR4'
 echo     34 = 'DDR5'
+echo     35 = 'LPDDR5'
 echo }
 echo/
 echo Write-Host "  INSTALLED RAM STICKS" -ForegroundColor White
@@ -155,7 +160,7 @@ echo     if ^(-not $slot^) { $slot = "Slot $stickNum" }
 echo     if ^($slot.Length -gt 5^) { $slot = $slot.Substring^(0, 5^) }
 echo/
 echo     $memType = $typeNames[[int]$stick.SMBIOSMemoryType]
-echo     if ^(-not $memType^) { $memType = "Type $^($stick.SMBIOSMemoryType^)" }
+echo     if ^(-not $memType^) { $memType = "Type $($stick.SMBIOSMemoryType)" }
 echo/
 echo     $speedStr = "${speed}MHz"
 echo     Write-Host ^("  {0,-6} {1,-12} {2,-10} {3,-10} {4,-15} {5}" -f $slot, "$capGB GB", $speedStr, $memType, $mfr, $partNum^)
@@ -167,36 +172,40 @@ echo Write-Host "  ---------------"
 echo Write-Host "  Channel Mode:         $channelMode"
 echo/
 echo if ^($isMatched^) {
-echo     Write-Host "  Stick Matching:       All sticks matched ^(same speed and capacity^)" -ForegroundColor Green
+echo     Write-Host "  Stick Matching:       All sticks matched (same speed and capacity)" -ForegroundColor Green
 echo } else {
-echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected^^!" -ForegroundColor Red
+echo     Write-Host "  Stick Matching:       MISMATCHED sticks detected^!" -ForegroundColor Red
 echo     if ^($speeds.Count -gt 1^) {
-echo         Write-Host "    - Different speeds: $^($speeds -join ', '^) MHz" -ForegroundColor Yellow
+echo         Write-Host "    - Different speeds: $($speeds -join ', ') MHz" -ForegroundColor Yellow
 echo         Write-Host "      All sticks will run at the slowest speed." -ForegroundColor Yellow
 echo     }
 echo     if ^($capacities.Count -gt 1^) {
-echo         $capList = $capacities ^| ForEach-Object { "$^([math]::Round^($_ / 1GB, 0^)^) GB" }
-echo         Write-Host "    - Different capacities: $^($capList -join ', '^)" -ForegroundColor Yellow
-echo         Write-Host "      Dual-channel may operate in flex mode ^(partial dual-channel^)." -ForegroundColor Yellow
+echo         $capList = $capacities ^| ForEach-Object { "$([math]::Round($_ / 1GB, 0)) GB" }
+echo         Write-Host "    - Different capacities: $($capList -join ', ')" -ForegroundColor Yellow
+echo         Write-Host "      Dual-channel may operate in flex mode (partial dual-channel)." -ForegroundColor Yellow
 echo     }
 echo }
 echo/
-echo # XMP/DOCP detection
+echo # Memory speed: SMBIOS Speed is the BIOS-reported module max, not the XMP/EXPO profile
 echo $configSpeed = ^($sticks ^| Select-Object -First 1^).ConfiguredClockSpeed
 echo $ratedSpeed = ^($sticks ^| Select-Object -First 1^).Speed
+echo $isLaptop = ^($cs.PCSystemType -eq 2^)
 echo if ^($ratedSpeed -and $configSpeed -and $ratedSpeed -gt $configSpeed^) {
 echo     Write-Host ""
-echo     Write-Host "  XMP/DOCP:             NOT ENABLED" -ForegroundColor Yellow
-echo     Write-Host "    - RAM is running at ${configSpeed}MHz but rated for ${ratedSpeed}MHz" -ForegroundColor Yellow
-echo     Write-Host "    - Enable XMP/DOCP/EXPO in BIOS to get full speed" -ForegroundColor Yellow
-echo } elseif ^($ratedSpeed -and $configSpeed -and $ratedSpeed -eq $configSpeed^) {
-echo     Write-Host "  XMP/DOCP:             Running at rated speed ^(${configSpeed}MHz^)" -ForegroundColor Green
+echo     Write-Host "  Memory Speed:         ${configSpeed} MT/s (module max ${ratedSpeed} MT/s)" -ForegroundColor Yellow
+echo     if ^($isLaptop^) {
+echo         Write-Host "    - Most likely capped by the CPU or platform" -ForegroundColor Yellow
+echo     } else {
+echo         Write-Host "    - Check the BIOS memory profile (XMP/DOCP/EXPO); the CPU or board may also cap speed" -ForegroundColor Yellow
+echo     }
+echo } elseif ^($ratedSpeed -and $configSpeed^) {
+echo     Write-Host "  Memory Speed:         ${configSpeed} MT/s" -ForegroundColor Green
 echo }
 echo/
 echo # Single channel warning
 echo if ^($channelMode -eq 'Single-Channel'^) {
 echo     Write-Host ""
-echo     Write-Host "  WARNING: Single-channel mode detected^^!" -ForegroundColor Red
+echo     Write-Host "  WARNING: Single-channel mode detected^!" -ForegroundColor Red
 echo     Write-Host "    - Dual-channel doubles memory bandwidth" -ForegroundColor Yellow
 echo     Write-Host "    - Add a matching stick for significant performance gain" -ForegroundColor Yellow
 echo     Write-Host "    - Especially impacts gaming and integrated graphics" -ForegroundColor Yellow
@@ -274,7 +283,7 @@ echo     $wsMB = [math]::Round^($p.WorkingSet64 / 1MB, 1^)
 echo     $pct = [math]::Round^(^($p.WorkingSet64 / $totalBytes^) * 100, 1^)
 echo     $procId = $p.Id
 echo/
-echo     $wsStr = if ^($wsMB -ge 1024^) { "$^([math]::Round^($wsMB / 1024, 1^)^) GB" } else { "$wsMB MB" }
+echo     $wsStr = if ^($wsMB -ge 1024^) { "$([math]::Round($wsMB / 1024, 1)) GB" } else { "$wsMB MB" }
 echo/
 echo     $color = 'White'
 echo     if ^($pct -ge 5^) { $color = 'Yellow' }
@@ -306,13 +315,13 @@ echo/
 echo $totalProcMB = [math]::Round^(^($allProcs ^| Measure-Object WorkingSet64 -Sum^).Sum / 1MB, 0^)
 echo $otherMB = $totalProcMB - $browserMB - $gameMB - $systemMB - $securityMB
 echo/
-echo Write-Host ^("  Browsers:       {0,8} MB  ^({1} processes^)" -f $browserMB, $browsers.Count^)
-echo Write-Host ^("  System/Shell:   {0,8} MB  ^({1} processes^)" -f $systemMB, $system.Count^)
-echo Write-Host ^("  Security:       {0,8} MB  ^({1} processes^)" -f $securityMB, $security.Count^)
-echo Write-Host ^("  Game Clients:   {0,8} MB  ^({1} processes^)" -f $gameMB, $games.Count^)
+echo Write-Host ^("  Browsers:       {0,8} MB  ({1} processes)" -f $browserMB, $browsers.Count^)
+echo Write-Host ^("  System/Shell:   {0,8} MB  ({1} processes)" -f $systemMB, $system.Count^)
+echo Write-Host ^("  Security:       {0,8} MB  ({1} processes)" -f $securityMB, $security.Count^)
+echo Write-Host ^("  Game Clients:   {0,8} MB  ({1} processes)" -f $gameMB, $games.Count^)
 echo Write-Host ^("  Other:          {0,8} MB" -f $otherMB^)
 echo Write-Host ^("  -------------------------"^)
-echo Write-Host ^("  Total:          {0,8} MB  ^({1} processes^)" -f $totalProcMB, $allProcs.Count^)
+echo Write-Host ^("  Total:          {0,8} MB  ({1} processes)" -f $totalProcMB, $allProcs.Count^)
 echo Write-Host ""
 ) > "!PSUSAGE!"
 
@@ -395,29 +404,31 @@ echo     Write-Host " MATCHED" -ForegroundColor Green
 echo } else {
 echo     Write-Host " MISMATCHED" -ForegroundColor Yellow
 echo     if ^($speeds.Count -gt 1^) {
-echo         $issues += "Mixed RAM speeds: $^($speeds -join ', '^) MHz"
+echo         $issues += "Mixed RAM speeds: $($speeds -join ', ') MHz"
 echo         $recommendations += "Use identical RAM sticks for optimal performance"
 echo         $score -= 10
 echo     }
 echo     if ^($capacities.Count -gt 1^) {
-echo         $capList = $capacities ^| ForEach-Object { "$^([math]::Round^($_ / 1GB, 0^)^) GB" }
-echo         $issues += "Mixed RAM capacities: $^($capList -join ', '^)"
+echo         $capList = $capacities ^| ForEach-Object { "$([math]::Round($_ / 1GB, 0)) GB" }
+echo         $issues += "Mixed RAM capacities: $($capList -join ', ')"
 echo         $score -= 5
 echo     }
 echo }
 echo/
-echo # Check 4: XMP/DOCP
+echo # Check 4: Memory speed vs module maximum
+echo # SMBIOS Speed is the BIOS-reported module max, not the XMP/EXPO profile, so XMP state cannot be confirmed
 echo $configSpeed = ^($sticks ^| Select-Object -First 1^).ConfiguredClockSpeed
 echo $ratedSpeed = ^($sticks ^| Select-Object -First 1^).Speed
+echo $isLaptop = ^($cs.PCSystemType -eq 2^)
 echo/
-echo Write-Host "  [CHECK] XMP/DOCP:" -NoNewline
+echo Write-Host "  [CHECK] Memory Speed:" -NoNewline
 echo if ^($ratedSpeed -and $configSpeed -and $ratedSpeed -gt $configSpeed^) {
-echo     Write-Host " NOT ENABLED ^(${configSpeed}MHz of ${ratedSpeed}MHz^)" -ForegroundColor Yellow
-echo     $issues += "RAM running below rated speed ^(${configSpeed} vs ${ratedSpeed} MHz^)"
-echo     $recommendations += "Enable XMP/DOCP/EXPO in BIOS for full RAM speed"
-echo     $score -= 15
+echo     Write-Host " BELOW MODULE MAX (${configSpeed} of ${ratedSpeed} MT/s)" -ForegroundColor Yellow
+echo     if ^(-not $isLaptop^) {
+echo         $recommendations += "Check the BIOS memory profile (XMP/DOCP/EXPO); the CPU or board may also cap speed"
+echo     }
 echo } elseif ^($ratedSpeed -and $configSpeed^) {
-echo     Write-Host " OK ^(${configSpeed}MHz^)" -ForegroundColor Green
+echo     Write-Host " OK (${configSpeed} MT/s)" -ForegroundColor Green
 echo } else {
 echo     Write-Host " UNKNOWN" -ForegroundColor Yellow
 echo }
@@ -426,9 +437,9 @@ echo # Check 5: Available slots
 echo $emptySlots = $totalSlots - $slotsFilled
 echo Write-Host "  [CHECK] Expansion:" -NoNewline
 echo if ^($emptySlots -gt 0^) {
-echo     Write-Host " $emptySlots empty slot^(s^) available" -ForegroundColor Green
+echo     Write-Host " $emptySlots empty slot(s) available" -ForegroundColor Green
 echo } else {
-echo     Write-Host " All slots filled ^(no expansion possible^)" -ForegroundColor Yellow
+echo     Write-Host " All slots filled (no expansion possible)" -ForegroundColor Yellow
 echo     if ^($totalGB -lt 32^) {
 echo         $recommendations += "All slots full - would need higher capacity sticks to upgrade"
 echo     }
@@ -457,10 +468,10 @@ echo Write-Host "  [CHECK] Pagefile:" -NoNewline
 echo if ^($pf^) {
 echo     $pfUsePct = if ^($pf.AllocatedBaseSize -gt 0^) { [math]::Round^($pf.CurrentUsage / $pf.AllocatedBaseSize * 100, 1^) } else { 0 }
 echo     if ^($pfUsePct -ge 50^) {
-echo         Write-Host " $pfUsePct%% used ^($^($pf.CurrentUsage^) MB of $^($pf.AllocatedBaseSize^) MB^)" -ForegroundColor Yellow
+echo         Write-Host " $pfUsePct%% used ($($pf.CurrentUsage) MB of $($pf.AllocatedBaseSize) MB)" -ForegroundColor Yellow
 echo         $recommendations += "High pagefile usage - consider adding more RAM"
 echo     } else {
-echo         Write-Host " $pfUsePct%% used ^($^($pf.CurrentUsage^) MB of $^($pf.AllocatedBaseSize^) MB^)" -ForegroundColor Green
+echo         Write-Host " $pfUsePct%% used ($($pf.CurrentUsage) MB of $($pf.AllocatedBaseSize) MB)" -ForegroundColor Green
 echo     }
 echo } else {
 echo     Write-Host " NOT CONFIGURED" -ForegroundColor Red
@@ -472,10 +483,10 @@ echo Write-Host ""
 echo/
 echo # Score
 echo $grade = switch ^([math]::Floor^($score / 10^)^) {
-echo     { $_ -ge 9 } { 'A' }
-echo     { $_ -ge 8 } { 'B' }
-echo     { $_ -ge 7 } { 'C' }
-echo     { $_ -ge 6 } { 'D' }
+echo     { $_ -ge 9 } { 'A'; break }
+echo     { $_ -ge 8 } { 'B'; break }
+echo     { $_ -ge 7 } { 'C'; break }
+echo     { $_ -ge 6 } { 'D'; break }
 echo     default { 'F' }
 echo }
 echo $gradeColor = switch ^($grade^) {
@@ -486,7 +497,7 @@ echo     'D' { 'Yellow' }
 echo     'F' { 'Red' }
 echo }
 echo/
-echo Write-Host "  OVERALL GRADE: $grade ^($score/100^)" -ForegroundColor $gradeColor
+echo Write-Host "  OVERALL GRADE: $grade ($score/100)" -ForegroundColor $gradeColor
 echo Write-Host ""
 echo/
 echo if ^($issues.Count -gt 0^) {
@@ -552,6 +563,7 @@ echo   [3] View results from last diagnostic
 echo   [0] Cancel
 echo/
 
+set "diagChoice="
 set /p "diagChoice=Select option: "
 
 if "%diagChoice%"=="0" goto MainMenu
@@ -567,13 +579,13 @@ if "%diagChoice%"=="3" (
     echo $results = Get-WinEvent -FilterHashtable @{ LogName='System'; ProviderName='Microsoft-Windows-MemoryDiagnostics-Results' } -MaxEvents 5 -ErrorAction SilentlyContinue
     echo if ^($results^) {
     echo     foreach ^($r in $results^) {
-    echo         Write-Host "  Date:    $^($r.TimeCreated^)" -ForegroundColor White
-    echo         Write-Host "  Result:  $^($r.Message^)"
+    echo         Write-Host "  Date:    $($r.TimeCreated)" -ForegroundColor White
+    echo         Write-Host "  Result:  $($r.Message)"
     echo         Write-Host ""
     echo     }
     echo } else {
     echo     Write-Host "  No memory diagnostic results found." -ForegroundColor Yellow
-    echo     Write-Host "  Run a diagnostic first ^(options 1 or 2^)."
+    echo     Write-Host "  Run a diagnostic first (options 1 or 2)."
     echo }
     ) > "!PSRESULT!"
 
@@ -585,36 +597,23 @@ if "%diagChoice%"=="3" (
     goto MainMenu
 )
 
+:: mdsched.exe takes no command-line switches: both options open the same Windows
+:: dialog, and nothing is scheduled or restarted until the user picks a choice there.
 if "%diagChoice%"=="1" (
     echo/
-    echo %YELLOW%The computer will restart now to run Memory Diagnostic.%RESET%
-    echo %YELLOW%Save all work before continuing.%RESET%
+    echo %YELLOW%Save all work first. The Windows Memory Diagnostic dialog will open.%RESET%
+    echo %YELLOW%Choose "Restart now and check for problems".%RESET%
     echo/
-    set /p "confirm=Restart now? [Y/N]: "
-    if /i not "!confirm!"=="Y" goto MainMenu
-
-    :: Schedule immediate diagnostic
-    bcdedit /set {memdiag} locale en-US >nul 2>&1
-    mdsched.exe /f >nul 2>&1
-    if errorlevel 1 (
-        :: Fallback
-        echo %YELLOW%Starting Windows Memory Diagnostic...%RESET%
-        start "" mdsched.exe
-    )
+    start "" mdsched.exe
+    pause
     goto MainMenu
 )
 
 if "%diagChoice%"=="2" (
     echo/
-    echo %GREEN%Memory Diagnostic will run on next restart.%RESET%
+    echo %YELLOW%In the dialog, choose "Check for problems the next time I start my computer".%RESET%
     echo/
-    mdsched.exe >nul 2>&1
-    if errorlevel 1 (
-        start "" mdsched.exe
-    )
-    echo %YELLOW%When prompted by the system dialog, select%RESET%
-    echo %YELLOW%"Check for problems the next time I start my computer"%RESET%
-    echo/
+    start "" mdsched.exe
     pause
     goto MainMenu
 )

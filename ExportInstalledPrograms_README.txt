@@ -19,6 +19,11 @@ HOW TO USE
 Output files are saved to your Desktop:
   - InstalledPrograms_COMPUTERNAME_DATE.txt (human-readable list)
   - WingetPrograms_COMPUTERNAME_DATE.json (for automated reinstall)
+The script asks Windows for the real Desktop folder, so this is also correct
+when OneDrive folder backup has moved the Desktop into OneDrive (for example
+C:\Users\Name\OneDrive\Desktop). If that folder cannot be found, the files
+go to your user folder (%USERPROFILE%) instead. The full path is shown before
+the scan starts.
 
 
 BEFORE YOU RUN
@@ -33,7 +38,9 @@ WHAT IT CAPTURES
 - Desktop applications (64-bit and 32-bit)
 - User-installed applications
 - Microsoft Store apps
-- Enabled Windows optional features
+- Enabled Windows optional features (read through WMI, Win32_OptionalFeature;
+  if Windows does not return them without elevation, the report says so -
+  re-run with "Run as administrator" to include them)
 - Detailed list with versions and publishers
 - Winget-compatible program list
 
@@ -62,7 +69,7 @@ This script only READS information and creates files. It makes NO changes
 to your system. Nothing to restore.
 
 To delete the export files:
-  1. Go to your Desktop
+  1. Go to your Desktop (or the folder shown when the script started)
   2. Delete InstalledPrograms_*.txt and WingetPrograms_*.json
 
 

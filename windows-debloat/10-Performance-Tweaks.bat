@@ -102,7 +102,9 @@ echo  - Consider installing "Everything" search (voidtools.com) as a
 echo    faster alternative to Windows Search
 echo  - If you use a HDD (not SSD), you may want to re-enable Superfetch:
 echo      sc config SysMain start= auto
-echo      net start SysMain
+echo      reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnablePrefetcher /t REG_DWORD /d 3 /f
+echo      reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnableSuperfetch /t REG_DWORD /d 3 /f
+echo      net start SysMain   ^(then restart^)
 echo/
 echo A reboot is recommended to complete all changes.
 echo/

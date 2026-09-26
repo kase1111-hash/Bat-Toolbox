@@ -48,6 +48,7 @@ echo   [3] Export report to Desktop
 echo   [0] Exit
 echo/
 
+set "choice="
 set /p "choice=Select option: "
 
 if "%choice%"=="1" goto QuickOverview
@@ -102,13 +103,28 @@ echo %CYAN%=====================================================================
 echo/
 
 for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set "dt=%%I"
-set "REPORT=%USERPROFILE%\Desktop\StorageReliability_%COMPUTERNAME%_%dt:~0,8%.txt"
+:: Resolve the real Desktop folder (follows OneDrive / folder redirection);
+:: fall back to %USERPROFILE%\Desktop if it cannot be resolved.
+set "DESKTOP="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP=%%D"
+if not defined DESKTOP set "DESKTOP=%USERPROFILE%\Desktop"
+if not exist "!DESKTOP!\" set "DESKTOP=%USERPROFILE%\Desktop"
+set "REPORT=!DESKTOP!\StorageReliability_%COMPUTERNAME%_%dt:~0,8%.txt"
+:: Remove an earlier same-day report so a stale file cannot be mistaken for success
+if exist "!REPORT!" del /f /q "!REPORT!" >nul 2>&1
 
+set "exportOk=0"
 powershell -ExecutionPolicy Bypass -File "%~dp0StorageReliabilityCounter.ps1" -Mode Export -ReportPath "!REPORT!" 2>nul
+if %errorlevel% equ 0 if exist "!REPORT!" set "exportOk=1"
 
 echo/
-echo %GREEN%Report saved to:%RESET%
-echo   %REPORT%
+if "!exportOk!"=="1" (
+    echo %GREEN%Report saved to:%RESET%
+    echo   !REPORT!
+) else (
+    echo %RED%[ERROR] Report could not be written to:%RESET%
+    echo   !REPORT!
+)
 echo/
 
 pause

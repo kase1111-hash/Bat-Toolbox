@@ -34,6 +34,13 @@ WHAT THE SCRIPT DOES
 3. Disables EOSNotify scheduled tasks
 4. Renames EOSNotify.exe to prevent future execution
 
+EOSNotify (the process, the \Microsoft\Windows\Setup\EOSNotify and
+EOSNotify2 tasks and System32\EOSNotify.exe) is the older end-of-support
+notifier and is often absent on current Windows 10 builds. If none of these
+components exist, the script says so with an [INFO] message instead of
+reporting success: only the upgrade-offer policies were applied, and the
+end-of-support reminder may keep appearing.
+
 
 HOW TO RESTORE / UNDO
 ---------------------
@@ -47,7 +54,7 @@ Option 2: Manual Reversal
 
   2. Re-enable the registry settings:
      reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "DisableOSUpgrade" /f
-     reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\EOSNotify" /v "DiscontinueEOS" /f
+     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\OSUpgrade" /v "AllowOSUpgrade" /f
 
   3. Rename EOSNotify.exe back (if it was renamed):
      Navigate to C:\Windows\System32
@@ -76,5 +83,8 @@ TIPS
 ----
 - The notification may return after major Windows updates
 - Run the script again if the notification reappears
-- This doesn't affect Windows Update functionality
+- The script sets OS-upgrade blocking values (DisableOSUpgrade=1,
+  AllowOSUpgrade=0), which can suppress feature-upgrade offers in Windows
+  Update; quality/security updates are unaffected. Undo them (Option 2) if
+  you later want the upgrade offer back.
 - You can still manually upgrade to Windows 11 anytime

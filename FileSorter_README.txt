@@ -6,6 +6,8 @@ DESCRIPTION
 -----------
 Automatically organizes files in a folder by moving them into subfolders
 based on their file extension (e.g., .jpg files go into a "JPG" folder).
+Only the files directly in that folder are sorted. Existing subfolders and
+everything inside them are left untouched.
 
 
 HOW TO USE
@@ -29,6 +31,7 @@ BEFORE YOU RUN
 - The script will NOT overwrite files with the same name
 - The script itself (FileSorter.bat) will not be moved
 - Hidden and system files are skipped
+- Subfolders are NOT entered - files inside them stay where they are
 
 
 HOW TO RESTORE / UNDO
@@ -43,8 +46,13 @@ Option 1: Manual Restore
 
 Option 2: Use Command Prompt
   1. Open Command Prompt in the sorted folder
-  2. Run: for /d %d in (*) do move "%d\*" . 2>nul
-  3. Delete empty folders: for /d %d in (*) do rd "%d" 2>nul
+  2. For each extension folder the script created, move its files back,
+     for example:
+       move "JPG\*" .
+       rd "JPG"
+  Caution: a loop such as  for /d %d in (*) do move "%d\*" .  also empties
+  subfolders that existed BEFORE sorting, so only use it if the folder had
+  no subfolders of its own.
 
 Option 3: System Restore (if needed)
   1. Press Win+R, type "rstrui.exe", press Enter

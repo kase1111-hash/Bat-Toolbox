@@ -41,16 +41,18 @@ WHAT IT DOES (the 12 phases)
        Device Census, CEIP, DiskDiagnostic, Feedback, Maps, NetTrace, WER)
   [12] Appends 60+ telemetry domains as 0.0.0.0 to the hosts file (idempotent;
        it checks for its own marker and skips if already present, and backs up
-       hosts first)
+       hosts first - if the backup cannot be written, hosts is left unchanged)
 
 
 BEFORE YOU RUN
 --------------
 - A hosts backup is created automatically as:
-    %SystemRoot%\System32\drivers\etc\hosts.bak.<YYYYMMDD>
-  (the date is derived from your locale's %date% format; if your locale
-  formats dates differently the suffix characters may differ, but a backup is
-  still written)
+    %SystemRoot%\System32\drivers\etc\hosts.bak.<YYYYMMDD-HHMMSS>
+  (the exact file name is printed when the hosts file is updated)
+- Phase 3 does NOT set the AppCompat "DisableEngine" policy ("Turn off
+  Application Compatibility Engine"). Older versions of this script set it
+  by mistake, which stops compatibility fixes for older apps and games; see
+  HOW TO RESTORE / UNDO to remove it.
 - Disabling DPS (Diagnostic Policy Service) can affect some Windows
   troubleshooters and network diagnostics.
 - Disabling location (lfsvc) breaks "Find my device" and any app that needs
@@ -63,14 +65,28 @@ HOW TO RESTORE / UNDO
 1. Delete the policy keys the script created, e.g.:
      reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /f
    (and the other HKLM\SOFTWARE\Policies\Microsoft\... keys listed in the
-   script's phases)
+   script's phases). Also delete the values it set OUTSIDE that tree -
+   otherwise error reporting, CEIP and Copilot stay off:
+     reg delete "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /f
+     reg delete "HKLM\SOFTWARE\Microsoft\SQMClient\Windows" /v CEIPEnable /f
+     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v AllowTelemetry /f
+     reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v MaxTelemetryAllowed /f
+     reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /f
+     reg delete "HKCU\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /f
+     reg delete "HKLM\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" /v AutoConnectAllowedOEM /f
+   If an older version of this script ran, also restore the Application
+   Compatibility Engine:
+     reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableEngine /f
+   After the reboot in step 4, choose the diagnostic data level in Settings >
+   Privacy & security > Diagnostics & feedback (this writes AllowTelemetry
+   again).
 2. Set the disabled services back to default Start values (most are 2=Auto or
    3=Manual), e.g.:
      reg add "HKLM\SYSTEM\CurrentControlSet\Services\DiagTrack" /v Start /t REG_DWORD /d 2 /f
 3. Remove the telemetry block from the hosts file - either edit out the
    section between the "# --- TELEMETRY BLOCK ..." and "# --- END TELEMETRY
    BLOCK ---" markers, or restore the backup:
-     copy /Y "%SystemRoot%\System32\drivers\etc\hosts.bak.<date>" "%SystemRoot%\System32\drivers\etc\hosts"
+     copy /Y "%SystemRoot%\System32\drivers\etc\hosts.bak.<YYYYMMDD-HHMMSS>" "%SystemRoot%\System32\drivers\etc\hosts"
 4. Re-enable scheduled tasks via Task Scheduler, then reboot.
 
 

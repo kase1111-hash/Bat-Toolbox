@@ -159,9 +159,11 @@ for /l %%i in (5,-1,1) do (
 powershell -command "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('Goodbye.')" >nul 2>&1
 
 :: Log completion
-echo SHUTDOWN EXECUTED >> "%logfile%"
+echo SHUTDOWN SCHEDULED (30 second timer) >> "%logfile%"
 echo ============================================ >> "%logfile%"
 echo/ >> "%logfile%"
 
 :: SHUTDOWN
-shutdown /s /t 0 /f
+:: A 30-second timer (instead of /t 0) gives the owner a real cancel window:
+:: "shutdown /a" aborts a pending shutdown only while its timer is running.
+shutdown /s /t 30 /f /c "Unauthorized access logged. System shutting down."

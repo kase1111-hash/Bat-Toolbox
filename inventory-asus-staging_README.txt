@@ -28,7 +28,9 @@ Nothing is changed. You can run this as often as you like.
 
 WHAT IT SHOWS (per service)
 ---------------------------
-  - Service short name (resolved from the display name)
+  - Service short name (resolved from the display name; a display name
+    with the short name appended in parentheses also matches, e.g.
+    "Microsoft Edge Elevation Service (MicrosoftEdgeElevationService)")
   - State (RUNNING / STOPPED / ...)
   - Startup type (AUTO / DEMAND / DISABLED)
   - Binary path

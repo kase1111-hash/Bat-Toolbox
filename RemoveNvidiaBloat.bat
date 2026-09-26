@@ -42,6 +42,7 @@ echo [INFO] Administrator privileges confirmed.
 echo/
 
 :: Confirm before proceeding
+set "confirm="
 set /p "confirm=Do you want to remove NVIDIA bloatware? (Y/N): "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -117,32 +118,33 @@ echo/
 
 echo [3/6] Uninstalling GeForce Experience...
 
-:: Try standard uninstall first
+:: GeForce Experience is an NVIDIA Installer2 package: it has no uninstall.exe
+:: and is not an MSI product. Run the uninstaller it registered with Windows
+:: (RunDll32 ...\NVI2.DLL,UninstallPackage Display.GFExperience) silently.
+set "GFE_KEY=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}_Display.GFExperience"
 set "GFE_UNINSTALL="
-
-:: Check common uninstall locations (avoid parentheses in for loop)
-set "GFE_PATH1=%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
-set "GFE_PATH2=%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience\uninstall.exe"
-
-if exist "!GFE_PATH1!" set "GFE_UNINSTALL=!GFE_PATH1!"
-if exist "!GFE_PATH2!" set "GFE_UNINSTALL=!GFE_PATH2!"
+for /f "tokens=2,*" %%A in ('reg query "%GFE_KEY%" /v UninstallString 2^>nul ^| findstr /i "UninstallString"') do set "GFE_UNINSTALL=%%B"
 
 if defined GFE_UNINSTALL (
     echo       - Found GeForce Experience uninstaller
     echo       - Running uninstaller [this may take a moment]...
-    start /wait "" "!GFE_UNINSTALL!" /silent /noreboot 2>nul
-    if not errorlevel 1 (
+    start "" /wait !GFE_UNINSTALL! -silent
+    reg query "%GFE_KEY%" >nul 2>&1
+    if errorlevel 1 (
         echo       - GeForce Experience uninstalled
         set /a success+=1
     ) else (
-        echo       - Uninstaller returned an error [may already be removed]
+        echo       - Uninstaller did not complete [GeForce Experience is still registered]
     )
 ) else (
-    echo       - GeForce Experience uninstaller not found [may not be installed]
+    echo       - GeForce Experience is not registered [not installed]
 )
 
-:: Also try using WMIC
-wmic product where "name like '%%GeForce Experience%%'" call uninstall /nointeractive >nul 2>&1
+:: If GeForce Experience is still registered, its program folders are left in
+:: place in Phase 5 - deleting them would orphan the Apps and Features entry.
+set "GFE_REGISTERED=0"
+reg query "%GFE_KEY%" >nul 2>&1
+if %errorlevel% equ 0 set "GFE_REGISTERED=1"
 
 echo/
 echo ============================================================================
@@ -166,7 +168,7 @@ for %%T in (
     "\NvTmRepCR2_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}"
     "\NvTmRepCR3_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}"
 ) do (
-    schtasks /delete /tn "%%T" /f >nul 2>&1
+    schtasks /delete /tn "%%~T" /f >nul 2>&1
     if not errorlevel 1 (
         echo       - Removed task: %%~nT
         set /a success+=1
@@ -206,9 +208,16 @@ echo/
 
 echo [6/6] Removing NVIDIA bloatware files and folders...
 
-:: Remove GeForce Experience folders (using call to handle paths with parentheses)
-call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience"
-call :RemoveFolder "%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience"
+:: Remove GeForce Experience program folders - only once it is no longer
+:: registered, so a failed uninstall does not leave a broken Apps entry.
+:: (:RemoveFolder reads its argument via !RF_PATH!, so paths such as
+:: "Program Files (x86)" cannot break its parenthesized blocks.)
+if "%GFE_REGISTERED%"=="1" (
+    echo       - Skipped GeForce Experience program folders [still installed - uninstall it from Settings ^> Apps]
+) else (
+    call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NVIDIA GeForce Experience"
+    call :RemoveFolder "%ProgramFiles(x86)%\NVIDIA Corporation\NVIDIA GeForce Experience"
+)
 call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvContainer"
 call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvTelemetry"
 call :RemoveFolder "%ProgramFiles%\NVIDIA Corporation\NvNode"
@@ -258,11 +267,12 @@ echo/
 echo A reboot is recommended to complete the removal process.
 echo/
 
+set "reboot="
 set /p "reboot=Would you like to restart your computer now? (Y/N): "
 if /i "%reboot%"=="Y" (
     echo/
     echo Restarting computer in 10 seconds...
-    echo Press Ctrl+C to cancel.
+    echo To cancel, press Win+R and run: shutdown /a
     shutdown /r /t 10 /c "NVIDIA Bloatware Removal - Restart"
 )
 
@@ -275,13 +285,17 @@ exit /b 0
 :: Safely removes a folder if it exists
 :: ============================================================================
 :RemoveFolder
-if exist "%~1" (
-    rd /s /q "%~1" >nul 2>&1
-    if not errorlevel 1 (
-        echo       - Removed: %~1
-        set /a success+=1
+REM Read the path through !RF_PATH! - an argument containing ")" such as
+REM "Program Files (x86)" would otherwise close the blocks below.
+REM RD does not reliably set ERRORLEVEL, so check whether the folder is gone.
+set "RF_PATH=%~1"
+if exist "!RF_PATH!" (
+    rd /s /q "!RF_PATH!" >nul 2>&1
+    if exist "!RF_PATH!" (
+        echo       - Could not remove: !RF_PATH! [in use or protected]
     ) else (
-        echo       - Could not remove: %~1 [in use or protected]
+        echo       - Removed: !RF_PATH!
+        set /a success+=1
     )
 )
 goto :eof

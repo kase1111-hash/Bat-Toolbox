@@ -16,7 +16,10 @@
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Requesting administrator privileges...
-    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    REM Pass the path through an environment variable so an apostrophe
+    REM in it cannot break the PowerShell command string
+    set "SELF_PATH=%~f0"
+    powershell -NoProfile -Command "Start-Process -FilePath $env:SELF_PATH -Verb RunAs"
     exit /b
 )
 
@@ -26,6 +29,20 @@ echo/
 echo ============================================================
 echo  Edge Disable  -  Bat-Toolbox
 echo ============================================================
+echo/
+echo  This will force-close Microsoft Edge and every app that uses WebView2
+echo  (new Outlook, Teams, Widgets and others) - save your work first.
+echo  It then disables Edge updates, update tasks and background launching.
+echo  NOTE: the WebView2 Runtime is updated by the same Edge Update services,
+echo  so it also stops receiving security updates until you undo this.
+echo/
+choice /C YN /N /M "  Continue? (Y/N): "
+if %errorlevel% neq 1 (
+    echo  Cancelled. No changes were made.
+    endlocal
+    pause
+    exit /b 0
+)
 echo/
 
 :: --- 1. Kill any running Edge processes ----------------------
@@ -78,15 +95,18 @@ echo       can execute it (including system features like Widgets
 echo       that try to force-launch via microsoft-edge:// protocol).
 echo       Reversible by renaming msedge_disabled.exe back.
 echo/
+set "RENAME_CHOICE="
 set /p RENAME_CHOICE="       Rename msedge.exe? (y/N): "
 if /I "!RENAME_CHOICE!"=="y" (
     set "EDGE_DIR=C:\Program Files (x86)\Microsoft\Edge\Application"
     if exist "!EDGE_DIR!\msedge.exe" (
-        :: msedge.exe is locked down - take ownership first
+        REM msedge.exe is locked down - take ownership first
         takeown /F "!EDGE_DIR!\msedge.exe" >nul 2>&1
         icacls "!EDGE_DIR!\msedge.exe" /grant administrators:F >nul 2>&1
+        REM A copy left by an earlier run makes ren fail - remove the stale one first
+        if exist "!EDGE_DIR!\msedge_disabled.exe" del /f /q "!EDGE_DIR!\msedge_disabled.exe" >nul 2>&1
         ren "!EDGE_DIR!\msedge.exe" "msedge_disabled.exe" >nul 2>&1
-        if exist "!EDGE_DIR!\msedge_disabled.exe" (
+        if not exist "!EDGE_DIR!\msedge.exe" (
             echo       Renamed: msedge.exe  --^>  msedge_disabled.exe
         ) else (
             echo       Rename failed. Edge may still be running, or

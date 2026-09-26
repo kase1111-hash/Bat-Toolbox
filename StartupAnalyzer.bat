@@ -71,25 +71,35 @@ set "REMOVE_PATTERNS=iTunes Helper;iTunesHelper;QuickTime;Adobe ARM;Acrobat Assi
 :: Scan startup locations
 :: ============================================================================
 
+:: reg query prints "    <value name>    REG_SZ    <data>" with 4-space columns.
+:: Value names often contain spaces ("Google Update", "Adobe ARM"), so do not
+:: split on spaces: strip the 4-space indent and turn the type column into ";"
+:: to get "<value name>;<data>" with the full value name intact.
 echo [1/4] Scanning HKCU Run registry...
-for /f "tokens=1,2,*" %%a in ('reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i "REG_SZ REG_EXPAND_SZ"') do (
-    set "name=%%a"
-    set "value=%%c"
-    echo HKCU_Run;!name!;!value! >> "%TEMP_ALL%"
+for /f "delims=" %%L in ('reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i /c:"    REG_SZ    " /c:"    REG_EXPAND_SZ    "') do (
+    set "line=%%L"
+    set "line=!line:~4!"
+    set "line=!line:    REG_EXPAND_SZ    =;!"
+    set "line=!line:    REG_SZ    =;!"
+    echo HKCU_Run;!line!>> "%TEMP_ALL%"
 )
 
 echo [2/4] Scanning HKLM Run registry...
-for /f "tokens=1,2,*" %%a in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i "REG_SZ REG_EXPAND_SZ"') do (
-    set "name=%%a"
-    set "value=%%c"
-    echo HKLM_Run;!name!;!value! >> "%TEMP_ALL%"
+for /f "delims=" %%L in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i /c:"    REG_SZ    " /c:"    REG_EXPAND_SZ    "') do (
+    set "line=%%L"
+    set "line=!line:~4!"
+    set "line=!line:    REG_EXPAND_SZ    =;!"
+    set "line=!line:    REG_SZ    =;!"
+    echo HKLM_Run;!line!>> "%TEMP_ALL%"
 )
 
 echo [3/4] Scanning HKLM Run (32-bit)...
-for /f "tokens=1,2,*" %%a in ('reg query "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i "REG_SZ REG_EXPAND_SZ"') do (
-    set "name=%%a"
-    set "value=%%c"
-    echo HKLM_Run32;!name!;!value! >> "%TEMP_ALL%"
+for /f "delims=" %%L in ('reg query "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Run" 2^>nul ^| findstr /i /c:"    REG_SZ    " /c:"    REG_EXPAND_SZ    "') do (
+    set "line=%%L"
+    set "line=!line:~4!"
+    set "line=!line:    REG_EXPAND_SZ    =;!"
+    set "line=!line:    REG_SZ    =;!"
+    echo HKLM_Run32;!line!>> "%TEMP_ALL%"
 )
 
 echo [4/4] Scanning Startup folders...
@@ -233,7 +243,7 @@ echo     'RegClean' = 'Scareware - registry cleaners are unnecessary'
 echo }
 echo/
 echo # Read all startup items
-echo $items = Get-Content '%TEMP_ALL%' ^| Where-Object { $_ -match ';' }
+echo $items = Get-Content ^(Join-Path $env:TEMP 'startup_all.txt'^) ^| Where-Object { $_ -match ';' }
 echo/
 echo $keepList = @^(^)
 echo $optionalList = @^(^)
@@ -246,12 +256,16 @@ echo     if ^($parts.Count -lt 2^) { continue }
 echo     $location = $parts[0]
 echo     $name = $parts[1]
 echo     $path = if ^($parts.Count -gt 2^) { $parts[2] } else { '' }
+echo     # KEEP matches the path too, but not the user profile folder: short
+echo     # tokens like 'ELAN' or 'Intel' would otherwise match a profile such as
+echo     # C:\Users\Melanie and mark every per-user entry as essential.
+echo     $keepPath = $path -replace [regex]::Escape^($env:USERPROFILE^), '~'
 echo/
 echo     $categorized = $false
 echo/
 echo     # Check KEEP patterns
 echo     foreach ^($pattern in $keepPatterns^) {
-echo         if ^($name -match [regex]::Escape^($pattern^) -or $path -match [regex]::Escape^($pattern^)^) {
+echo         if ^($name -match [regex]::Escape^($pattern^) -or $keepPath -match [regex]::Escape^($pattern^)^) {
 echo             $keepList += [PSCustomObject]@{Location=$location; Name=$name; Path=$path; Reason='Essential system/driver component'}
 echo             $categorized = $true
 echo             break
@@ -311,8 +325,8 @@ echo if ^($keepList.Count -eq 0^) {
 echo     Write-Host '  No essential startup programs found.' -ForegroundColor Gray
 echo } else {
 echo     foreach ^($item in $keepList^) {
-echo         Write-Host "  [OK] $^($item.Name^)" -ForegroundColor Green
-echo         Write-Host "       $^($item.Reason^)" -ForegroundColor DarkGray
+echo         Write-Host "  [OK] $($item.Name)" -ForegroundColor Green
+echo         Write-Host "       $($item.Reason)" -ForegroundColor DarkGray
 echo     }
 echo }
 echo/
@@ -326,8 +340,8 @@ echo     Write-Host '  No optional startup programs found.' -ForegroundColor Gra
 echo } else {
 echo     $i = 1
 echo     foreach ^($item in $optionalList^) {
-echo         Write-Host "  [$i] $^($item.Name^)" -ForegroundColor Yellow
-echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkGray
+echo         Write-Host "  [$i] $($item.Name)" -ForegroundColor Yellow
+echo         Write-Host "      $($item.Reason)" -ForegroundColor DarkGray
 echo         $i++
 echo     }
 echo }
@@ -341,8 +355,8 @@ echo if ^($unknownList.Count -eq 0^) {
 echo     Write-Host '  No unknown startup programs found.' -ForegroundColor Gray
 echo } else {
 echo     foreach ^($item in $unknownList^) {
-echo         Write-Host "  [?] $^($item.Name^)" -ForegroundColor Cyan
-echo         Write-Host "      Path: $^($item.Path^)" -ForegroundColor DarkGray
+echo         Write-Host "  [?] $($item.Name)" -ForegroundColor Cyan
+echo         Write-Host "      Path: $($item.Path)" -ForegroundColor DarkGray
 echo     }
 echo }
 echo/
@@ -356,20 +370,20 @@ echo     Write-Host '  No bloatware found^^! Your startup is clean.' -Foreground
 echo } else {
 echo     $i = 1
 echo     foreach ^($item in $removeList^) {
-echo         Write-Host "  [$i] $^($item.Name^)" -ForegroundColor Red
-echo         Write-Host "      $^($item.Reason^)" -ForegroundColor DarkYellow
+echo         Write-Host "  [$i] $($item.Name)" -ForegroundColor Red
+echo         Write-Host "      $($item.Reason)" -ForegroundColor DarkYellow
 echo         $i++
 echo     }
 echo }
 echo/
 echo # Save remove list for batch file
-echo $removeList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_REMOVE%' -Encoding ASCII
-echo $optionalList ^| ForEach-Object { "$^($_.Location^);$^($_.Name^);$^($_.Path^)" } ^| Out-File -FilePath '%TEMP_OPTIONAL%' -Encoding ASCII
+echo $removeList ^| ForEach-Object { "$($_.Location);$($_.Name);$($_.Path)" } ^| Out-File -FilePath ^(Join-Path $env:TEMP 'startup_remove.txt'^) -Encoding ASCII
+echo $optionalList ^| ForEach-Object { "$($_.Location);$($_.Name);$($_.Path)" } ^| Out-File -FilePath ^(Join-Path $env:TEMP 'startup_optional.txt'^) -Encoding ASCII
 echo/
 echo # Output counts
 echo ''
 echo '============================================================================'
-echo " Summary: $^($keepList.Count^) Keep, $^($optionalList.Count^) Optional, $^($unknownList.Count^) Unknown, $^($removeList.Count^) Remove"
+echo " Summary: $($keepList.Count) Keep, $($optionalList.Count) Optional, $($unknownList.Count) Unknown, $($removeList.Count) Remove"
 echo '============================================================================'
 ) > "%PSSCRIPT%"
 
@@ -384,51 +398,49 @@ echo/
 
 if %remove_count% gtr 0 (
     echo/
+    set "doremove="
     set /p "doremove=Would you like to disable the [REMOVE] items? [Y/N]: "
     if /i "!doremove!"=="Y" (
         echo/
         echo Disabling bloatware startup entries...
         echo/
 
+        REM Disable the same way Task Manager does: write a "disabled" marker,
+        REM 03 followed by zeros, to the matching StartupApproved key. The Run value or
+        REM shortcut itself is NOT deleted, so the item stays listed in Task
+        REM Manager's Startup tab and can be re-enabled there.
         for /f "tokens=1,2,3 delims=;" %%a in ('type "%TEMP_REMOVE%" 2^>nul') do (
             set "loc=%%a"
             set "itemname=%%b"
-
-            if "!loc!"=="HKCU_Run" (
-                reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" /f >nul 2>&1
+            set "approvedKey="
+            if "!loc!"=="HKCU_Run" set "approvedKey=HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+            if "!loc!"=="HKLM_Run" set "approvedKey=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+            if "!loc!"=="HKLM_Run32" set "approvedKey=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32"
+            if "!loc!"=="Startup_Folder" set "approvedKey=HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder"
+            if "!loc!"=="Startup_Folder_All" set "approvedKey=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder"
+            REM Only write the marker when the entry exists under this exact name,
+            REM because reg add would otherwise create an unrelated value and report success
+            set "srcFound="
+            if "!loc!"=="HKCU_Run" reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="HKLM_Run" reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="HKLM_Run32" reg query "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" >nul 2>&1 && set "srcFound=1"
+            if "!loc!"=="Startup_Folder" if exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" set "srcFound=1"
+            if "!loc!"=="Startup_Folder_All" if exist "%ProgramData%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" set "srcFound=1"
+            REM A ? in the name means it was altered, and if exist would treat it as a wildcard
+            if not "!itemname:?=!"=="!itemname!" set "srcFound="
+            if not defined srcFound set "approvedKey=" & echo   [FAILED] !itemname! - not found under this name, disable it in Task Manager
+            if defined approvedKey (
+                reg add "!approvedKey!" /v "!itemname!" /t REG_BINARY /d 030000000000000000000000 /f >nul 2>&1
                 if not errorlevel 1 (
-                    echo   [REMOVED] !itemname!
-                ) else (
-                    echo   [FAILED] !itemname!
-                )
-            )
-            if "!loc!"=="HKLM_Run" (
-                reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" /f >nul 2>&1
-                if not errorlevel 1 (
-                    echo   [REMOVED] !itemname!
+                    echo   [DISABLED] !itemname!
                 ) else (
                     echo   [FAILED] !itemname! - may need admin rights
                 )
-            )
-            if "!loc!"=="HKLM_Run32" (
-                reg delete "HKLM\SOFTWARE\WoW6432Node\Microsoft\Windows\CurrentVersion\Run" /v "!itemname!" /f >nul 2>&1
-                if not errorlevel 1 (
-                    echo   [REMOVED] !itemname!
-                ) else (
-                    echo   [FAILED] !itemname! - may need admin rights
-                )
-            )
-            if "!loc!"=="Startup_Folder" (
-                del /f /q "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" >nul 2>&1
-                echo   [REMOVED] !itemname!
-            )
-            if "!loc!"=="Startup_Folder_All" (
-                del /f /q "%ProgramData%\Microsoft\Windows\Start Menu\Programs\Startup\!itemname!" >nul 2>&1
-                echo   [REMOVED] !itemname!
             )
         )
         echo/
         echo Bloatware startup entries have been disabled.
+        echo Re-enable any of them in Task Manager ^> Startup tab.
     )
 )
 
@@ -438,6 +450,7 @@ for /f %%a in ('type "%TEMP_OPTIONAL%" 2^>nul ^| find /c ";"') do set "optional_
 
 if %optional_count% gtr 0 (
     echo/
+    set "dooptional="
     set /p "dooptional=Would you like to review [OPTIONAL] items for removal? [Y/N]: "
     if /i "!dooptional!"=="Y" (
         echo/
@@ -458,7 +471,7 @@ del "%TEMP_REMOVE%" 2>nul
 title [2/2] Startup Analyzer - Complete
 echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
-echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %GREEN%Complete^^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Use Task Manager %DIM%[Ctrl+Shift+Esc]%RESET% ^> Startup tab for manual control %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Disabled programs can be re-enabled in Task Manager               %CYAN%║%RESET%

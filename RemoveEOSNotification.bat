@@ -31,6 +31,7 @@ echo [INFO] Administrator privileges confirmed.
 echo/
 
 :: Confirm before proceeding
+set "confirm="
 set /p "confirm=Do you want to remove the EOS notification? (Y/N): "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -47,6 +48,9 @@ echo/
 
 set "success=0"
 set "errors=0"
+:: Counts the EOSNotify components (process, tasks, executable) that exist.
+:: If none exist, the reminder does not come from EOSNotify on this system.
+set "eosFound=0"
 
 :: Step 1: Kill any running EOSNotify processes
 echo [1/5] Terminating EOSNotify processes...
@@ -56,6 +60,7 @@ if !errorlevel! neq 0 (
 ) else (
     echo       - EOSNotify process terminated successfully
     set /a success+=1
+    set /a eosFound+=1
 )
 
 :: Step 2: Disable EOS notification via registry (User Policy)
@@ -88,6 +93,7 @@ if !errorlevel! neq 0 (
 ) else (
     echo       - EOSNotify scheduled task disabled
     set /a success+=1
+    set /a eosFound+=1
 )
 
 schtasks /change /tn "\Microsoft\Windows\Setup\EOSNotify2" /disable >nul 2>&1
@@ -96,12 +102,14 @@ if !errorlevel! neq 0 (
 ) else (
     echo       - EOSNotify2 scheduled task disabled
     set /a success+=1
+    set /a eosFound+=1
 )
 
 :: Step 5: Rename EOSNotify.exe to prevent future execution
 echo [5/5] Renaming EOSNotify executable to prevent future execution...
 set "eosPath=%SystemRoot%\System32\EOSNotify.exe"
 if exist "%eosPath%" (
+    set /a eosFound+=1
     takeown /f "%eosPath%" >nul 2>&1
     icacls "%eosPath%" /grant administrators:F >nul 2>&1
     ren "%eosPath%" "EOSNotify.exe.bak" >nul 2>&1
@@ -114,6 +122,7 @@ if exist "%eosPath%" (
     )
 ) else (
     echo       - EOSNotify.exe not found ^(may already be removed^)
+    if exist "%eosPath%.bak" set /a eosFound+=1
 )
 
 echo/
@@ -129,6 +138,11 @@ if %errors% gtr 0 (
     color 0E
     echo [WARNING] Some operations failed. The notification may still appear.
     echo Try running the script again or manually check the registry settings.
+) else if !eosFound! equ 0 (
+    color 0E
+    echo [INFO] No EOSNotify process, task or executable exists on this system.
+    echo Only the upgrade-offer policies were applied - the source of the
+    echo end-of-support reminder was not changed, so it may keep appearing.
 ) else (
     color 0A
     echo [SUCCESS] EOS notification has been disabled.
@@ -139,6 +153,7 @@ echo/
 echo NOTE: You may need to restart your computer or restart
 echo       Windows Explorer for changes to take full effect.
 echo/
+set "restart="
 set /p "restart=Would you like to restart Windows Explorer now? (Y/N): "
 if /i "%restart%"=="Y" (
     echo/

@@ -76,21 +76,6 @@ echo   - Productivity: Moderate (consistent performance)
 echo   - Content creation: Variable (depends on app)
 echo/
 
-choice /c YN /m "Create a system restore point before continuing"
-if %errorlevel%==1 (
-    echo/
-    echo %CYAN%Creating restore point...%RESET%
-    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
-    :: off, or the 24h frequency limit), so verify a point was actually added.
-    powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
-    if !errorlevel! equ 0 (
-        echo %GREEN%[OK] Restore point created%RESET%
-    ) else (
-        echo %YELLOW%[WARN] Could not create restore point ^(System Protection off or created recently^)%RESET%
-    )
-)
-
-echo/
 echo %CYAN%============================================================%RESET%
 echo %WHITE%  SELECT OPTIMIZATION PROFILE%RESET%
 echo %CYAN%============================================================%RESET%
@@ -115,17 +100,51 @@ echo     - Adaptive performance, lower temps
 echo     - Best for: Laptops, quiet operation
 echo     - Tradeoff: Variable performance
 echo/
+echo %WHITE%[5]%RESET% Cancel - exit without changes
+echo/
 
-choice /c 1234 /m "Select profile"
+choice /c 12345 /m "Select profile"
 set "profile=%errorlevel%"
 
+:: Only 1-4 are profiles. [5] cancels, and choice returns 0 when Ctrl+C is
+:: pressed and the batch is not terminated, so both exit without changes.
+set "profile_name="
 if "%profile%"=="1" set "profile_name=Competitive Gaming"
 if "%profile%"=="2" set "profile_name=Balanced Gaming"
 if "%profile%"=="3" set "profile_name=Quality / Content Creation"
 if "%profile%"=="4" set "profile_name=Power Efficient"
+if not defined profile_name (
+    echo/
+    echo %YELLOW%Cancelled - no changes were made.%RESET%
+    pause
+    exit /b 0
+)
 
 echo/
 echo %GREEN%Selected: %profile_name%%RESET%
+echo/
+choice /c YN /m "Apply the %profile_name% profile now"
+if %errorlevel% neq 1 (
+    echo/
+    echo %YELLOW%Cancelled - no changes were made.%RESET%
+    pause
+    exit /b 0
+)
+
+echo/
+choice /c YN /m "Create a system restore point before continuing"
+if %errorlevel%==1 (
+    echo/
+    echo %CYAN%Creating restore point...%RESET%
+    REM Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    REM off, or the 24h frequency limit), so verify a point was actually added.
+    powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before GPUDriverOptimizer' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
+    if !errorlevel! equ 0 (
+        echo %GREEN%[OK] Restore point created%RESET%
+    ) else (
+        echo %YELLOW%[WARN] Could not create restore point ^(System Protection off or created recently^)%RESET%
+    )
+)
 echo/
 
 :: ============================================================
@@ -149,12 +168,15 @@ if "%profile%"=="4" (
 
 :: Variable Refresh Rate
 echo %WHITE%[2/4] Variable Refresh Rate (VRR)...%RESET%
+:: DirectXUserGlobalSettings holds all of Windows' default graphics settings
+:: (e.g. AutoHDREnable, SwapEffectUpgradeEnable), so :SetVRR changes only the
+:: VRROptimizeEnable entry instead of overwriting the whole value.
 if "%profile%"=="1" (
-    :: Competitive - disable VRR for lowest latency ^(controversial, user preference^)
-    reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /t REG_SZ /d "VRROptimizeEnable=0;" /f >nul 2>&1
+    REM Competitive - disable VRR for lowest latency ^(controversial, user preference^)
+    call :SetVRR 0
     echo %YELLOW%   [SET] VRR optimization disabled ^(raw latency^)%RESET%
 ) else (
-    reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "DirectXUserGlobalSettings" /t REG_SZ /d "VRROptimizeEnable=1;" /f >nul 2>&1
+    call :SetVRR 1
     echo %GREEN%   [SET] VRR optimization enabled%RESET%
 )
 
@@ -173,13 +195,16 @@ if "%profile%"=="3" (
 :: Fullscreen optimizations
 echo %WHITE%[4/4] Fullscreen optimizations...%RESET%
 if "%profile%"=="1" (
-    :: Disable FSO for competitive ^(true exclusive fullscreen^)
+    REM Disable FSO for competitive ^(true exclusive fullscreen^)
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /t REG_DWORD /d 2 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 1 /f >nul 2>&1
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehavior" /t REG_DWORD /d 2 /f >nul 2>&1
     echo %GREEN%   [SET] True exclusive fullscreen enabled%RESET%
 ) else (
     reg add "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehaviorMode" /t REG_DWORD /d 0 /f >nul 2>&1
+    REM Undo the Profile 1 overrides so FSO really returns to Windows' per-app choice
+    reg add "HKCU\System\GameConfigStore" /v "GameDVR_HonorUserFSEBehaviorMode" /t REG_DWORD /d 0 /f >nul 2>&1
+    reg delete "HKCU\System\GameConfigStore" /v "GameDVR_FSEBehavior" /f >nul 2>&1
     echo %GREEN%   [SET] Windows decides per-application%RESET%
 )
 
@@ -194,24 +219,32 @@ if "%has_nvidia%"=="1" (
     echo %CYAN%============================================================%RESET%
     echo/
 
-    REM Find NVIDIA profile registry path
+    REM Find the display-class instance key whose ProviderName is NVIDIA.
+    REM Instance numbers follow install order: on laptops and PCs with an Intel/AMD
+    REM iGPU, \0000 is often the iGPU and the NVIDIA adapter is \0001 or higher.
     set "nv_path="
-    for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "NVIDIA" 2^>nul ^| findstr /i "0000 0001 0002 0003"') do (
-        set "nv_path=%%a"
+    for /f "delims=" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" 2^>nul ^| findstr /r "\\[0-9][0-9][0-9][0-9]$"') do (
+        reg query "%%k" /v ProviderName 2>nul | find /i "NVIDIA" >nul && set "nv_path=%%k"
     )
 
     REM Global NVIDIA settings via registry
+    REM Profiles 1-2 force maximum performance. Profiles 3-4 remove those overrides
+    REM so the driver's own adaptive power management applies again.
     echo %WHITE%[1/10] Power management mode...%RESET%
-    if "%profile%"=="4" (
-        REM Adaptive
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
-        echo %YELLOW%   [SET] Adaptive ^(power saving^)%RESET%
+    set "nv_maxperf=0"
+    if "%profile%"=="1" set "nv_maxperf=1"
+    if "%profile%"=="2" set "nv_maxperf=1"
+    if not defined nv_path (
+        echo %YELLOW%   [SKIP] NVIDIA adapter registry key not found%RESET%
+    ) else if "!nv_maxperf!"=="0" (
+        for %%v in (PerfLevelSrc PowerMizerEnable PowerMizerLevel PowerMizerLevelAC) do reg delete "!nv_path!" /v "%%v" /f >nul 2>&1
+        echo %YELLOW%   [SET] Driver default ^(adaptive^)%RESET%
     ) else (
         REM Prefer maximum performance
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PowerMizerEnable" /t REG_DWORD /d 0 /f >nul 2>&1
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PowerMizerLevel" /t REG_DWORD /d 1 /f >nul 2>&1
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "PowerMizerLevelAC" /t REG_DWORD /d 1 /f >nul 2>&1
+        reg add "!nv_path!" /v "PerfLevelSrc" /t REG_DWORD /d 8738 /f >nul 2>&1
+        reg add "!nv_path!" /v "PowerMizerEnable" /t REG_DWORD /d 0 /f >nul 2>&1
+        reg add "!nv_path!" /v "PowerMizerLevel" /t REG_DWORD /d 1 /f >nul 2>&1
+        reg add "!nv_path!" /v "PowerMizerLevelAC" /t REG_DWORD /d 1 /f >nul 2>&1
         echo %GREEN%   [SET] Maximum performance%RESET%
     )
 
@@ -233,13 +266,15 @@ if "%has_nvidia%"=="1" (
 
     echo %WHITE%[3/10] Shader cache...%RESET%
     REM Shader cache location and size
-    if "%profile%"=="3" (
+    if not defined nv_path (
+        echo %YELLOW%   [SKIP] NVIDIA adapter registry key not found%RESET%
+    ) else if "%profile%"=="3" (
         REM Unlimited for content creation ^(more VRAM usage^)
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /t REG_DWORD /d 0xFFFFFFFF /f >nul 2>&1
+        reg add "!nv_path!" /v "ShaderCacheSize" /t REG_DWORD /d 0xFFFFFFFF /f >nul 2>&1
         echo %GREEN%   [SET] Unlimited ^(quality/content creation^)%RESET%
     ) else (
         REM Default driver controlled
-        reg delete "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000" /v "ShaderCacheSize" /f >nul 2>&1
+        reg delete "!nv_path!" /v "ShaderCacheSize" /f >nul 2>&1
         echo %GREEN%   [SET] Driver controlled ^(10GB default^)%RESET%
     )
 
@@ -298,10 +333,11 @@ if "%has_nvidia%"=="1" (
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID44231" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID64640" /t REG_DWORD /d 0 /f >nul 2>&1
     reg add "HKLM\SOFTWARE\NVIDIA Corporation\Global\FTS" /v "EnableRID66610" /t REG_DWORD /d 0 /f >nul 2>&1
-    REM Disable NVIDIA container telemetry tasks
-    schtasks /change /tn "NvTmRepOnLogon_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1
-    schtasks /change /tn "NvTmRep_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1
-    echo %GREEN%   [OK] Telemetry disabled%RESET%
+    echo %GREEN%   [OK] Telemetry opt-out registry values set%RESET%
+    REM Disable NVIDIA container telemetry tasks ^(only present with older drivers^)
+    for %%T in (NvTmRepOnLogon NvTmRep) do (
+        schtasks /change /tn "%%T_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}" /disable >nul 2>&1 && echo %GREEN%   [OK] %%T task disabled%RESET% || echo %GRAY%   [--] %%T task not found%RESET%
+    )
 
     echo/
     echo %CYAN%NVIDIA Profile Inspector recommended settings:%RESET%
@@ -324,12 +360,18 @@ if "%has_nvidia%"=="1" (
         echo     - Texture Filtering - Quality: Quality
         echo     - Threaded Optimization: Auto
         echo     - Vertical Sync: Use Application Setting
-    ) else (
-        echo     - Power Management Mode: Adaptive
+    ) else if "%profile%"=="3" (
+        echo     - Power Management Mode: Normal ^(driver default^)
         echo     - Shader Cache: Unlimited
         echo     - Texture Filtering - Quality: High Quality
         echo     - Threaded Optimization: Auto
-        echo     - Vertical Sync: Use Application Setting
+        echo     - Vertical Sync: On
+    ) else (
+        echo     - Power Management Mode: Adaptive / Optimal Power
+        echo     - Shader Cache: Driver Default
+        echo     - Texture Filtering - Quality: Quality
+        echo     - Threaded Optimization: Auto
+        echo     - Vertical Sync: On
     )
 )
 
@@ -389,9 +431,9 @@ if "%has_amd%"=="1" (
     )
 
     echo %WHITE%[6/12] Shader cache...%RESET%
-    :: AMD Shader Cache registry
+    REM AMD Shader Cache registry
     if "%profile%"=="3" (
-        :: Reset shader cache location for content creation ^(use default^)
+        REM Reset shader cache location for content creation ^(use default^)
         echo %GREEN%   [SET] Default location ^(content creation^)%RESET%
     ) else (
         echo %GREEN%   [SET] Driver controlled%RESET%
@@ -433,7 +475,7 @@ if "%has_amd%"=="1" (
     echo %YELLOW%   [INFO] Set via AMD Software: Performance ^> Tuning%RESET%
 
     echo %WHITE%[11/12] ULPS ^(Ultra Low Power State^)...%RESET%
-    :: Disable ULPS for lower latency ^(wake-up delay^)
+    REM Disable ULPS for lower latency ^(wake-up delay^)
     for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "EnableULPS" 2^>nul ^| findstr /i "HKEY"') do (
         if "%profile%"=="4" (
             reg add "%%a" /v "EnableULPS" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -447,13 +489,12 @@ if "%has_amd%"=="1" (
         echo %GREEN%   [SET] Disabled ^(reduces wake latency^)%RESET%
     )
 
-    echo %WHITE%[12/12] AMD telemetry...%RESET%
-    :: Disable AMD telemetry tasks
-    schtasks /change /tn "AMDInstallLauncher" /disable >nul 2>&1
-    schtasks /change /tn "AMDLinkUpdate" /disable >nul 2>&1
-    schtasks /change /tn "StartCN" /disable >nul 2>&1
-    schtasks /change /tn "StartDVR" /disable >nul 2>&1
-    echo %GREEN%   [OK] Telemetry tasks disabled%RESET%
+    echo %WHITE%[12/12] AMD update/telemetry tasks...%RESET%
+    REM StartCN ^(starts AMD Software at logon^) and StartDVR ^(ReLive / Instant Replay^)
+    REM are not telemetry and are intentionally left alone.
+    for %%T in (AMDInstallLauncher AMDLinkUpdate) do (
+        schtasks /change /tn "%%T" /disable >nul 2>&1 && echo %GREEN%   [OK] %%T disabled%RESET% || echo %GRAY%   [--] %%T not found%RESET%
+    )
 
     echo/
     echo %CYAN%AMD Software recommended settings for %profile_name%:%RESET%
@@ -503,7 +544,7 @@ if "%has_intel%"=="1" (
     echo %CYAN%============================================================%RESET%
     echo/
 
-    :: Check if it's Intel Arc or integrated (reuse the CIM-derived GPU names)
+    REM Check if it's Intel Arc or integrated (reuse the CIM-derived GPU names)
     set "is_arc=0"
     echo !GPU_NAMES! | findstr /i "Arc" >nul && set "is_arc=1"
 
@@ -545,18 +586,15 @@ if "%has_intel%"=="1" (
         echo/
 
         echo %WHITE%[1/4] Graphics Power Plan...%RESET%
-        :: Intel graphics power settings
-        for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /f "Intel" 2^>nul ^| findstr /i "0000 0001 0002"') do (
-            if "%profile%"=="4" (
-                reg add "%%a" /v "FeatureTestControl" /t REG_DWORD /d 0 /f >nul 2>&1
-            ) else (
-                reg add "%%a" /v "FeatureTestControl" /t REG_DWORD /d 1 /f >nul 2>&1
-            )
-        )
-        if "%profile%"=="4" (
-            echo %YELLOW%   [SET] Balanced ^(power saving^)%RESET%
+        REM Intel's power-plan setting ^(0 = Max Battery Life, 1 = Balanced, 2 = Max Performance^), AC only.
+        REM Never touch FeatureTestControl: it is a driver feature-disable bitmask, not a power plan.
+        if "%profile%"=="4" (set "igpuPlan=1") else (set "igpuPlan=2")
+        powercfg /setacvalueindex SCHEME_CURRENT 44f3beca-a7c0-460e-9df2-bb8b99e0cba6 3619c3f2-afb2-4afc-b0e9-e7fef372de36 !igpuPlan! >nul 2>&1
+        if !errorlevel! equ 0 (
+            powercfg /setactive SCHEME_CURRENT >nul 2>&1
+            if "%profile%"=="4" (echo %YELLOW%   [SET] Balanced ^(power saving^)%RESET%) else (echo %GREEN%   [SET] Maximum Performance%RESET%)
         ) else (
-            echo %GREEN%   [SET] Maximum Performance%RESET%
+            echo %GRAY%   [--] Intel Graphics Power Plan not exposed by this driver%RESET%
         )
 
         echo %WHITE%[2/4] Intel Graphics Command Center...%RESET%
@@ -639,7 +677,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%GPU driver profile "%profile_name%" applied^!%RESET%
+echo %GREEN%GPU driver profile "%profile_name%" applied^^!%RESET%
 echo/
 echo %WHITE%Changes applied:%RESET%
 echo   [+] Windows GPU scheduling configured
@@ -660,15 +698,24 @@ echo/
 
 choice /c YN /m "Would you like to open the GPU control panel now"
 if %errorlevel%==1 (
+    REM Current NVIDIA ^(DCH^) and Intel control panels are Microsoft Store apps, so
+    REM fall back to their app IDs when the classic Win32 program is not installed.
     if "%has_nvidia%"=="1" (
-        start "" "C:\Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe" 2>nul
-        if !errorlevel! neq 0 start "" control /name Microsoft.NVIDIA 2>nul
+        if exist "%ProgramFiles%\NVIDIA Corporation\Control Panel Client\nvcplui.exe" (
+            start "" "%ProgramFiles%\NVIDIA Corporation\Control Panel Client\nvcplui.exe"
+        ) else (
+            start "" explorer.exe "shell:AppsFolder\NVIDIACorp.NVIDIAControlPanel_56jybvy8sckqj^!NVIDIACorp.NVIDIAControlPanel"
+        )
     )
     if "%has_amd%"=="1" (
-        start "" "C:\Program Files\AMD\CNext\CNext\RadeonSoftware.exe" 2>nul
+        if exist "%ProgramFiles%\AMD\CNext\CNext\RadeonSoftware.exe" start "" "%ProgramFiles%\AMD\CNext\CNext\RadeonSoftware.exe"
     )
     if "%has_intel%"=="1" (
-        start "" "C:\Program Files\Intel\Intel(R) Graphics Command Center\IntelGraphicsCommandCenter.exe" 2>nul
+        if exist "%ProgramFiles%\Intel\Intel Graphics Software\IntelGraphicsSoftware.exe" (
+            start "" "%ProgramFiles%\Intel\Intel Graphics Software\IntelGraphicsSoftware.exe"
+        ) else (
+            start "" explorer.exe "shell:AppsFolder\AppUp.IntelGraphicsExperience_8j3eq9eme6ctt^!App"
+        )
     )
 )
 
@@ -676,10 +723,25 @@ echo/
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
     echo/
+    REM Wait here, where Ctrl+C really stops the script, then restart. A delayed
+    REM "shutdown /t 10" cannot be cancelled with Ctrl+C and implies /f, which
+    REM force-closes apps without letting them save.
     echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
-    shutdown /r /t 10 /c "Restarting to apply GPU driver optimizations"
+    timeout /t 10 /nobreak >nul
+    shutdown /r /t 0 /c "Restarting to apply GPU driver optimizations"
 )
 
 echo/
 pause
+exit /b 0
+
+:: ============================================================
+:: Subroutines
+:: ============================================================
+
+:SetVRR
+:: %~1 = 0 or 1. Updates only VRROptimizeEnable inside DirectXUserGlobalSettings
+:: (a ;-separated list of all Windows default graphics settings) and keeps the
+:: other entries, such as AutoHDREnable and SwapEffectUpgradeEnable.
+powershell -NoProfile -Command "$k='HKCU:\Software\Microsoft\DirectX\UserGpuPreferences'; if (-not (Test-Path $k)) { New-Item $k -Force | Out-Null }; $v=(Get-ItemProperty $k -ErrorAction SilentlyContinue).DirectXUserGlobalSettings; $p=@(([string]$v) -split ';' | Where-Object { $_ -and $_ -notmatch '^VRROptimizeEnable=' }) + 'VRROptimizeEnable=%~1'; Set-ItemProperty $k DirectXUserGlobalSettings (($p -join ';') + ';')" >nul 2>&1
 exit /b 0

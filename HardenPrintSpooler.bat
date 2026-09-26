@@ -58,7 +58,8 @@ echo/
 
 :: Check spooler service status
 for /f "tokens=3" %%a in ('sc query Spooler ^| findstr STATE') do set "SPOOLER_STATE=%%a"
-for /f "tokens=3" %%a in ('sc qc Spooler ^| findstr START_TYPE') do set "SPOOLER_START=%%a"
+:: sc qc prints "START_TYPE : 4   DISABLED" - token 3 is the number, token 4 the name
+for /f "tokens=4" %%a in ('sc qc Spooler ^| findstr START_TYPE') do set "SPOOLER_START=%%a"
 
 if "!SPOOLER_STATE!"=="1" (
     echo   Service state:  %GREEN%STOPPED%RESET%
@@ -110,6 +111,7 @@ echo/
 echo     %CYAN%[3]%RESET% %BOLD%Cancel%RESET%
 echo/
 
+set "choice="
 set /p "choice=  Select option [1/2/3]: "
 
 if "%choice%"=="3" (
@@ -167,12 +169,25 @@ echo/
 echo   %BOLD%%WHITE%Hardening Print Spooler (keeping printing functional)...%RESET%
 echo/
 
-:: Set spooler to Manual start (only runs when needed)
-sc config Spooler start= demand >nul 2>&1
+:: Keep the spooler on Automatic start. It has no service trigger and print
+:: clients never start it on demand, so Manual would leave printing broken
+:: after the next reboot.
+sc config Spooler start= auto >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Print Spooler set to Manual start
+    echo   %GREEN%[OK]%RESET% Print Spooler set to Automatic start
 ) else (
     echo   %YELLOW%[SKIP]%RESET% Could not change start type
+)
+
+:: Start the spooler if it is stopped (e.g. after an earlier Option 1 run)
+sc query Spooler | findstr /c:"RUNNING" >nul 2>&1
+if %errorlevel% neq 0 (
+    net start Spooler >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo   %GREEN%[OK]%RESET% Print Spooler started
+    ) else (
+        echo   %RED%[FAIL]%RESET% Could not start Print Spooler
+    )
 )
 
 goto :apply_registry_hardening
@@ -223,7 +238,7 @@ if %errorlevel% equ 0 (
 :: Disable internet printing (IPP)
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers" /v DisableHTTPPrinting /t REG_DWORD /d 1 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Internet printing (IPP/HTTP) disabled
+    echo   %GREEN%[OK]%RESET% Internet printing ^(IPP/HTTP^) disabled
 ) else (
     echo   %RED%[FAIL]%RESET% Could not disable HTTP printing
 )
@@ -250,7 +265,7 @@ echo   %CYAN%╠═════════════════════�
 if "%choice%"=="1" (
 echo   %CYAN%║%RESET%  Print Spooler has been stopped, disabled, and hardened.               %CYAN%║%RESET%
 ) else (
-echo   %CYAN%║%RESET%  Print Spooler has been set to manual start and hardened.              %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  Print Spooler kept on Automatic start and hardened.                   %CYAN%║%RESET%
 )
 echo   %CYAN%║%RESET%  PrintNightmare mitigations applied.                                   %CYAN%║%RESET%
 echo   %CYAN%╚══════════════════════════════════════════════════════════════════════════╝%RESET%
@@ -262,7 +277,9 @@ echo        %CYAN%sc config Spooler start= auto%RESET%
 echo        %CYAN%sc start Spooler%RESET%
 echo/
 echo     %DIM%2.%RESET% Remove Point and Print restrictions:
-echo        %CYAN%reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /f%RESET%
+echo        %CYAN%reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v NoWarningNoElevationOnInstall /f%RESET%
+echo        %CYAN%reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v UpdatePromptSettings /f%RESET%
+echo        %CYAN%reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers\PointAndPrint" /v RestrictDriverInstallationToAdministrators /f%RESET%
 echo/
 echo     %DIM%3.%RESET% Re-enable web/HTTP printing:
 echo        %CYAN%reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Printers" /v DisableWebPnPDownload /f%RESET%

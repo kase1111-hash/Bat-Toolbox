@@ -64,7 +64,8 @@ echo/
 set "SSDP_STATE=Unknown"
 set "SSDP_START=Unknown"
 for /f "tokens=3" %%a in ('sc query SSDPSRV 2^>nul ^| findstr STATE') do set "SSDP_STATE=%%a"
-for /f "tokens=3" %%a in ('sc qc SSDPSRV 2^>nul ^| findstr START_TYPE') do set "SSDP_START=%%a"
+:: sc qc prints "START_TYPE : 4   DISABLED" - token 3 is the number, token 4 the name
+for /f "tokens=4" %%a in ('sc qc SSDPSRV 2^>nul ^| findstr START_TYPE') do set "SSDP_START=%%a"
 
 echo   %BOLD%SSDP Discovery (SSDPSRV):%RESET%
 if "!SSDP_STATE!"=="1" (
@@ -85,7 +86,7 @@ echo/
 set "UPNP_STATE=Unknown"
 set "UPNP_START=Unknown"
 for /f "tokens=3" %%a in ('sc query upnphost 2^>nul ^| findstr STATE') do set "UPNP_STATE=%%a"
-for /f "tokens=3" %%a in ('sc qc upnphost 2^>nul ^| findstr START_TYPE') do set "UPNP_START=%%a"
+for /f "tokens=4" %%a in ('sc qc upnphost 2^>nul ^| findstr START_TYPE') do set "UPNP_START=%%a"
 
 echo   %BOLD%UPnP Device Host (upnphost):%RESET%
 if "!UPNP_STATE!"=="1" (
@@ -105,8 +106,8 @@ echo/
 :: Check Function Discovery services
 set "FDPHOST_START=Unknown"
 set "FDRESPUB_START=Unknown"
-for /f "tokens=3" %%a in ('sc qc fdPHost 2^>nul ^| findstr START_TYPE') do set "FDPHOST_START=%%a"
-for /f "tokens=3" %%a in ('sc qc FDResPub 2^>nul ^| findstr START_TYPE') do set "FDRESPUB_START=%%a"
+for /f "tokens=4" %%a in ('sc qc fdPHost 2^>nul ^| findstr START_TYPE') do set "FDPHOST_START=%%a"
+for /f "tokens=4" %%a in ('sc qc FDResPub 2^>nul ^| findstr START_TYPE') do set "FDRESPUB_START=%%a"
 
 echo   %BOLD%Function Discovery Provider Host (fdPHost):%RESET%
 if "!FDPHOST_START!"=="DISABLED" (
@@ -137,6 +138,7 @@ echo   game consoles for NAT traversal), disabling UPnP may require manual
 echo   port forwarding in your router. Most applications work fine without it.%RESET%
 echo/
 
+set "confirm="
 set /p "confirm=  Disable UPnP and SSDP? [Y/N]: "
 if /i not "%confirm%"=="Y" (
     echo/
@@ -156,24 +158,10 @@ title [2/4] Disable UPnP - Stopping services...
 echo   %BOLD%%WHITE%Disabling UPnP services...%RESET%
 echo/
 
-:: SSDP Discovery
-sc stop SSDPSRV >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% SSDP Discovery stopped
-) else (
-    echo   %DIM%[--]%RESET% SSDP Discovery was not running
-)
-sc config SSDPSRV start= disabled >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% SSDP Discovery set to disabled
-) else (
-    echo   %RED%[FAIL]%RESET% Could not disable SSDP Discovery
-)
-
-echo/
-
-:: UPnP Device Host
-sc stop upnphost >nul 2>&1
+:: UPnP Device Host first: it depends on SSDPSRV, so SSDPSRV refuses to stop
+:: (error 1051) while upnphost is running. net stop waits until the service
+:: has actually stopped (sc stop returns immediately).
+net stop upnphost /y >nul 2>&1
 if %errorlevel% equ 0 (
     echo   %GREEN%[OK]%RESET% UPnP Device Host stopped
 ) else (
@@ -188,6 +176,22 @@ if %errorlevel% equ 0 (
 
 echo/
 
+:: SSDP Discovery
+net stop SSDPSRV /y >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   %GREEN%[OK]%RESET% SSDP Discovery stopped
+) else (
+    echo   %DIM%[--]%RESET% SSDP Discovery was not running or could not be stopped
+)
+sc config SSDPSRV start= disabled >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   %GREEN%[OK]%RESET% SSDP Discovery set to disabled
+) else (
+    echo   %RED%[FAIL]%RESET% Could not disable SSDP Discovery
+)
+
+echo/
+
 :: ========================================================================
 :: Phase 3: Disable Function Discovery services
 :: ========================================================================
@@ -197,22 +201,9 @@ title [3/4] Disable UPnP - Disabling discovery services...
 echo   %BOLD%%WHITE%Disabling Function Discovery services...%RESET%
 echo/
 
-:: Function Discovery Provider Host
-sc stop fdPHost >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Function Discovery Provider Host stopped
-) else (
-    echo   %DIM%[--]%RESET% Function Discovery Provider Host was not running
-)
-sc config fdPHost start= disabled >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Function Discovery Provider Host set to disabled
-) else (
-    echo   %YELLOW%[SKIP]%RESET% Could not disable Function Discovery Provider Host
-)
-
-:: Function Discovery Resource Publication
-sc stop FDResPub >nul 2>&1
+:: Function Discovery Resource Publication first: it depends on fdPHost, so
+:: fdPHost refuses to stop (error 1051) while FDResPub is running.
+net stop FDResPub /y >nul 2>&1
 if %errorlevel% equ 0 (
     echo   %GREEN%[OK]%RESET% Function Discovery Resource Publication stopped
 ) else (
@@ -223,6 +214,20 @@ if %errorlevel% equ 0 (
     echo   %GREEN%[OK]%RESET% Function Discovery Resource Publication set to disabled
 ) else (
     echo   %YELLOW%[SKIP]%RESET% Could not disable Function Discovery Resource Publication
+)
+
+:: Function Discovery Provider Host
+net stop fdPHost /y >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   %GREEN%[OK]%RESET% Function Discovery Provider Host stopped
+) else (
+    echo   %DIM%[--]%RESET% Function Discovery Provider Host was not running or could not be stopped
+)
+sc config fdPHost start= disabled >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   %GREEN%[OK]%RESET% Function Discovery Provider Host set to disabled
+) else (
+    echo   %YELLOW%[SKIP]%RESET% Could not disable Function Discovery Provider Host
 )
 
 echo/
@@ -243,7 +248,7 @@ netsh advfirewall firewall delete rule name="Block SSDP outbound (UDP 1900)" >nu
 :: Block inbound SSDP
 netsh advfirewall firewall add rule name="Block SSDP (UDP 1900)" dir=in action=block protocol=UDP localport=1900 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 1900 %DIM%(SSDP)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked inbound UDP 1900 %DIM%^(SSDP^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add inbound rule for UDP 1900
 )
@@ -251,7 +256,7 @@ if %errorlevel% equ 0 (
 :: Block outbound SSDP (prevents this machine from discovering)
 netsh advfirewall firewall add rule name="Block SSDP outbound (UDP 1900)" dir=out action=block protocol=UDP remoteport=1900 >nul 2>&1
 if %errorlevel% equ 0 (
-    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 1900 %DIM%(SSDP discovery)%RESET%
+    echo   %GREEN%[OK]%RESET% Blocked outbound UDP 1900 %DIM%^(SSDP discovery^)%RESET%
 ) else (
     echo   %RED%[FAIL]%RESET% Could not add outbound rule for UDP 1900
 )

@@ -55,8 +55,8 @@ choice /c YN /m "Create a system restore point before continuing"
 if %errorlevel%==1 (
     echo/
     echo %CYAN%Creating restore point...%RESET%
-    :: Checkpoint-Computer exits 0 even when it silently skips (System Protection
-    :: off, or the 24h frequency limit), so verify a point was actually added.
+    REM Checkpoint-Computer exits 0 even when it silently skips (System Protection
+    REM off, or the 24h frequency limit), so verify a point was actually added.
     powershell -NoProfile -Command "$b=@(Get-ComputerRestorePoint).Count; Checkpoint-Computer -Description 'Before InterruptLatencyTuning' -RestorePointType 'MODIFY_SETTINGS'; if (@(Get-ComputerRestorePoint).Count -gt $b) { exit 0 } else { exit 1 }" 2>nul
     if !errorlevel! equ 0 (
         echo %GREEN%[OK] Restore point created%RESET%
@@ -128,8 +128,9 @@ for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s
     echo %GREEN%   [OK] AMD GPU - MSI enabled%RESET%
 )
 
-:: Find and configure Intel GPUs
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /f "VEN_8086" 2^>nul ^| findstr /i "display" ^| findstr /i "HKEY"') do (
+:: Find and configure Intel GPUs. Select device instances by their Class value
+:: (exact data match "Display"), then keep only the Intel ones (VEN_8086).
+for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /d /f "Display" /e 2^>nul ^| findstr /i /b "HKEY" ^| findstr /i "VEN_8086"') do (
     reg add "%%a\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties" /v "MSISupported" /t REG_DWORD /d 1 /f >nul 2>&1
     echo %GREEN%   [OK] Intel GPU - MSI enabled%RESET%
 )
@@ -137,8 +138,8 @@ for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s
 :: Enable MSI for Network adapters
 echo %WHITE%[2/4] Configuring MSI for Network Adapters...%RESET%
 
-:: Intel NICs (VEN_8086 with NET)
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /f "VEN_8086" 2^>nul ^| findstr /i "net" ^| findstr /i "HKEY"') do (
+:: Intel NICs / Wi-Fi (Class = Net, VEN_8086)
+for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\PCI" /s /d /f "Net" /e 2^>nul ^| findstr /i /b "HKEY" ^| findstr /i "VEN_8086"') do (
     reg add "%%a\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties" /v "MSISupported" /t REG_DWORD /d 1 /f >nul 2>&1
 )
 
@@ -246,7 +247,7 @@ echo %YELLOW%   [INFO] HPET disabled - using TSC for lower latency%RESET%
 
 echo/
 echo %CYAN%============================================================%RESET%
-echo %WHITE%  PHASE 5: Kernel & Scheduler Optimizations%RESET%
+echo %WHITE%  PHASE 5: Kernel ^& Scheduler Optimizations%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
 
@@ -301,11 +302,11 @@ echo/
 echo %WHITE%[1/4] Checking NVIDIA driver settings...%RESET%
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" >nul 2>&1
 if %errorlevel%==0 (
-    :: Disable NVIDIA telemetry that causes DPC spikes
+    REM Disable NVIDIA telemetry that causes DPC spikes
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm\Global\Startup" /v "SendTelemetryData" /t REG_DWORD /d 0 /f >nul 2>&1
-    :: Disable HDCP ^(can cause latency^)
+    REM Disable HDCP ^(can cause latency^)
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "DisableHDCP" /t REG_DWORD /d 1 /f >nul 2>&1
-    :: Optimize interrupt handling
+    REM Optimize interrupt handling
     reg add "HKLM\SYSTEM\CurrentControlSet\Services\nvlddmkm" /v "RmDisableHdcp22" /t REG_DWORD /d 1 /f >nul 2>&1
     echo %GREEN%   [OK] NVIDIA optimizations applied%RESET%
 ) else (
@@ -316,36 +317,42 @@ if %errorlevel%==0 (
 echo %WHITE%[2/4] Checking AMD driver settings...%RESET%
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" >nul 2>&1
 if %errorlevel%==0 (
-    :: AMD interrupt coalescing
-    reg add "HKLM\SYSTEM\CurrentControlSet\Services\amdkmdag" /v "EnableUlps" /t REG_DWORD /d 0 /f >nul 2>&1
-    echo %GREEN%   [OK] AMD ULPS disabled ^(reduces wake latency^)%RESET%
+    REM EnableUlps lives in the display adapter class key, not the service key.
+    REM Only rewrite it where the driver already created it.
+    set "ulpsFound=0"
+    for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}" /s /v "EnableUlps" 2^>nul ^| findstr /i /b "HKEY"') do (
+        reg add "%%k" /v "EnableUlps" /t REG_DWORD /d 0 /f >nul 2>&1
+        set "ulpsFound=1"
+    )
+    if "!ulpsFound!"=="1" (
+        echo %GREEN%   [OK] AMD ULPS disabled ^(reduces wake latency^)%RESET%
+    ) else (
+        echo %YELLOW%   [SKIP] No EnableUlps value found on the AMD adapter%RESET%
+    )
 ) else (
     echo %YELLOW%   [SKIP] AMD driver not found%RESET%
 )
 
 :: Network driver optimizations
 echo %WHITE%[3/4] Optimizing network driver settings...%RESET%
-:: Disable interrupt moderation on Intel NICs
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}" /s /f "InterruptModerationRate" 2^>nul ^| findstr /i "HKEY"') do (
-    reg add "%%a" /v "InterruptModerationRate" /t REG_DWORD /d 0 /f >nul 2>&1
+:: Disable interrupt moderation, flow control (can cause latency spikes) and
+:: Energy Efficient Ethernet. Only touch adapter instance keys (\0000, \0001 ...),
+:: never the Ndi\Params definition subkeys, and only rewrite standard keywords
+:: the driver already defines, keeping their REG_SZ type.
+for /f "tokens=*" %%k in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}" 2^>nul ^| findstr /r /c:"\\[0-9][0-9][0-9][0-9]$"') do (
+    reg query "%%k" /v "*InterruptModeration" >nul 2>&1 && reg add "%%k" /v "*InterruptModeration" /t REG_SZ /d 0 /f >nul 2>&1
+    reg query "%%k" /v "*FlowControl" >nul 2>&1 && reg add "%%k" /v "*FlowControl" /t REG_SZ /d 0 /f >nul 2>&1
+    reg query "%%k" /v "*EEE" >nul 2>&1 && reg add "%%k" /v "*EEE" /t REG_SZ /d 0 /f >nul 2>&1
+    reg query "%%k" /v "EEELinkAdvertisement" >nul 2>&1 && reg add "%%k" /v "EEELinkAdvertisement" /t REG_SZ /d 0 /f >nul 2>&1
 )
-:: Disable flow control (can cause latency spikes)
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}" /s /f "*FlowControl" 2^>nul ^| findstr /i "HKEY"') do (
-    reg add "%%a" /v "*FlowControl" /t REG_DWORD /d 0 /f >nul 2>&1
-)
-:: Disable energy efficient ethernet
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}" /s /f "EEE" 2^>nul ^| findstr /i "HKEY"') do (
-    reg add "%%a" /v "EEE" /t REG_DWORD /d 0 /f >nul 2>&1
-    reg add "%%a" /v "EEELinkAdvertisement" /t REG_DWORD /d 0 /f >nul 2>&1
-)
-echo %GREEN%   [OK] Network interrupt moderation disabled%RESET%
+echo %GREEN%   [OK] NIC interrupt moderation, flow control and EEE disabled where the driver supports them ^(takes effect after reboot^)%RESET%
 
 :: USB driver optimizations
 echo %WHITE%[4/4] Optimizing USB driver settings...%RESET%
 :: Disable USB selective suspend
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\USB" /v "DisableSelectiveSuspend" /t REG_DWORD /d 1 /f >nul 2>&1
-:: Disable USB legacy support (BIOS setting, registry hint)
-for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}" /s /f "EnhancedPowerManagementEnabled" 2^>nul ^| findstr /i "HKEY"') do (
+:: Disable per-device USB enhanced power management (lives in Enum\USB\...\Device Parameters)
+for /f "tokens=*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Enum\USB" /s /v "EnhancedPowerManagementEnabled" 2^>nul ^| findstr /i "HKEY"') do (
     reg add "%%a" /v "EnhancedPowerManagementEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
 )
 echo %GREEN%   [OK] USB power management disabled%RESET%
@@ -400,7 +407,7 @@ echo %CYAN%============================================================%RESET%
 echo %WHITE%                    OPTIMIZATION COMPLETE%RESET%
 echo %CYAN%============================================================%RESET%
 echo/
-echo %GREEN%Interrupt and DPC latency tuning applied successfully^!%RESET%
+echo %GREEN%Interrupt and DPC latency tuning applied successfully^^!%RESET%
 echo/
 echo %WHITE%Summary of changes:%RESET%
 echo   [+] MSI mode enabled for GPU, NIC, Storage, USB
@@ -435,8 +442,13 @@ echo/
 choice /c YN /m "Would you like to restart now to apply all changes"
 if %errorlevel%==1 (
     echo/
-    echo %YELLOW%Restarting in 10 seconds... Press Ctrl+C to cancel%RESET%
-    shutdown /r /t 10 /c "Restarting to apply interrupt latency optimizations"
+    REM Ctrl+C would only end this batch file; the scheduled restart needs shutdown /a
+    shutdown /r /t 30 /c "Restarting to apply interrupt latency optimizations"
+    choice /c AC /t 25 /d C /m "Restarting in 30 seconds. Press A to abort, C to continue"
+    if !errorlevel! equ 1 (
+        shutdown /a
+        echo %YELLOW%Restart cancelled.%RESET%
+    )
 )
 
 echo/

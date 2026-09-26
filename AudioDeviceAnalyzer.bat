@@ -79,7 +79,7 @@ set "PSDEVICES=%TEMP%\audio_devices.ps1"
 echo $ErrorActionPreference = 'SilentlyContinue'
 echo/
 echo # Use WMI for audio device enumeration
-echo Write-Host "  PLAYBACK DEVICES ^(Speakers/Headphones^)" -ForegroundColor White
+echo Write-Host "  PLAYBACK DEVICES (Speakers/Headphones)" -ForegroundColor White
 echo Write-Host "  ----------------------------------------"
 echo Write-Host ""
 echo/
@@ -89,11 +89,11 @@ echo     $idx = 0
 echo     foreach ^($dev in $playback^) {
 echo         $idx++
 echo         $statusColor = if ^($dev.Status -eq 'OK'^) { 'Green' } else { 'Red' }
-echo         Write-Host "  [$idx] $^($dev.Name^)" -ForegroundColor White
-echo         Write-Host "      Manufacturer:  $^($dev.Manufacturer^)"
-echo         Write-Host "      Status:        $^($dev.Status^)" -ForegroundColor $statusColor
-echo         Write-Host "      PNP Device ID: $^($dev.PNPDeviceID^)"
-echo         if ^($dev.StatusInfo^) { Write-Host "      Status Info:   $^($dev.StatusInfo^)" }
+echo         Write-Host "  [$idx] $($dev.Name)" -ForegroundColor White
+echo         Write-Host "      Manufacturer:  $($dev.Manufacturer)"
+echo         Write-Host "      Status:        $($dev.Status)" -ForegroundColor $statusColor
+echo         Write-Host "      PNP Device ID: $($dev.PNPDeviceID)"
+echo         if ^($dev.StatusInfo^) { Write-Host "      Status Info:   $($dev.StatusInfo)" }
 echo         Write-Host ""
 echo     }
 echo } else {
@@ -101,7 +101,7 @@ echo     Write-Host "  No sound devices found via WMI." -ForegroundColor Red
 echo }
 echo/
 echo # Get more detail via registry
-echo Write-Host "  AUDIO ENDPOINTS ^(from Registry^)" -ForegroundColor White
+echo Write-Host "  AUDIO ENDPOINTS (from Registry)" -ForegroundColor White
 echo Write-Host "  ---------------------------------"
 echo Write-Host ""
 echo/
@@ -112,7 +112,7 @@ echo function Get-AudioEndpoints^($regPath, $type^) {
 echo     $endpoints = Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue
 echo     $count = 0
 echo     foreach ^($ep in $endpoints^) {
-echo         $props = Get-ItemProperty -Path "$^($ep.PSPath^)\Properties" -ErrorAction SilentlyContinue
+echo         $props = Get-ItemProperty -Path "$($ep.PSPath)\Properties" -ErrorAction SilentlyContinue
 echo         $state = ^(Get-ItemProperty -Path $ep.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
 echo/
 echo         # Device name from property store
@@ -128,7 +128,7 @@ echo             1 { 'Active' }
 echo             2 { 'Disabled' }
 echo             4 { 'Not Present' }
 echo             8 { 'Unplugged' }
-echo             default { "Unknown ^($state^)" }
+echo             default { "Unknown ($state)" }
 echo         }
 echo         $stateColor = switch ^($state^) {
 echo             1 { 'Green' }
@@ -153,7 +153,7 @@ echo $outCount = Get-AudioEndpoints $renderKey 'OUT'
 echo if ^($outCount -eq 0^) { Write-Host "  No output endpoints found." }
 echo/
 echo Write-Host ""
-echo Write-Host "  -- Input Devices ^(Microphones^) --" -ForegroundColor Cyan
+echo Write-Host "  -- Input Devices (Microphones) --" -ForegroundColor Cyan
 echo $inCount = Get-AudioEndpoints $captureKey 'IN'
 echo if ^($inCount -eq 0^) { Write-Host "  No input endpoints found." }
 echo/
@@ -187,34 +187,34 @@ echo Write-Host "  AUDIO DRIVERS" -ForegroundColor White
 echo Write-Host "  ---------------"
 echo Write-Host ""
 echo/
-echo # Get audio-related drivers
-echo $audioDrivers = Get-WindowsDriver -Online -ErrorAction SilentlyContinue ^| Where-Object {
-echo     $_.ClassName -match 'MEDIA^|AudioEndpoint^|Sound'
-echo }
+echo # Get audio-related drivers ^(sound devices and audio processing objects^)
+echo # Win32_PnPSignedDriver needs no elevation and includes Microsoft inbox drivers
+echo $audioDrivers = Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue ^| Where-Object { $_.DeviceClass -eq 'MEDIA' -or $_.DeviceClass -eq 'AUDIOPROCESSINGOBJECT' }
 echo/
 echo if ^($audioDrivers^) {
-echo     Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f "Class", "Provider", "Version", "Date"^) -ForegroundColor White
-echo     Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f ^("-"*19^), ^("-"*29^), ^("-"*14^), ^("-"*12^)^)
+echo     Write-Host ^("{0,-28} {1,-22} {2,-15} {3}" -f "Device", "Provider", "Version", "Date"^) -ForegroundColor White
+echo     Write-Host ^("{0,-28} {1,-22} {2,-15} {3}" -f ^("-"*27^), ^("-"*21^), ^("-"*14^), ^("-"*10^)^)
 echo/
-echo     foreach ^($drv in $audioDrivers ^| Sort-Object ClassName, ProviderName^) {
-echo         $class = $drv.ClassName
-echo         if ^($class.Length -gt 19^) { $class = $class.Substring^(0, 16^) + '...' }
-echo         $provider = $drv.ProviderName
-echo         if ^($provider.Length -gt 29^) { $provider = $provider.Substring^(0, 26^) + '...' }
-echo         $version = $drv.Version
+echo     foreach ^($drv in $audioDrivers ^| Sort-Object DeviceClass, DeviceName^) {
+echo         $device = $drv.DeviceName
+echo         if ^(-not $device^) { $device = $drv.DeviceClass }
+echo         if ^($device.Length -gt 27^) { $device = $device.Substring^(0, 24^) + '...' }
+echo         $provider = $drv.DriverProviderName
+echo         if ^($provider.Length -gt 21^) { $provider = $provider.Substring^(0, 18^) + '...' }
+echo         $version = $drv.DriverVersion
 echo         if ^($version -and $version.Length -gt 14^) { $version = $version.Substring^(0, 14^) }
-echo         $date = if ^($drv.Date^) { $drv.Date.ToString^('yyyy-MM-dd'^) } else { 'N/A' }
+echo         $date = if ^($drv.DriverDate^) { $drv.DriverDate.ToString^('yyyy-MM-dd'^) } else { 'N/A' }
 echo/
-echo         # Color old drivers
+echo         # Color old third-party drivers. Microsoft inbox drivers typically carry a 2006 date stamp, so skip them.
 echo         $color = 'White'
-echo         if ^($drv.Date -and $drv.Date -lt ^(Get-Date^).AddYears^(-2^)^) { $color = 'Yellow' }
-echo         if ^($drv.Date -and $drv.Date -lt ^(Get-Date^).AddYears^(-5^)^) { $color = 'Red' }
+echo         $isInbox = $drv.DriverProviderName -eq 'Microsoft'
+echo         if ^(-not $isInbox -and $drv.DriverDate -and $drv.DriverDate -lt ^(Get-Date^).AddYears^(-2^)^) { $color = 'Yellow' }
+echo         if ^(-not $isInbox -and $drv.DriverDate -and $drv.DriverDate -lt ^(Get-Date^).AddYears^(-5^)^) { $color = 'Red' }
 echo/
-echo         Write-Host ^("{0,-20} {1,-30} {2,-15} {3}" -f $class, $provider, $version, $date^) -ForegroundColor $color
+echo         Write-Host ^("{0,-28} {1,-22} {2,-15} {3}" -f $device, $provider, $version, $date^) -ForegroundColor $color
 echo     }
 echo } else {
-echo     Write-Host "  Could not enumerate audio drivers." -ForegroundColor Yellow
-echo     Write-Host "  ^(May require admin privileges^)"
+echo     Write-Host "  No audio drivers found." -ForegroundColor Yellow
 echo }
 echo/
 echo Write-Host ""
@@ -260,7 +260,7 @@ echo foreach ^($ap in $audioProcs^) {
 echo     $found = Get-Process ^| Where-Object { $_.ProcessName -match $ap.Pattern }
 echo     if ^($found^) {
 echo         $foundAny = $true
-echo         Write-Host ^("  [RUNNING] {0} ^({1} processes^)" -f $ap.Name, $found.Count^) -ForegroundColor Green
+echo         Write-Host ^("  [RUNNING] {0} ({1} processes)" -f $ap.Name, $found.Count^) -ForegroundColor Green
 echo     }
 echo }
 echo if ^(-not $foundAny^) {
@@ -301,7 +301,7 @@ echo     Write-Host " - OK" -ForegroundColor Green
 echo     $ok += "Windows Audio Service is running"
 echo } else {
 echo     Write-Host " - NOT RUNNING" -ForegroundColor Red
-echo     $issues += "Windows Audio Service ^(Audiosrv^) is not running"
+echo     $issues += "Windows Audio Service (Audiosrv) is not running"
 echo }
 echo/
 echo # Check 2: AudioEndpointBuilder
@@ -323,12 +323,12 @@ echo     $badDevs = $soundDevs ^| Where-Object { $_.Status -ne 'OK' }
 echo     if ^($badDevs^) {
 echo         Write-Host " - ISSUES FOUND" -ForegroundColor Yellow
 echo         foreach ^($bd in $badDevs^) {
-echo             $warnings += "Sound device '$^($bd.Name^)' status: $^($bd.Status^)"
+echo             $warnings += "Sound device '$($bd.Name)' status: $($bd.Status)"
 echo         }
 echo     } else {
 echo         $devCount = $soundDevs.Count
-echo         Write-Host " - OK ^($devCount device^(s^)^)" -ForegroundColor Green
-echo         $ok += "$devCount sound device^(s^) with OK status"
+echo         Write-Host " - OK ($devCount device(s))" -ForegroundColor Green
+echo         $ok += "$devCount sound device(s) with OK status"
 echo     }
 echo } else {
 echo     Write-Host " - NO DEVICES" -ForegroundColor Red
@@ -340,11 +340,13 @@ echo Write-Host "  [CHECK 4] Audio Enhancements" -NoNewline
 echo $enhancementsFound = $false
 echo $renderKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render'
 echo $renderDevices = Get-ChildItem -Path $renderKey -ErrorAction SilentlyContinue
+echo # An active endpoint with an effects ^(APO^) FxProperties key has enhancements on unless
+echo # PKEY_AudioEndpoint_Disable_SysFx {1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5 is set to 1
 echo foreach ^($ep in $renderDevices^) {
-echo     $fxProps = Get-ItemProperty -Path "$^($ep.PSPath^)\FxProperties" -ErrorAction SilentlyContinue
-echo     if ^($fxProps^) {
-echo         $enhancementsFound = $true
-echo     }
+echo     $st = ^(Get-ItemProperty -Path $ep.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
+echo     if ^($st -ne 1^) { continue }
+echo     $fxProps = Get-ItemProperty -Path "$($ep.PSPath)\FxProperties" -ErrorAction SilentlyContinue
+echo     if ^($fxProps -and $fxProps.'{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5' -ne 1^) { $enhancementsFound = $true }
 echo }
 echo if ^($enhancementsFound^) {
 echo     Write-Host " - ENHANCEMENTS DETECTED" -ForegroundColor Yellow
@@ -360,7 +362,7 @@ echo # Check via registry for render devices
 echo foreach ^($ep in $renderDevices^) {
 echo     $state = ^(Get-ItemProperty -Path $ep.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
 echo     if ^($state -eq 1^) {
-echo         $props = Get-ItemProperty -Path "$^($ep.PSPath^)\Properties" -ErrorAction SilentlyContinue
+echo         $props = Get-ItemProperty -Path "$($ep.PSPath)\Properties" -ErrorAction SilentlyContinue
 echo         # Property {b3f8fa53-0004-438e-9003-51a46e139bfc},3 is exclusive mode flag
 echo     }
 echo }
@@ -370,16 +372,16 @@ echo/
 echo # Check 6: Sample rate mismatches
 echo Write-Host "  [CHECK 6] Sample Rate Configuration" -NoNewline
 echo Write-Host " - Check Sound Settings manually" -ForegroundColor Yellow
-echo $warnings += "Sample rate: Ensure all devices use the same rate ^(e.g., 48000 Hz^)"
+echo $warnings += "Sample rate: Ensure all devices use the same rate (e.g., 48000 Hz)"
 echo/
 echo # Check 7: Multiple audio drivers
 echo Write-Host "  [CHECK 7] Multiple Audio Drivers" -NoNewline
 echo $audioDriverCount = ^(Get-CimInstance Win32_SoundDevice^).Count
 echo if ^($audioDriverCount -gt 3^) {
-echo     Write-Host " - MULTIPLE DRIVERS ^($audioDriverCount^)" -ForegroundColor Yellow
-echo     $warnings += "Multiple audio drivers installed ^($audioDriverCount^) - may cause conflicts"
+echo     Write-Host " - MULTIPLE DRIVERS ($audioDriverCount)" -ForegroundColor Yellow
+echo     $warnings += "Multiple audio drivers installed ($audioDriverCount) - may cause conflicts"
 echo } else {
-echo     Write-Host " - OK ^($audioDriverCount driver^(s^)^)" -ForegroundColor Green
+echo     Write-Host " - OK ($audioDriverCount driver(s))" -ForegroundColor Green
 echo }
 echo/
 echo # Check 8: Common problematic software
@@ -405,15 +407,15 @@ echo     Write-Host " - OK" -ForegroundColor Green
 echo }
 echo/
 echo # Check 9: High DPC latency ^(audio stuttering indicator^)
-echo Write-Host "  [CHECK 9] Audio Latency ^(DPC^)" -NoNewline
+echo Write-Host "  [CHECK 9] Audio Latency (DPC)" -NoNewline
 echo try {
 echo     $dpc = ^(Get-Counter '\Processor^(_Total^)\%% DPC Time' -ErrorAction Stop^).CounterSamples[0].CookedValue
 echo     $dpcRound = [math]::Round^($dpc, 1^)
 echo     if ^($dpc -gt 5^) {
-echo         Write-Host " - HIGH ^($dpcRound%%^)" -ForegroundColor Yellow
-echo         $warnings += "High DPC time ^($dpcRound%%^) - may cause audio stuttering"
+echo         Write-Host " - HIGH ($dpcRound%%)" -ForegroundColor Yellow
+echo         $warnings += "High DPC time ($dpcRound%%) - may cause audio stuttering"
 echo     } else {
-echo         Write-Host " - OK ^($dpcRound%%^)" -ForegroundColor Green
+echo         Write-Host " - OK ($dpcRound%%)" -ForegroundColor Green
 echo     }
 echo } catch {
 echo     Write-Host " - Could not measure" -ForegroundColor Yellow
@@ -424,15 +426,15 @@ echo Write-Host "  [CHECK 10] Recent Audio Errors in Event Log" -NoNewline
 echo $audioErrors = Get-WinEvent -FilterHashtable @{ LogName='System'; Level=2; ProviderName='*audio*' } -MaxEvents 10 -ErrorAction SilentlyContinue
 echo if ^($audioErrors^) {
 echo     $errCount = $audioErrors.Count
-echo     Write-Host " - $errCount ERROR^(S^) FOUND" -ForegroundColor Red
-echo     $issues += "Recent audio errors in Event Log ^($errCount in System log^)"
+echo     Write-Host " - $errCount ERROR(S) FOUND" -ForegroundColor Red
+echo     $issues += "Recent audio errors in Event Log ($errCount in System log)"
 echo     foreach ^($err in $audioErrors ^| Select-Object -First 3^) {
 echo         $msgLen = [math]::Min^(80, $err.Message.Length^)
 echo         $msgSnip = $err.Message.Substring^(0, $msgLen^)
-echo         Write-Host "    - $^($err.TimeCreated^): $msgSnip..." -ForegroundColor Red
+echo         Write-Host "    - $($err.TimeCreated): $msgSnip..." -ForegroundColor Red
 echo     }
 echo } else {
-echo     Write-Host " - OK ^(no recent errors^)" -ForegroundColor Green
+echo     Write-Host " - OK (no recent errors)" -ForegroundColor Green
 echo }
 echo/
 echo Write-Host ""
@@ -442,17 +444,17 @@ echo Write-Host "  ============================================" -ForegroundColo
 echo Write-Host ""
 echo/
 echo if ^($issues.Count -gt 0^) {
-echo     Write-Host "  ISSUES ^($^($issues.Count^)^):" -ForegroundColor Red
-echo     foreach ^($i in $issues^) { Write-Host "    [^^!] $i" -ForegroundColor Red }
+echo     Write-Host "  ISSUES ($($issues.Count)):" -ForegroundColor Red
+echo     foreach ^($i in $issues^) { Write-Host "    [^!] $i" -ForegroundColor Red }
 echo     Write-Host ""
 echo }
 echo if ^($warnings.Count -gt 0^) {
-echo     Write-Host "  WARNINGS ^($^($warnings.Count^)^):" -ForegroundColor Yellow
+echo     Write-Host "  WARNINGS ($($warnings.Count)):" -ForegroundColor Yellow
 echo     foreach ^($w in $warnings^) { Write-Host "    [~] $w" -ForegroundColor Yellow }
 echo     Write-Host ""
 echo }
 echo if ^($ok.Count -gt 0^) {
-echo     Write-Host "  OK ^($^($ok.Count^)^):" -ForegroundColor Green
+echo     Write-Host "  OK ($($ok.Count)):" -ForegroundColor Green
 echo     foreach ^($o in $ok^) { Write-Host "    [+] $o" -ForegroundColor Green }
 echo     Write-Host ""
 echo }
@@ -534,7 +536,7 @@ if "!isAdmin!"=="1" (
     echo         $color = if ^($startType -eq 'Automatic'^) { 'Green' } else { 'Yellow' }
     echo         Write-Host ^("  {0,-30} StartType: {1}" -f $svc.DisplayName, $startType^) -ForegroundColor $color
     echo         if ^($startType -ne 'Automatic'^) {
-    echo             Write-Host "    ^^ Should be Automatic^^!" -ForegroundColor Red
+    echo             Write-Host "    ^^^^ Should be Automatic^!" -ForegroundColor Red
     echo         }
     echo     }
     echo }
@@ -559,12 +561,13 @@ echo %CYAN%=====================================================================
 echo/
 echo   [1] Restart audio services
 echo   [2] Disable audio enhancements (all devices)
-echo   [3] Reset audio device to default format (48kHz/24-bit)
+echo   [3] Open classic Sound dialog to set format (48kHz/24-bit manually)
 echo   [4] Re-register audio components
 echo   [5] Open Windows Sound Settings
 echo   [0] Back to main menu
 echo/
 
+set "fixChoice="
 set /p "fixChoice=Select fix: "
 
 if "%fixChoice%"=="0" goto MainMenu
@@ -586,17 +589,19 @@ if "%fixChoice%"=="1" (
     net start AudioEndpointBuilder >nul 2>&1
     net start Audiosrv >nul 2>&1
 
-    :: Verify
-    for /f "tokens=3" %%t in ('sc query "Audiosrv" 2^>nul ^| findstr "STATE"') do (
-        if "%%t"=="4" (
-            echo   %GREEN%[OK] Windows Audio Service restarted%RESET%
-        ) else (
-            echo   %RED%[ERROR] Failed to restart Windows Audio Service%RESET%
-        )
+    REM Verify that both services are running again - net start waits for the start to finish
+    set "restartOk=1"
+    for %%s in (AudioEndpointBuilder Audiosrv) do (
+        sc query "%%s" 2>nul | findstr /c:"RUNNING" >nul
+        if !errorlevel! neq 0 set "restartOk=0"
     )
 
     echo/
-    echo %GREEN%Audio services restarted.%RESET%
+    if "!restartOk!"=="1" (
+        echo   %GREEN%[OK] Audio services restarted%RESET%
+    ) else (
+        echo   %RED%[ERROR] One or more audio services did not start%RESET%
+    )
     echo If audio still doesn't work, try option [4] or reboot.
     echo/
     pause
@@ -605,12 +610,19 @@ if "%fixChoice%"=="1" (
 
 if "%fixChoice%"=="2" (
     echo/
-    echo Disabling audio enhancements for all output devices...
+    if "!isAdmin!"=="0" (
+        echo %RED%[ERROR] Requires administrator privileges.%RESET%
+        pause
+        goto ApplyFixes
+    )
+
+    echo Disabling audio enhancements for all active output devices...
     echo/
     echo %YELLOW%Note: This sets the "Disable all enhancements" flag via registry.%RESET%
     echo %YELLOW%A reboot or audio service restart is needed for full effect.%RESET%
     echo/
 
+    set "confirm="
     set /p "confirm=Continue? [Y/N]: "
     if /i not "!confirm!"=="Y" goto ApplyFixes
 
@@ -619,35 +631,19 @@ if "%fixChoice%"=="2" (
     (
     echo $renderKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render'
     echo $devices = Get-ChildItem -Path $renderKey -ErrorAction SilentlyContinue
-    echo $count = 0
-    echo foreach ^($dev in $devices^) {
-    echo     $fxPath = "$^($dev.PSPath^)\FxProperties"
-    echo     if ^(Test-Path $fxPath^) {
-    echo         # Remove audio effect properties to disable enhancements
-    echo         $props = Get-ItemProperty -Path $fxPath -ErrorAction SilentlyContinue
-    echo         if ^($props^) {
-    echo             $count++
-    echo             Write-Host "  Cleared enhancements for endpoint $count"
-    echo         }
-    echo     }
-    echo }
-    echo/
-    echo # Also set via the EnableFx registry value
+    echo # PKEY_AudioEndpoint_Disable_SysFx under FxProperties = the "Disable all enhancements" setting
+    echo $count = 0; $failed = 0
     echo foreach ^($dev in $devices^) {
     echo     $state = ^(Get-ItemProperty -Path $dev.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue^).DeviceState
-    echo     if ^($state -eq 1^) {
-    echo         # Try to set the disable enhancements flag
-    echo         $propPath = "$^($dev.PSPath^)\Properties"
-    echo         if ^(Test-Path $propPath^) {
-    echo             # {24dbb0fc-9311-4b3d-9cf0-18ff155639d4},5 = DisableEnhancements
-    echo             Set-ItemProperty -Path $propPath -Name '{24dbb0fc-9311-4b3d-9cf0-18ff155639d4},5' -Value 1 -Type DWord -ErrorAction SilentlyContinue
-    echo         }
-    echo     }
+    echo     if ^($state -ne 1^) { continue }
+    echo     $fxPath = "$($dev.PSPath)\FxProperties"
+    echo     if ^(-not ^(Test-Path $fxPath^)^) { continue }
+    echo     try { New-ItemProperty -Path $fxPath -Name '{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5' -Value 1 -PropertyType DWord -Force -ErrorAction Stop ^| Out-Null; $count++ } catch { $failed++ }
     echo }
-    echo/
     echo Write-Host ""
-    echo Write-Host "Enhancements disabled for $count endpoint^(s^)." -ForegroundColor Green
-    echo Write-Host "Restart audio services ^(option 1^) or reboot for full effect."
+    echo Write-Host "Enhancements disabled for $count endpoint(s)." -ForegroundColor Green
+    echo if ^($failed -gt 0^) { Write-Host "$failed endpoint(s) could not be written - use the Enhancements tab instead." -ForegroundColor Red }
+    echo Write-Host "Restart audio services (option 1) or reboot for full effect."
     ) > "!PSDISABLE!"
 
     powershell -ExecutionPolicy Bypass -File "!PSDISABLE!" 2>nul
@@ -660,20 +656,17 @@ if "%fixChoice%"=="2" (
 
 if "%fixChoice%"=="3" (
     echo/
-    echo %YELLOW%Opening Windows Sound Settings...%RESET%
-    echo %YELLOW%In the settings dialog:%RESET%
-    echo   1. Click on your output device
-    echo   2. Go to Properties ^> Advanced
-    echo   3. Set format to: 24 bit, 48000 Hz (Studio Quality)
+    echo %YELLOW%Opening the classic Sound control panel...%RESET%
+    echo %YELLOW%In the Sound dialog:%RESET%
+    echo   1. On the Playback tab, select your output device
+    echo   2. Click Properties, then open the Advanced tab
+    echo   3. Set Default Format to: 24 bit, 48000 Hz ^(Studio Quality^)
     echo   4. Uncheck both "Exclusive Mode" checkboxes if having issues
     echo/
 
-    start ms-settings:sound >nul 2>&1
-    if errorlevel 1 (
-        start mmsys.cpl >nul 2>&1
-    )
+    start "" control.exe mmsys.cpl
 
-    echo Sound Settings opened.
+    echo Sound control panel opened.
     echo/
     pause
     goto ApplyFixes
@@ -690,23 +683,34 @@ if "%fixChoice%"=="4" (
     echo Re-registering audio components...
     echo/
 
-    :: Re-register audio DLLs
+    REM Re-register audio DLLs
     regsvr32 /s audiosrv.dll 2>nul
     regsvr32 /s AudioSes.dll 2>nul
     regsvr32 /s AudioEng.dll 2>nul
 
-    :: Restart services
+    REM Restart services
     net stop Audiosrv /y >nul 2>&1
     net stop AudioEndpointBuilder /y >nul 2>&1
     timeout /t 2 /nobreak >nul
     net start AudioEndpointBuilder >nul 2>&1
     net start Audiosrv >nul 2>&1
 
-    echo   %GREEN%[OK] Audio components re-registered%RESET%
-    echo   %GREEN%[OK] Audio services restarted%RESET%
+    REM Report the real service state instead of assuming success
+    set "restartOk=1"
+    for %%s in (AudioEndpointBuilder Audiosrv) do (
+        sc query "%%s" 2>nul | findstr /c:"RUNNING" >nul
+        if !errorlevel! neq 0 set "restartOk=0"
+    )
+
+    echo   %YELLOW%[INFO] Audio component re-registration attempted%RESET%
+    if "!restartOk!"=="1" (
+        echo   %GREEN%[OK] Audio services restarted%RESET%
+    ) else (
+        echo   %RED%[ERROR] One or more audio services did not start%RESET%
+    )
     echo/
     echo If problems persist, try updating your audio driver or running
-    echo the Windows audio troubleshooter (Settings ^> Troubleshoot).
+    echo the Windows audio troubleshooter ^(Settings ^> Troubleshoot^).
     echo/
     pause
     goto ApplyFixes

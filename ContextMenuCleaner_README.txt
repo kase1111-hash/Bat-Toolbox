@@ -62,18 +62,32 @@ WHAT EACH CATEGORY MEANS
   - Scan with Microsoft Defender
 
 [DISABLED] - Gray
-  Entries that are already hidden or disabled.
+  Entries that are already hidden or disabled (menu verbs with
+  LegacyDisable/ProgrammaticAccessOnly, or handlers whose CLSID is in the
+  Shell Extensions\Blocked list).
 
 
 HOW TO RESTORE / UNDO
 ---------------------
 Option 1: Re-enable Individual Entries
-  Open Registry Editor (regedit) and navigate to the entry's path
-  (shown during the scan). Delete the "LegacyDisable" value.
+  Menu verbs (paths containing \shell\):
+    Open Registry Editor (regedit) and navigate to the entry's path
+    (shown during the scan). Delete the "LegacyDisable" value.
+  Shell-extension handlers (paths containing \shellex\):
+    Open Registry Editor and navigate to
+      HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked
+    Delete the value named after the handler's CLSID ({xxxxxxxx-...}).
+    The value's data is the handler's key name (e.g. "7-Zip"). The CLSID
+    is the (Default) value of the handler's key shown in the scan (or the
+    key name itself when the key is named {CLSID}).
 
 Option 2: Re-enable via Command Line
   Open Command Prompt as Administrator:
-    reg delete "HKCR\*\shell\EntryName" /v LegacyDisable /f
+    Menu verb:
+      reg delete "HKCR\*\shell\EntryName" /v LegacyDisable /f
+    Shell-extension handler:
+      reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked" /v "{CLSID}" /f
+  Then restart Explorer (or sign out and back in).
 
 Option 3: Restore Windows 11 Simplified Menu
   If you restored the classic menu and want it back:
@@ -118,10 +132,30 @@ The script scans these registry paths for context menu entries:
 
 HOW THE DISABLING WORKS
 -----------------------
-The script uses the "LegacyDisable" registry value to hide entries.
-This is the standard Windows mechanism for hiding context menu items.
-It does NOT delete anything - entries can be re-enabled by removing
-the LegacyDisable value.
+Context menu entries come in two kinds, and each needs its own method:
+
+  Menu verbs (...\shell\<verb>):
+    The script adds an empty "LegacyDisable" string value to the verb's
+    key. Windows hides verbs that have this value.
+
+  Shell-extension handlers (...\shellex\ContextMenuHandlers\<name>):
+    These are COM add-ins (WinZip, antivirus "Scan with ..." entries,
+    7-Zip, WinRAR, Dropbox, TortoiseGit/SVN, ...). They ignore
+    LegacyDisable. The script adds the handler's CLSID as a value under
+      HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked
+    so Explorer no longer loads that extension. Note that this blocks the
+    whole extension, not only the menu entry shown in the scan: Explorer
+    stops loading that CLSID everywhere (files, folders, drives, folder
+    background), and any other feature the same extension provides - for
+    example a tab it adds to the Properties dialog, such as the Sharing tab
+    of the "Sharing" handler - is disabled too until the Blocked value is
+    removed.
+    Restart Explorer (or sign out and back in) for this to take effect.
+
+Neither method deletes anything - entries are re-enabled by removing the
+LegacyDisable value or the Blocked value (see HOW TO RESTORE / UNDO).
+If a registry write is refused (for example by an antivirus program's
+self-protection), the script reports [FAIL] for that entry.
 
 
 TIPS

@@ -28,6 +28,11 @@ BEFORE YOU RUN
 All pagefile changes require a reboot to take effect.
 The script will prompt you to reboot after making changes.
 Option [6] restores Windows default automatic management.
+Every change asks for confirmation first. Pressing Enter without typing
+anything at a [Y/N] prompt counts as "No". Pressing Enter at the drive
+prompt or at the first size prompt cancels back to the menu; in option [3],
+pressing Enter at "Maximum size" uses the initial size. Sizes must be whole
+numbers in MB.
 
 
 SIZE RECOMMENDATIONS
@@ -38,7 +43,11 @@ SIZE RECOMMENDATIONS
 | 16 GB     | 16 GB (fixed)       | Standard — most apps fit      |
 | 32 GB     | 16 GB (fixed)       | Moderate — safety net          |
 | 64 GB     | 16 GB (fixed)       | Minimal — rarely used          |
-| 128 GB    | 16 GB (fixed)       | Crash dump support only        |
+| 128 GB    | 32 GB (fixed)       | 25% of RAM, crash dump support |
+
+RAM is the total Windows reports, rounded to the nearest GB. Options [1] and
+[2] use the same calculation, so [2] applies exactly the "Recommended: Fixed"
+size that [1] shows (for less than 16 GB RAM, the lower end of the range).
 
 
 WHY FIXED SIZE?
@@ -81,6 +90,9 @@ another drive:
   - Minidumps (most useful for debugging) need only ~800 MB
   - Full memory dumps need pagefile >= RAM size
 
+Option [4] only asks about the small C: pagefile when the target drive is
+not C:. If you move the pagefile back to C:, the size you enter is used.
+
 
 DISABLING THE PAGEFILE
 -----------------------
@@ -119,11 +131,17 @@ WHAT THE ANALYSIS SHOWS
   - Peak pagefile usage (highest since boot)
   - Whether pagefile is system-managed or manually configured
   - Available drives with type (NVMe/SSD/HDD) and free space
+    (NVMe is detected from the disk's bus type)
   - Calculated recommendation based on your RAM amount
 
 
 NOTES
 -----
+- Settings are changed through PowerShell (CIM: Win32_ComputerSystem and
+  Win32_PageFileSetting), so the script works on Windows 11 24H2 and later
+  where WMIC is no longer available. If that update fails, the script writes
+  the PagingFiles registry value instead
+  (HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management)
 - All changes require a reboot to take effect
 - The old pagefile.sys is deleted on reboot after changes
 - A new pagefile.sys is created at the specified size
@@ -136,7 +154,7 @@ NOTES
 TIPS
 ----
 - Start with option [1] to understand your current configuration
-- For gaming PCs with 32+ GB RAM, a fixed 16 GB pagefile is ideal
+- For gaming PCs with 32-64 GB RAM, a fixed 16 GB pagefile is ideal
 - For workstations (video editing, CAD), match pagefile to RAM size
 - Always place the pagefile on the fastest available drive
 - Monitor pagefile usage over a week before deciding on size

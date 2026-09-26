@@ -48,27 +48,35 @@ for /l %%i in (1,1,3) do (
 echo/
 echo/
 
+:: Delete service lists left by an interrupted run - the analysis only writes a
+:: list when that category is non-empty, so a stale list would otherwise be
+:: offered (and applied) without its services being shown.
+del "%TEMP%\bloatware_services.txt" "%TEMP%\telemetry_services.txt" "%TEMP%\xbox_services.txt" "%TEMP%\manual_services.txt" 2>nul
+
 :: Run the PowerShell service analysis script
 powershell -ExecutionPolicy Bypass -File "%~dp0ServiceAnalyzer.ps1"
 
 echo/
 
-:: Ask about disabling bloatware services
+:: Ask about bloatware services. These are set to Manual, not Disabled: several
+:: are needed on demand (VPN clients, Apple device sync, Xbox Gaming Services),
+:: and Windows refuses to start a Disabled service even when its app asks.
 if exist "%TEMP%\bloatware_services.txt" (
     set "bloat_count=0"
     for /f %%a in ('type "%TEMP%\bloatware_services.txt" 2^>nul ^| find /c /v ""') do set "bloat_count=%%a"
 
     if !bloat_count! gtr 0 (
         echo/
-        set /p "disablebloat=Disable BLOATWARE services? [Y/N]: "
+        set "disablebloat="
+        set /p "disablebloat=Set BLOATWARE services to Manual? [Y/N]: "
         if /i "!disablebloat!"=="Y" (
             echo/
-            echo Disabling bloatware services...
+            echo Setting bloatware services to Manual...
             for /f "tokens=*" %%s in ('type "%TEMP%\bloatware_services.txt"') do (
                 sc stop "%%s" >nul 2>&1
-                sc config "%%s" start= disabled >nul 2>&1
+                sc config "%%s" start= demand >nul 2>&1
                 if not errorlevel 1 (
-                    echo   [DISABLED] %%s
+                    echo   [SET TO MANUAL] %%s
                 ) else (
                     echo   [FAILED] %%s - may be protected
                 )
@@ -85,6 +93,7 @@ if exist "%TEMP%\telemetry_services.txt" (
 
     if !tele_count! gtr 0 (
         echo/
+        set "disabletele="
         set /p "disabletele=Disable TELEMETRY services? [Y/N]: "
         if /i "!disabletele!"=="Y" (
             echo/
@@ -110,6 +119,7 @@ if exist "%TEMP%\xbox_services.txt" (
 
     if !xbox_count! gtr 0 (
         echo/
+        set "disablexbox="
         set /p "disablexbox=Disable XBOX services? [Y/N]: "
         if /i "!disablexbox!"=="Y" (
             echo/
@@ -134,7 +144,7 @@ del "%TEMP%\manual_services.txt" 2>nul
 title [2/2] Service Analyzer - Complete
 echo/
 echo   %CYAN%╔══════════════════════════════════════════════════════════════════════════╗%RESET%
-echo   %CYAN%║%RESET%  %GREEN%Complete^!%RESET%                                                               %CYAN%║%RESET%
+echo   %CYAN%║%RESET%  %GREEN%Complete^^!%RESET%                                                               %CYAN%║%RESET%
 echo   %CYAN%╠══════════════════════════════════════════════════════════════════════════╣%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Use %WHITE%services.msc%RESET% for manual service management                     %CYAN%║%RESET%
 echo   %CYAN%║%RESET%  %DIM%-%RESET% Disabled services can be re-enabled anytime                        %CYAN%║%RESET%
