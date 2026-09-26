@@ -233,6 +233,31 @@ echo     Write-Host "Done (all drives)"
 - Use `REM`, not `::`, for comments inside blocks (labels inside blocks are a
   parsing hazard)
 
+### User Prompts
+
+`set /p` leaves the variable unchanged when the user just presses Enter, so a
+previous answer (an earlier "Y" or menu number) is silently reused. Clear the
+variable first, quote every comparison, and make an empty answer take the
+safe/cancel path:
+
+```batch
+set "confirm="
+set /p "confirm=Apply changes? [Y/N]: "
+if /i not "%confirm%"=="Y" goto MainMenu
+```
+
+### No WMIC
+
+`wmic` is disabled by default on Windows 11 24H2 and removed in 25H2. Query
+WMI/CIM through PowerShell instead:
+
+```batch
+for /f "delims=" %%a in ('powershell -NoProfile -Command "(Get-CimInstance Win32_BIOS).Manufacturer" 2^>nul') do set "BIOS_MFR=%%a"
+```
+
+`powershell` is Windows PowerShell 5.1 - do not use PS7-only syntax (`??`,
+`?.`, ternary `? :`, `&&`/`||` pipeline chains) or PS7-only cmdlets/parameters.
+
 ### Line Endings
 
 `.bat` files must be checked out with CRLF line endings; with LF-only files
